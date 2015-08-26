@@ -7,6 +7,16 @@ DASH masternode management utilities
 * sync_dashman_to_github.sh -- safe git commands to get everything up to date
 * update_dashd.sh -- An easy to use update script for 32/64 bit linux
 
+# Assumptions/Limitations
+
+This script, for now, assumes your binaries live in your ~/.dash folder and
+downloads/creates symlinks there. (By adding ~/.dash to your PATH you can
+invoke dash-cli/dashd from any directory.)
+
+It is currently only compatible with 32/64 bit linux.
+
+A destination/install folder will be added in future versions.
+
 # Dependencies
 
 * dashd - version 12 or greater

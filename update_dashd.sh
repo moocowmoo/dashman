@@ -16,7 +16,7 @@ C_YELLOW="\e[33m"
 C_GREEN="\e[32m"
 C_NORM="\e[0m"
 
-SCRIPT_VERSION=4
+SCRIPT_VERSION=5
 
 # ----------------------------------------------------------------------------
 
@@ -39,7 +39,7 @@ fi
 confirm() { read -r -p "${1:-Are you sure? [y/N]} "; [[ ${REPLY:0:1} = [Yy] ]]; }
 
 _check_script_updates() {
-    GITHUB_SCRIPT_VERSION=$( wget -q https://raw.githubusercontent.com/moocowmoo/dashman/master/VERSION -O - )
+    GITHUB_SCRIPT_VERSION=$( wget --no-check-certificate -q https://raw.githubusercontent.com/moocowmoo/dashman/master/VERSION -O - )
     if [ $SCRIPT_VERSION != $GITHUB_SCRIPT_VERSION ]; then
         echo -e ""
         echo -e "${C_RED}$0 requires updating. In dashman directory, do './sync_dashman_to_github.sh' and try again. Exiting.$C_NORM"
@@ -48,7 +48,7 @@ _check_script_updates() {
 }
 
 _get_versions() {
-    DOWNLOAD_HTML=$( wget -q $DOWNLOAD_PAGE -O - )
+    DOWNLOAD_HTML=$( wget --no-check-certificate -q $DOWNLOAD_PAGE -O - )
     local IFS=' '
     read -a DOWNLOAD_URLS <<< $( echo $DOWNLOAD_HTML | sed -e 's/ /\n/g' | grep binaries | grep Download | grep linux | perl -ne '/.*"([^"]+)".*/; print "$1 ";')
     LATEST_VERSION=$( echo ${DOWNLOAD_URLS[0]} | perl -ne '/dash-([0-9.]+)-/; print $1;')
@@ -123,8 +123,8 @@ if [ $LATEST_VERSION != $CURRENT_VERSION ]; then
     # pull it ----------------------------------------------------------------
 
     echo -en "${C_YELLOW}downloading ${DOWNLOAD_URL}..."
-    wget -q -r $DOWNLOAD_URL -O $DOWNLOAD_FILE
-    wget -q -r ${DOWNLOAD_URL}.DIGESTS.txt -O ${DOWNLOAD_FILE}.DIGESTS.txt
+    wget --no-check-certificate -q -r $DOWNLOAD_URL -O $DOWNLOAD_FILE
+    wget --no-check-certificate -q -r ${DOWNLOAD_URL}.DIGESTS.txt -O ${DOWNLOAD_FILE}.DIGESTS.txt
     if [ ! -e $DOWNLOAD_FILE ] ; then
         echo -e "${C_RED}error downloading file"
         echo -e "tried to get $DOWNLOAD_URL$C_NORM"
