@@ -1,11 +1,6 @@
 # dashman
 
-DASH masternode management utilities
-
-# Files
-
-* sync_dashman_to_github.sh -- safe git commands to get everything up to date
-* update_dashd.sh -- An easy to use update script for 32/64 bit linux
+DASH wallet/daemon management utilities
 
 # Assumptions/Limitations
 
@@ -17,6 +12,11 @@ It is currently only compatible with 32/64 bit linux.
 
 A destination/install folder will be added in future versions.
 
+# Files
+
+* sync_dashman_to_github.sh -- safe git commands to get everything up to date
+* update_dashd.sh -- An easy to use update script for 32/64 bit linux
+
 # Dependencies
 
 * dashd - version 12 or greater
@@ -26,8 +26,7 @@ A destination/install folder will be added in future versions.
 
 # Install/Usage
 
-To update your masternode to the latest dashd, on your remote 32/64bit linux
-masternode do:
+To update your 32/64bit linux daemon to the latest dashd, do:
 
     sudo apt-get install git
     git clone https://github.com/moocowmoo/dashman.git
