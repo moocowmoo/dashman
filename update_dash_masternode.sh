@@ -42,7 +42,7 @@ _check_script_updates() {
     GITHUB_SCRIPT_VERSION=$( wget -q https://raw.githubusercontent.com/moocowmoo/dashman/master/VERSION -O - )
     if [ $SCRIPT_VERSION != $GITHUB_SCRIPT_VERSION ]; then
         echo -e ""
-        echo -e "${C_RED}$0 requires updating. In dashman directory, do 'git pull' and try again. Exiting.$C_NORM"
+        echo -e "${C_RED}$0 requires updating. In dashman directory, do './sync_dashman_to_github.sh' and try again. Exiting.$C_NORM"
         exit 1
     fi
 }

@@ -4,8 +4,7 @@ DASH masternode management utilities
 
 # Files
 
-Just one to start:
-
+* sync_dashman_to_github.sh -- safe git commands to get everything up to date
 * update_dash_masternode.sh -- An easy to use update script for 32/64 bit linux
 
 # Dependencies
