@@ -15,7 +15,8 @@ C_RED="\e[31m"
 C_YELLOW="\e[33m"
 C_GREEN="\e[32m"
 C_NORM="\e[0m"
-SCRIPT_VERSION=1
+
+SCRIPT_VERSION=2
 
 # ----------------------------------------------------------------------------
 
@@ -123,6 +124,7 @@ if [ $LATEST_VERSION != $CURRENT_VERSION ]; then
 
     echo -en "${C_YELLOW}downloading ${DOWNLOAD_URL}..."
     wget -q -r $DOWNLOAD_URL -O $DOWNLOAD_FILE
+    wget -q -r ${DOWNLOAD_URL}.DIGESTS.txt -O ${DOWNLOAD_FILE}.DIGESTS.txt
     if [ ! -e $DOWNLOAD_FILE ] ; then
         echo -e "${C_RED}error downloading file"
         echo -e "tried to get $DOWNLOAD_URL$C_NORM"
@@ -130,6 +132,23 @@ if [ $LATEST_VERSION != $CURRENT_VERSION ]; then
     else 
         echo -e " ${C_GREEN}DONE!$C_NORM"
     fi
+
+    # prove it ---------------------------------------------------------------
+
+    echo -en "${C_YELLOW}checksumming ${DOWNLOAD_FILE}..."
+    SHA256SUM=$( sha256sum $DOWNLOAD_FILE )
+    MD5SUM=$( md5sum $DOWNLOAD_FILE )
+    SHA256PASS=$( grep $SHA256SUM ${DOWNLOAD_FILE}.DIGESTS.txt | wc -l )
+    MD5SUMPASS=$( grep $MD5SUM ${DOWNLOAD_FILE}.DIGESTS.txt | wc -l )
+    if [ $SHA256PASS -lt 1 ] ; then
+        echo -e " ${C_RED} SHA256 checksum FAILED! Try again later. Exiting.$C_NORM"
+        exit 1
+    fi
+    if [ $MD5SUMPASS -lt 1 ] ; then
+        echo -e " ${C_RED} MD5 checksum FAILED! Try again later. Exiting.$C_NORM"
+        exit 1
+    fi
+    echo -e " ${C_GREEN}DONE!$C_NORM"
 
     # produce it -------------------------------------------------------------
 
