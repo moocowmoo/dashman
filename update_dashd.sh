@@ -16,7 +16,7 @@ C_YELLOW="\e[33m"
 C_GREEN="\e[32m"
 C_NORM="\e[0m"
 
-SCRIPT_VERSION=3
+SCRIPT_VERSION=4
 
 # ----------------------------------------------------------------------------
 
@@ -175,6 +175,8 @@ if [ $LATEST_VERSION != $CURRENT_VERSION ]; then
         peers.dat \
         dashd \
         dashd-$CURRENT_VERSION \
+        dash-qt \
+        dash-qt-$CURRENT_VERSION \
         dash-cli \
         dash-cli-$CURRENT_VERSION
     echo -e " ${C_GREEN}DONE!$C_NORM"
@@ -183,8 +185,14 @@ if [ $LATEST_VERSION != $CURRENT_VERSION ]; then
 
     mv dash-0.12.0/bin/dashd dashd-$LATEST_VERSION
     mv dash-0.12.0/bin/dash-cli dash-cli-$LATEST_VERSION
+    mv dash-0.12.0/bin/dash-qt dash-qt-$LATEST_VERSION
     ln -s dashd-$LATEST_VERSION dashd
     ln -s dash-cli-$LATEST_VERSION dash-cli
+    ln -s dash-qt-$LATEST_VERSION dash-qt
+
+    # purge it ---------------------------------------------------------------
+
+    rm -rf dash-0.12.0
 
     # punch it ---------------------------------------------------------------
 
@@ -195,7 +203,6 @@ if [ $LATEST_VERSION != $CURRENT_VERSION ]; then
     # probe it ---------------------------------------------------------------
 
     echo -en "${C_YELLOW}Waiting for dashd to respond..."
-
     while [ $DASHD_RUNNING == 0 ]; do
         echo -n "."
         _check_dashd_running
@@ -203,10 +210,11 @@ if [ $LATEST_VERSION != $CURRENT_VERSION ]; then
     done
     echo -e " ${C_GREEN}DONE!$C_NORM"
 
-
-    # part ways --------------------------------------------------------------
+    # poll it ----------------------------------------------------------------
 
     _get_versions
+
+    # pass or punt -----------------------------------------------------------
 
     if [ $LATEST_VERSION == $CURRENT_VERSION ]; then
         echo -e "${C_GREEN}dashd version $CURRENT_VERSION is up to date. Exiting.$C_NORM"
