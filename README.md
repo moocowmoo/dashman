@@ -26,7 +26,7 @@ masternode do:
 
 # Screencap
 
-<img src="https://masternode.me/downloads/dashman-screencap.png">
+<img src="https://masternode.me/downloads/dashman-screencap.png?_=1">
 
 # Contact
 
