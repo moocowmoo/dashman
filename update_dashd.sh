@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# update_dash_masternode.sh
-# interactively update your linux dash masternode to latest distributed version
+# update_dashd.sh
+# interactively update your local linux dashd to latest distributed version
 
 # dependencies:
 #     wget
@@ -16,7 +16,7 @@ C_YELLOW="\e[33m"
 C_GREEN="\e[32m"
 C_NORM="\e[0m"
 
-SCRIPT_VERSION=2
+SCRIPT_VERSION=3
 
 # ----------------------------------------------------------------------------
 

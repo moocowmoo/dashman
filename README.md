@@ -5,7 +5,7 @@ DASH masternode management utilities
 # Files
 
 * sync_dashman_to_github.sh -- safe git commands to get everything up to date
-* update_dash_masternode.sh -- An easy to use update script for 32/64 bit linux
+* update_dashd.sh -- An easy to use update script for 32/64 bit linux
 
 # Dependencies
 
@@ -22,7 +22,7 @@ masternode do:
     sudo apt-get install git
     git clone https://github.com/moocowmoo/dashman.git
     cd dashman
-    ./update_dash_masternode.sh
+    ./update_dashd.sh
 
 # Screencap
 
