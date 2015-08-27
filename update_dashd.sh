@@ -16,21 +16,35 @@ C_YELLOW="\e[33m"
 C_GREEN="\e[32m"
 C_NORM="\e[0m"
 
-SCRIPT_VERSION=5
+SCRIPT_VERSION=6
+
+DOWNLOAD_PAGE='https://www.dashpay.io/downloads/'
 
 # ----------------------------------------------------------------------------
 
-DASH_HOME="$HOME/.dash"
-DASH_CLI="$DASH_HOME/dash-cli"
-DOWNLOAD_PAGE='https://www.dashpay.io/downloads/'
+# attempt to locate dash-cli executable
+INSTALL_DIR=''
+if   [ -e ./dash-cli ];            then INSTALL_DIR='.' ;
+elif [ -e $HOME/.dash/dash-cli ] ; then INSTALL_DIR="$HOME/.dash" ;
+elif [ ! -z $(which dash-cli) ] ;  then INSTALL_DIR=$(which dash-cli);
+    INSTALL_DIR=${INSTALL_DIR%%/dash-cli};
+fi
+INSTALL_DIR=$(readlink -f $INSTALL_DIR)
+if [ ! -e $INSTALL_DIR ]; then
+    echo -e "${C_RED}cannot find dash-cli in current directory, ~/.dash, or \$PATH. -- Exiting.$C_NORM"
+    exit 1
+fi
 
-if [ ! -e $DASH_HOME ]; then
-    echo -e "${C_RED}$DASH_HOME not found! Exiting.$C_NORM"
+DASH_CLI="$INSTALL_DIR/dash-cli"
+
+# check INSTALL_DIR has dashd and dash-cli
+if [ ! -e $INSTALL_DIR/dashd ]; then
+    echo -e "${C_RED}dashd not found in $INSTALL_DIR -- Exiting.$C_NORM"
     exit 1
 fi
 
 if [ ! -e $DASH_CLI ]; then
-    echo -e "${C_RED}$DASH_CLI not found! Exiting.$C_NORM"
+    echo -e "${C_RED}dash-cli not found in $INSTALL_DIR -- Exiting.$C_NORM"
     exit 1
 fi
 
@@ -109,16 +123,20 @@ if [ $LATEST_VERSION != $CURRENT_VERSION ]; then
     echo -e "   latest version: $C_GREEN$LATEST_VERSION$C_NORM"
     echo -e ""
     
-    echo -en "download\n    $DOWNLOAD_URL\nto\n    $DASH_HOME/$DOWNLOAD_FILE\nand install?"
+    echo -en "download\n"
+    echo -en "    $DOWNLOAD_URL\nto\n"
+    echo -en "    $INSTALL_DIR/$DOWNLOAD_FILE\nand install to\n"
+    echo -en "    $INSTALL_DIR ?"
 
     if ! confirm " [y/N]"; then
         echo -e "${C_RED}Exiting.$C_NORM"
+        echo ""
         exit 0
     fi
 
     # push it ----------------------------------------------------------------
 
-    cd $DASH_HOME
+    cd $INSTALL_DIR
 
     # pull it ----------------------------------------------------------------
 
@@ -197,7 +215,7 @@ if [ $LATEST_VERSION != $CURRENT_VERSION ]; then
     # punch it ---------------------------------------------------------------
 
     echo -en "${C_YELLOW}Launching dashd..."
-    $DASH_HOME/dashd > /dev/null
+    $INSTALL_DIR/dashd > /dev/null
     echo -e " ${C_GREEN}DONE!$C_NORM"
 
     # probe it ---------------------------------------------------------------

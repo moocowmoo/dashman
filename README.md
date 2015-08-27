@@ -2,15 +2,14 @@
 
 DASH wallet/daemon management utilities
 
-# Assumptions/Limitations
+# Limitations
 
-This script, for now, assumes your binaries live in your ~/.dash folder and
-downloads/creates symlinks there. (By adding ~/.dash to your PATH you can
-invoke dash-cli/dashd from any directory.)
-
-It is currently only compatible with 32/64 bit linux.
-
-A destination/install folder will be added in future versions.
+* This script searches for your dashd/dash-cli executibles in the current
+directory, ~/.dash, and $PATH.  It will prompt to install in the first
+directory found containing both dashd and dash-cli.  Multiple wallet
+directories are not supported. The script assumes the host runs a single
+instance of dashd.
+* It is currently only compatible with 32/64 bit linux.
 
 # Files
 
