@@ -107,6 +107,7 @@ _get_download_url(){
 
 # ----------------------------------------------------------------------------
 
+echo ""
 echo -e "${C_CYAN}${0##*/} version $SCRIPT_VERSION"
 echo -en "${C_YELLOW}gathering info..."
 _check_script_updates
@@ -125,10 +126,8 @@ if [ $LATEST_VERSION != $CURRENT_VERSION ]; then
     echo -e "   latest version: $C_GREEN$LATEST_VERSION$C_NORM"
     echo -e ""
     
-    echo -en "download\n"
-    echo -en "    $DOWNLOAD_URL\nto\n"
-    echo -en "    $INSTALL_DIR/$DOWNLOAD_FILE\nand install to\n"
-    echo -en "    $INSTALL_DIR ?"
+    echo -en "download $DOWNLOAD_URL\n"
+    echo -en "and ${C_YELLOW}install to $INSTALL_DIR$C_NORM?"
 
     if ! confirm " [y/N]"; then
         echo -e "${C_RED}Exiting.$C_NORM"
@@ -142,7 +141,8 @@ if [ $LATEST_VERSION != $CURRENT_VERSION ]; then
 
     # pull it ----------------------------------------------------------------
 
-    echo -en "${C_YELLOW}downloading ${DOWNLOAD_URL}..."
+    echo ""
+    echo -en "${C_YELLOW} --> downloading ${DOWNLOAD_URL}..."
     wget --no-check-certificate -q -r $DOWNLOAD_URL -O $DOWNLOAD_FILE
     wget --no-check-certificate -q -r ${DOWNLOAD_URL}.DIGESTS.txt -O ${DOWNLOAD_FILE}.DIGESTS.txt
     if [ ! -e $DOWNLOAD_FILE ] ; then
@@ -155,7 +155,7 @@ if [ $LATEST_VERSION != $CURRENT_VERSION ]; then
 
     # prove it ---------------------------------------------------------------
 
-    echo -en "${C_YELLOW}checksumming ${DOWNLOAD_FILE}..."
+    echo -en "${C_YELLOW} --> checksumming ${DOWNLOAD_FILE}..."
     SHA256SUM=$( sha256sum $DOWNLOAD_FILE )
     MD5SUM=$( md5sum $DOWNLOAD_FILE )
     SHA256PASS=$( grep $SHA256SUM ${DOWNLOAD_FILE}.DIGESTS.txt | wc -l )
@@ -172,14 +172,14 @@ if [ $LATEST_VERSION != $CURRENT_VERSION ]; then
 
     # produce it -------------------------------------------------------------
 
-    echo -en "${C_YELLOW}unpacking ${DOWNLOAD_FILE}..." && \
+    echo -en "${C_YELLOW} --> unpacking ${DOWNLOAD_FILE}..." && \
     tar zxf $DOWNLOAD_FILE && \
     echo -e " ${C_GREEN}DONE!$C_NORM" && \
 
     # pummel it --------------------------------------------------------------
 
     if [ $DASHD_RUNNING == 1 ]; then 
-        echo -en "${C_YELLOW}stopping dashd. please wait..."
+        echo -en "${C_YELLOW} --> stopping dashd. please wait..."
         $DASH_CLI stop >/dev/null 2>&1
         sleep 15
         killall -9 dashd dash-shutoff >/dev/null 2>&1
@@ -188,7 +188,7 @@ if [ $LATEST_VERSION != $CURRENT_VERSION ]; then
 
     # prune it ---------------------------------------------------------------
 
-    echo -en "${C_YELLOW}Removing old version..." && \
+    echo -en "${C_YELLOW} --> Removing old version..." && \
     rm -f \
         debug.log \
         mncache.dat \
@@ -216,13 +216,13 @@ if [ $LATEST_VERSION != $CURRENT_VERSION ]; then
 
     # punch it ---------------------------------------------------------------
 
-    echo -en "${C_YELLOW}Launching dashd..."
+    echo -en "${C_YELLOW} --> Launching dashd..."
     $INSTALL_DIR/dashd > /dev/null
     echo -e " ${C_GREEN}DONE!$C_NORM"
 
     # probe it ---------------------------------------------------------------
 
-    echo -en "${C_YELLOW}Waiting for dashd to respond..."
+    echo -en "${C_YELLOW} --> Waiting for dashd to respond..."
     while [ $DASHD_RUNNING == 0 ]; do
         echo -n "."
         _check_dashd_running
@@ -237,7 +237,14 @@ if [ $LATEST_VERSION != $CURRENT_VERSION ]; then
     # pass or punt -----------------------------------------------------------
 
     if [ $LATEST_VERSION == $CURRENT_VERSION ]; then
-        echo -e "${C_GREEN}dashd version $CURRENT_VERSION is up to date. Exiting.$C_NORM"
+        echo -e ""
+        echo -e "${C_GREEN}dashd successfully upgraded to version ${LATEST_VERSION}$C_NORM"
+        echo -e ""
+        echo -e "${C_GREEN}Installed in ${INSTALL_DIR}$C_NORM"
+        echo -e ""
+        ls -l --color {$DOWNLOAD_FILE,${DOWNLOAD_FILE}.DIGESTS.txt,dash-cli,dashd,dash-qt,dash*$LATEST_VERSION}
+        echo -e ""
+        echo -e "${C_GREEN}Exiting.$C_NORM"
     else
         echo -e "${C_RED}dashd version $CURRENT_VERSION is not up to date. ($LATEST_VERSION) Exiting.$C_NORM"
     fi
