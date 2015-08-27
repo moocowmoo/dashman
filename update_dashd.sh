@@ -14,9 +14,10 @@
 C_RED="\e[31m"
 C_YELLOW="\e[33m"
 C_GREEN="\e[32m"
+C_CYAN="\e[36m"
 C_NORM="\e[0m"
 
-SCRIPT_VERSION=6
+SCRIPT_VERSION=0.0.6
 
 DOWNLOAD_PAGE='https://www.dashpay.io/downloads/'
 
@@ -54,9 +55,9 @@ confirm() { read -r -p "${1:-Are you sure? [y/N]} "; [[ ${REPLY:0:1} = [Yy] ]]; 
 
 _check_script_updates() {
     GITHUB_SCRIPT_VERSION=$( wget --no-check-certificate -q https://raw.githubusercontent.com/moocowmoo/dashman/master/VERSION -O - )
-    if [ $SCRIPT_VERSION != $GITHUB_SCRIPT_VERSION ]; then
+    if [ "$SCRIPT_VERSION" != "$GITHUB_SCRIPT_VERSION" ]; then
         echo -e ""
-        echo -e "${C_RED}$0 requires updating. In dashman directory, do './sync_dashman_to_github.sh' and try again. Exiting.$C_NORM"
+        echo -e "${C_RED}${0##*/} requires updating. In dashman directory, do './sync_dashman_to_github.sh' and try again. Exiting.$C_NORM"
         exit 1
     fi
 }
@@ -106,6 +107,7 @@ _get_download_url(){
 
 # ----------------------------------------------------------------------------
 
+echo -e "${C_CYAN}${0##*/} version $SCRIPT_VERSION"
 echo -en "${C_YELLOW}gathering info..."
 _check_script_updates
 _get_platform_info
