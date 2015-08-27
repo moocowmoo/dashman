@@ -34,7 +34,7 @@ To update your 32/64bit linux daemon to the latest dashd, do:
 
 # Screencap
 
-<img src="https://masternode.me/downloads/dashman-screencap.png?_=1">
+<img src="https://raw.githubusercontent.com/moocowmoo/dashman/master/screencap.png">
 
 # Contact
 
