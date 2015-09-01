@@ -197,16 +197,23 @@ if [ $LATEST_VERSION != $CURRENT_VERSION ] || [ $REINSTALL ] ; then
     # pull it ----------------------------------------------------------------
 
     echo ""
-    echo -en "${C_YELLOW} --> downloading ${DOWNLOAD_URL}..."
-    wget --no-check-certificate -q -r $DOWNLOAD_URL -O $DOWNLOAD_FILE
-    wget --no-check-certificate -q -r ${DOWNLOAD_URL}.DIGESTS.txt -O ${DOWNLOAD_FILE}.DIGESTS.txt
-    if [ ! -e $DOWNLOAD_FILE ] ; then
-        echo -e "${C_RED}error downloading file"
-        echo -e "tried to get $DOWNLOAD_URL$C_NORM"
-        exit 1
-    else 
-        echo -e " ${C_GREEN}DONE!$C_NORM"
-    fi
+    for DOWNLOAD_URL in $DOWNLOAD_URL ${DOWNLOAD_URL}.DIGESTS.txt ; do
+        download_file=${DOWNLOAD_URL##*/}
+        if [ ! -e $download_file ] ; then
+            echo -en "${C_YELLOW} --> downloading ${DOWNLOAD_URL}..."
+            wget --no-check-certificate -q -r $DOWNLOAD_URL -O $download_file
+            if [ ! -e $download_file ] ; then
+                echo -e ""
+                echo -e ""
+                echo -e "${C_RED}error downloading file"
+                echo -e "tried to get $DOWNLOAD_URL$C_NORM"
+                exit 1
+            fi
+            echo -e " ${C_GREEN}DONE!$C_NORM"
+        else
+            echo -e "${C_YELLOW} --> using existing local file: ${download_file}"
+        fi
+    done
 
     # prove it ---------------------------------------------------------------
 
@@ -216,11 +223,15 @@ if [ $LATEST_VERSION != $CURRENT_VERSION ] || [ $REINSTALL ] ; then
     SHA256PASS=$( grep $SHA256SUM ${DOWNLOAD_FILE}.DIGESTS.txt | wc -l )
     MD5SUMPASS=$( grep $MD5SUM ${DOWNLOAD_FILE}.DIGESTS.txt | wc -l )
     if [ $SHA256PASS -lt 1 ] ; then
-        echo -e " ${C_RED} SHA256 checksum FAILED! Try again later. Exiting.$C_NORM"
+        mv ${DOWNLOAD_FILE}{,.invalid}
+        mv ${DOWNLOAD_FILE}.DIGESTS.txt{,.invalid}
+        echo -e " ${C_RED} SHA256 checksum FAILED! Downloaded files renamed. Try again later. Exiting.$C_NORM"
         exit 1
     fi
     if [ $MD5SUMPASS -lt 1 ] ; then
-        echo -e " ${C_RED} MD5 checksum FAILED! Try again later. Exiting.$C_NORM"
+        mv ${DOWNLOAD_FILE}{,.invalid}
+        mv ${DOWNLOAD_FILE}.DIGESTS.txt{,.invalid}
+        echo -e " ${C_RED} MD5 checksum FAILED! Downloaded files renamed Try again later. Exiting.$C_NORM"
         exit 1
     fi
     echo -e " ${C_GREEN}DONE!$C_NORM"
