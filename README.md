@@ -1,6 +1,6 @@
 # dashman
 
-DASH wallet/daemon management utilities
+DASH wallet/daemon management utilities - version 0.0.8
 
 # Limitations
 

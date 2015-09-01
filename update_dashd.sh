@@ -17,7 +17,7 @@ C_GREEN="\e[32m"
 C_CYAN="\e[36m"
 C_NORM="\e[0m"
 
-SCRIPT_VERSION=0.0.7
+SCRIPT_VERSION=0.0.8
 
 DOWNLOAD_PAGE='https://www.dashpay.io/downloads/'
 
@@ -50,6 +50,19 @@ if [ ! -e $DASH_CLI ]; then
 fi
 
 # ----------------------------------------------------------------------------
+
+usage() {
+    echo ""
+    echo -e "${C_NORM}usage: ${0##*/} [-h|--help -v|--version --reinstall]"
+    echo "-h --help"
+    echo "   This help."
+    echo "-v"
+    echo "   print script version"
+    echo "--version"
+    echo "   print script name and version"
+    echo "--reinstall "
+    echo "   re-download and overwrite dash executables"
+}
 
 confirm() { read -r -p "${1:-Are you sure? [y/N]} "; [[ ${REPLY:0:1} = [Yy] ]]; }
 
@@ -107,6 +120,41 @@ _get_download_url(){
 
 # ----------------------------------------------------------------------------
 
+while getopts ":hv-:" optchar; do
+    case "${optchar}" in
+        -)
+            case "${OPTARG}" in
+                reinstall)
+                    REINSTALL=1
+                ;;
+                version)
+                    echo -e "${0##*/} version $SCRIPT_VERSION"
+                    exit 0
+                ;;
+                help)
+                    usage
+                    exit 0
+                ;;
+                *)
+                if [ "$OPTERR" = 1 ] && [ "${optspec:0:1}" != ":" ]; then
+                    echo "Unknown option --${OPTARG}" >&2
+                fi
+                ;;
+            esac;;
+        h)
+            usage
+            exit 0
+            ;;
+        v)
+            echo -e "$SCRIPT_VERSION"
+            exit 0
+            ;;
+        *)
+            echo "Unknown option --${OPTARG}" >&2
+        ;;
+    esac
+done
+
 echo ""
 echo -e "${C_CYAN}${0##*/} version $SCRIPT_VERSION"
 echo -en "${C_YELLOW}gathering info..."
@@ -117,17 +165,24 @@ _check_dashd_running
 _get_download_url
 echo -e " ${C_GREEN}DONE!$C_NORM"
 
-if [ $LATEST_VERSION != $CURRENT_VERSION ]; then
-    
-    echo -e ""
-    echo -e "$C_RED*** a newer version of dashd is available. ***$C_NORM"
-    echo -e ""
-    echo -e "  current version: $C_RED$CURRENT_VERSION$C_NORM"
-    echo -e "   latest version: $C_GREEN$LATEST_VERSION$C_NORM"
-    echo -e ""
-    
-    echo -en "download $DOWNLOAD_URL\n"
-    echo -en "and ${C_YELLOW}install to $INSTALL_DIR$C_NORM?"
+if [ $LATEST_VERSION != $CURRENT_VERSION ] || [ $REINSTALL ] ; then
+
+    if [ $REINSTALL ];then
+        echo -e ""
+        echo -e "$C_GREEN*** current version of dashd is up-to-date. ***$C_NORM"
+        echo -e ""
+        echo -en "${C_YELLOW}reinstall to $INSTALL_DIR$C_NORM?"
+    else
+        echo -e ""
+        echo -e "$C_RED*** a newer version of dashd is available. ***$C_NORM"
+        echo -e ""
+        echo -e "  current version: $C_RED$CURRENT_VERSION$C_NORM"
+        echo -e "   latest version: $C_GREEN$LATEST_VERSION$C_NORM"
+        echo -e ""
+        echo -en "download $DOWNLOAD_URL\n"
+        echo -en "and ${C_YELLOW}install to $INSTALL_DIR$C_NORM?"
+    fi
+
 
     if ! confirm " [y/N]"; then
         echo -e "${C_RED}Exiting.$C_NORM"

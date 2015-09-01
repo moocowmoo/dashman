@@ -13,6 +13,7 @@ if [ ${CWD##*/} != 'dashman' ] || [ ! -e sync_dashman_to_github.sh ]; then
 fi
 
 git fetch
+git fetch -t
 git stash
 git checkout master
 git reset --hard origin/master
