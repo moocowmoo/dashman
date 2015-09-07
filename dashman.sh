@@ -116,7 +116,7 @@ case "$1" in
             pending " --> dashd connecting (peers) : " ; [ $DASHD_CONNECTED  -gt 0 ] && ok 'YES' || err 'NO'
             pending " --> dashd blocks synced      : " ; [ $DASHD_SYNCED     -gt 0 ] && ok 'YES' || err 'NO'
 
-            if [ $DASHD_RUNNING -gt 0 ] && [ $MN_MISSING_INPUT -lt 1 ] ; then
+            if [ $DASHD_RUNNING -gt 0 ] && [ $MN_CONF_ENABLED -gt 0 ] ; then
                 pending " --> masternode started       : " ; [ $MN_STARTED -gt 0  ] && ok 'YES' || err 'NO'
                 pending " --> masternode visible       : " ; [ $MN_VISIBLE -gt 0  ] && ok 'YES' || err 'NO'
             fi

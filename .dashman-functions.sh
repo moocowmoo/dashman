@@ -577,8 +577,8 @@ install_dashd(){
 get_dashd_status(){
 
     DASHD_HASPID=0
-    if [ -e ~/.dash/dashd.pid ] ; then
-        DASHD_HASPID=`ps --no-header \`cat ~/.dash/dashd.pid 2>/dev/null\` | wc -l`;
+    if [ -e $INSTALL_DIR/dashd.pid ] ; then
+        DASHD_HASPID=`ps --no-header \`cat $INSTALL_DIR/dashd.pid 2>/dev/null\` | wc -l`;
     fi
     DASHD_LISTENING=`netstat -nat | grep LIST | grep 9999 | wc -l`;
     DASHD_CONNECTIONS=`netstat -nat | grep ESTA | grep 9999 | wc -l`;
@@ -601,7 +601,7 @@ get_dashd_status(){
 
     PUBLIC_PORT_CLOSED=$( nc -z $WEB_MNIP 9999; echo $? )
 
-    MN_MISSING_INPUT=$($DASH_CLI masternode debug 2>&1 | grep -i missing | wc -l)
+    MN_CONF_ENABLED=$( egrep 'masternode\s*=\s*1' $INSTALL_DIR/dash.conf |wc -l)
     MN_STARTED=`$DASH_CLI masternode debug 2>&1 | grep 'successfully started' | wc -l`
     MN_LIST=`$DASH_CLI masternode list full 2>/dev/null`
     MN_VISIBLE=$(  echo "$MN_LIST" | grep $WEB_MNIP | wc -l)
