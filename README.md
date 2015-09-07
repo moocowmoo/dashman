@@ -1,40 +1,78 @@
 # dashman
 
-DASH wallet/daemon management utilities - version 0.0.8
+DASH wallet/daemon management utilities - version 0.1.0
 
-# Limitations
-
-* This script searches for your dashd/dash-cli executibles in the current
-directory, ~/.dash, and $PATH.  It will prompt to install in the first
-directory found containing both dashd and dash-cli.  Multiple wallet
-directories are not supported. The script assumes the host runs a single
-instance of dashd.
+* This script installs, updates, and manages dash daemons and wallets
 * It is currently only compatible with 32/64 bit linux.
-
-# Files
-
-* sync_dashman_to_github.sh -- safe git commands to get everything up to date
-* update_dashd.sh -- An easy to use update script for 32/64 bit linux
-
-# Dependencies
-
-* dashd - version 12 or greater
-* dash-cli
-* wget
-* perl
 
 # Install/Usage
 
-To update your 32/64bit linux daemon to the latest dashd, do:
+To download dashman do: 
 
     sudo apt-get install git
     git clone https://github.com/moocowmoo/dashman.git
     cd dashman
-    ./update_dashd.sh
 
-# Screencap
+To update your existing version 12 32/64bit linux dash wallet to the latest
+dashd, do:
 
-<img src="https://raw.githubusercontent.com/moocowmoo/dashman/master/screencap.png">
+    ./dashman update
+
+To perform a new install of dash, do:
+
+    ./dashman install
+
+To overwrite an existing dash install, do:
+
+    ./dashman reinstall
+
+To update dashman to the latest version, do:
+
+    ./dashman sync
+
+# Commands
+
+## sync
+
+"dashman sync" updates the dashman to the latest version from github
+
+## install
+
+"dashman install" downloads and initializes a fresh dash install into ~/.dash
+unless already present
+
+## reinstall
+
+"dashman reinstall" downloads and overwrites existing dash executables, even if
+already present
+
+## update
+
+where it all began, "dashman update" searches for your dashd/dash-cli
+executibles in the current directory, ~/.dash, and $PATH.  It will prompt to
+install in the first directory found containing both dashd and dash-cli.
+Multiple wallet directories are not supported. The script assumes the host runs
+a single instance of dashd.
+
+# Dependencies
+
+* wget
+* perl
+* dashd, dash-cli - version 12 or greater to update
+
+# Screencaps
+
+### install
+
+<img src="https://raw.githubusercontent.com/moocowmoo/dashman/master/screencaps/dashman_0.1-install.png">
+
+### update
+
+<img src="https://raw.githubusercontent.com/moocowmoo/dashman/master/screencaps/dashman_0.1-update.png">
+
+### reinstall
+
+<img src="https://raw.githubusercontent.com/moocowmoo/dashman/master/screencaps/dashman_0.1-reinstall.png">
 
 # Contact
 

@@ -1,0 +1,17 @@
+"#----"
+rpcuser=$RPCUSER
+rpcpassword=$RPCPASS
+rpcallowip=127.0.0.1
+rpcport=9998
+"#----"
+listen=1
+server=1
+daemon=1
+logtimestamps=1
+maxconnections=64
+"#----"
+"#masternode=1"
+"#masternodeaddr=${IPADDR}:9999"
+"#masternodeprivkey=<replace_with_mnprivkey>"
+
+

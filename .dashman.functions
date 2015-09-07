@@ -1,0 +1,611 @@
+# vim: set filetype=sh
+
+# .dashman.functions - common functions and variables
+
+# Copyright (c) 2015 moocowmoo - moocowmoo@masternode.me
+
+# variables are for putting things in ----------------------------------------
+
+C_RED="\e[31m"
+C_YELLOW="\e[33m"
+C_GREEN="\e[32m"
+C_CYAN="\e[36m"
+C_NORM="\e[0m"
+
+DOWNLOAD_PAGE='https://www.dashpay.io/downloads/'
+
+DASHD_RUNNING=0
+DASHMAN_VERSION=$(cat $DASHMAN_GITDIR/VERSION)
+
+# (mostly) functioning functions -- lots of refactoring to do ----------------
+
+pending(){ [[ $QUIET ]] || echo -en $C_YELLOW$1$C_NORM ; }
+
+ok(){ [[ $QUIET ]] || echo -e $C_GREEN$1$C_NORM ; }
+
+die() { [[ $QUIET ]] || echo -e $C_RED$1$C_NORM ; exit 1 ; }
+
+quit(){ [[ $QUIET ]] || echo -e $C_GREEN${1:-Exiting.}$C_NORM ; exit 0 ; }
+
+confirm() { read -r -p "$(echo -e "${1:-Are you sure? [y/N]}")" ; [[ ${REPLY:0:1} = [Yy] ]]; }
+
+usage(){
+    cat<<EOF
+
+    USAGE: ${0##*/} [command]
+
+        installs, updates, and manages dash daemons and wallets
+
+    COMMANDS
+
+        install
+
+            creates a fresh dash installation and starts dashd
+
+        update
+
+            updates dash to latest version and restarts (see below)
+
+        reinstall
+
+            overwrites dash with latest version and restarts (see below)
+
+        restart [now]
+
+            restarts dashd and deletes:
+                budget.dat
+                debug.log
+                fee_estimates.dat
+                mncache.dat
+                mnpayments.dat
+                peers.dat
+
+            will prompt user if not given the 'now' argument
+
+        version
+
+            prints dashmans version number and exit
+
+EOF
+}
+
+
+# attempt to locate dash-cli executable.
+# search current dir, ~/.dash, `which dash-cli` ($PATH), finally recurive
+_find_dash_directory() {
+
+    INSTALL_DIR=''
+
+    # dash-cli in PATH
+
+    if [ ! -z $(which dash-cli) ] ; then
+        INSTALL_DIR=$(readlink -f `which dash-cli`)
+        INSTALL_DIR=${INSTALL_DIR%%/dash-cli*};
+
+        # if copied to /usr/*
+        if [[ $INSTALL_DIR =~ \/usr.* ]]; then
+            LINK_TO_SYSTEM_DIR=$INSTALL_DIR
+
+            # if not run as root
+            if [ $EUID -ne 0 ] ; then
+                die "\ndash executables found in system dir $INSTALL_DIR. Run dashman as root (sudo dashman command) to continue. Exiting."
+            fi
+
+        fi
+
+    # dash-cli not in PATH
+
+        # check current directory
+    elif [ -e ./dash-cli ] ; then
+        INSTALL_DIR='.' ;
+
+        # check ~/.dash directory
+    elif [ -e $HOME/.dash/dash-cli ] ; then
+        INSTALL_DIR="$HOME/.dash" ;
+
+        # TODO try to find dash-cli with find
+#    else
+#        CANDIDATES=`find $HOME -name dash-cli`
+    fi
+
+    if [ ! -z "$INSTALL_DIR" ]; then
+        INSTALL_DIR=$(readlink -f $INSTALL_DIR) 2>/dev/null
+        if [ ! -e $INSTALL_DIR ]; then
+            echo -e "${C_RED}cannot find dash-cli in current directory, ~/.dash, or \$PATH. -- Exiting.$C_NORM"
+            exit 1
+        fi
+    else
+        echo -e "${C_RED}cannot find dash-cli in current directory, ~/.dash, or \$PATH. -- Exiting.$C_NORM"
+        exit 1
+    fi
+
+    DASH_CLI="$INSTALL_DIR/dash-cli"
+
+    # check INSTALL_DIR has dashd and dash-cli
+    if [ ! -e $INSTALL_DIR/dashd ]; then
+        echo -e "${C_RED}dashd not found in $INSTALL_DIR -- Exiting.$C_NORM"
+        exit 1
+    fi
+
+    if [ ! -e $DASH_CLI ]; then
+        echo -e "${C_RED}dash-cli not found in $INSTALL_DIR -- Exiting.$C_NORM"
+        exit 1
+    fi
+
+}
+
+
+_check_dashman_updates() {
+    GITHUB_DASHMAN_VERSION=$( wget --no-check-certificate -q https://raw.githubusercontent.com/moocowmoo/dashman/master/VERSION -O - )
+    if [ "$DASHMAN_VERSION" != "$GITHUB_DASHMAN_VERSION" ]; then
+        echo -e "\n"
+        echo -e "${C_RED}${0##*/} requires updating. Latest version is: $C_GREEN$GITHUB_DASHMAN_VERSION$C_RED\nIn dashman directory, do 'dashman sync' and try again. Exiting.$C_NORM\n"
+        exit 1
+    fi
+}
+
+_get_platform_info() {
+    PLATFORM=$(uname -m)
+    case "$PLATFORM" in
+        i[3-6]86)
+            BITS=32
+            ;;
+        x86_64)
+            BITS=64
+            ;;
+        *)
+            echo "unknown platform: $PLATFORM"
+            echo "dashman currently only supports 32/64bit linux"
+            echo "-- Exiting."
+            exit 1
+            ;;
+    esac
+}
+
+_get_versions() {
+    DOWNLOAD_HTML=$( wget --no-check-certificate -q $DOWNLOAD_PAGE -O - )
+    local IFS=' '
+    read -a DOWNLOAD_URLS <<< $( echo $DOWNLOAD_HTML | sed -e 's/ /\n/g' | grep binaries | grep Download | grep linux | perl -ne '/.*"([^"]+)".*/; print "$1 ";' 2>/dev/null )
+    LATEST_VERSION=$( echo ${DOWNLOAD_URLS[0]} | perl -ne '/dash-([0-9.]+)-/; print $1;' 2>/dev/null )
+    if [ -z "$DASH_CLI" ]; then DASH_CLI='echo'; fi
+    CURRENT_VERSION=$( $DASH_CLI --version | perl -ne '/v([0-9.]+)-/; print $1;' 2>/dev/null ) 2>/dev/null
+    for url in "${DOWNLOAD_URLS[@]}"
+    do
+        if [[ $url =~ .*linux${BITS}.* ]] ; then
+            DOWNLOAD_URL=$url
+            DOWNLOAD_FILE=${DOWNLOAD_URL##*/}
+        fi
+    done
+}
+
+
+_check_dashd_running() {
+    if [ $( $DASH_CLI help 2>/dev/null | wc -l ) -gt 0 ]; then
+        DASHD_RUNNING=1
+    fi
+}
+
+restart_dashd(){
+
+    pending 'restarting...'
+    ok 'DONE!'
+
+}
+
+
+update_dashd(){
+
+    if [ $LATEST_VERSION != $CURRENT_VERSION ] || [ $REINSTALL ] ; then
+
+        if [ $REINSTALL ];then
+            echo -e ""
+            echo -e "$C_GREEN*** dash version $CURRENT_VERSION is up-to-date. ***$C_NORM"
+            echo -e ""
+            echo -en
+            pending "reinstall to $INSTALL_DIR$C_NORM?"
+        else
+            echo -e ""
+            echo -e "$C_RED*** a newer version of dash is available. ***$C_NORM"
+            echo -e ""
+            echo -e "  current version: $C_RED$CURRENT_VERSION$C_NORM"
+            echo -e "   latest version: $C_GREEN$LATEST_VERSION$C_NORM"
+            echo -e ""
+            pending "download $DOWNLOAD_URL\nand install to $INSTALL_DIR?"
+        fi
+
+
+        if ! confirm " [${C_GREEN}y${C_NORM}/${C_RED}N${C_NORM}]"; then
+            echo -e "${C_RED}Exiting.$C_NORM"
+            echo ""
+            exit 0
+        fi
+
+        # prep it ----------------------------------------------------------------
+
+        if [ ! -z $LINK_TO_SYSTEM_DIR ]; then
+
+            # mv executables into ~/.dash
+            mv $INSTALL_DIR/{dashd,dash-cli} $HOME/.dash
+            chown $SUDO_USER $HOME/.dash/{dashd,dash-cli}
+
+            # symlink to system dir
+            ln -s $HOME/.dash/dashd $LINK_TO_SYSTEM_DIR
+            ln -s $HOME/.dash/dash-cli $LINK_TO_SYSTEM_DIR
+
+            INSTALL_DIR=$HOME/.dash
+
+        fi
+
+
+        # push it ----------------------------------------------------------------
+
+        cd $INSTALL_DIR
+
+        # pull it ----------------------------------------------------------------
+
+        echo ""
+        pending " --> downloading ${DOWNLOAD_URL}..."
+        wget --no-check-certificate -q -r $DOWNLOAD_URL -O $DOWNLOAD_FILE
+        wget --no-check-certificate -q -r ${DOWNLOAD_URL}.DIGESTS.txt -O ${DOWNLOAD_FILE}.DIGESTS.txt
+        if [ ! -e $DOWNLOAD_FILE ] ; then
+            echo -e "${C_RED}error downloading file"
+            echo -e "tried to get $DOWNLOAD_URL$C_NORM"
+            exit 1
+        else
+            ok "DONE!"
+        fi
+
+        # prove it ---------------------------------------------------------------
+
+        pending " --> checksumming ${DOWNLOAD_FILE}..."
+        SHA256SUM=$( sha256sum $DOWNLOAD_FILE )
+        MD5SUM=$( md5sum $DOWNLOAD_FILE )
+        SHA256PASS=$( grep $SHA256SUM ${DOWNLOAD_FILE}.DIGESTS.txt | wc -l )
+        MD5SUMPASS=$( grep $MD5SUM ${DOWNLOAD_FILE}.DIGESTS.txt | wc -l )
+        if [ $SHA256PASS -lt 1 ] ; then
+            echo -e " ${C_RED} SHA256 checksum FAILED! Try again later. Exiting.$C_NORM"
+            exit 1
+        fi
+        if [ $MD5SUMPASS -lt 1 ] ; then
+            echo -e " ${C_RED} MD5 checksum FAILED! Try again later. Exiting.$C_NORM"
+            exit 1
+        fi
+        ok "DONE!"
+
+        # produce it -------------------------------------------------------------
+
+        pending " --> unpacking ${DOWNLOAD_FILE}..." && \
+        tar zxf $DOWNLOAD_FILE && \
+        ok "DONE!"
+
+        # pummel it --------------------------------------------------------------
+
+        if [ $DASHD_RUNNING == 1 ]; then
+            pending " --> stopping dashd. please wait..."
+            $DASH_CLI stop >/dev/null 2>&1
+            sleep 15
+            killall -9 dashd dash-shutoff >/dev/null 2>&1
+            ok "DONE!"
+        fi
+
+        # prune it ---------------------------------------------------------------
+
+        pending " --> Removing old version..."
+        rm -f \
+            debug.log \
+            mncache.dat \
+            peers.dat \
+            dashd \
+            dashd-$CURRENT_VERSION \
+            dash-qt \
+            dash-qt-$CURRENT_VERSION \
+            dash-cli \
+            dash-cli-$CURRENT_VERSION
+        ok "DONE!"
+
+        # place it ---------------------------------------------------------------
+
+        mv dash-0.12.0/bin/dashd dashd-$LATEST_VERSION
+        mv dash-0.12.0/bin/dash-cli dash-cli-$LATEST_VERSION
+        mv dash-0.12.0/bin/dash-qt dash-qt-$LATEST_VERSION
+        ln -s dashd-$LATEST_VERSION dashd
+        ln -s dash-cli-$LATEST_VERSION dash-cli
+        ln -s dash-qt-$LATEST_VERSION dash-qt
+
+        # permission it ----------------------------------------------------------
+
+        if [ ! -z "$SUDO_USER" ]; then
+            chown -h $SUDO_USER:$SUDO_USER {$DOWNLOAD_FILE,${DOWNLOAD_FILE}.DIGESTS.txt,dash-cli,dashd,dash-qt,dash*$LATEST_VERSION}
+        fi
+
+        # purge it ---------------------------------------------------------------
+
+        rm -rf dash-0.12.0
+
+        # punch it ---------------------------------------------------------------
+
+        pending " --> Launching dashd..."
+        $INSTALL_DIR/dashd > /dev/null
+        ok "DONE!"
+
+        # probe it ---------------------------------------------------------------
+
+        pending " --> Waiting for dashd to respond..."
+        echo -en "${C_YELLOW}"
+        while [ $DASHD_RUNNING == 0 ]; do
+            echo -n "."
+            _check_dashd_running
+            sleep 5
+        done
+        ok "DONE!"
+
+        # poll it ----------------------------------------------------------------
+
+        _get_versions
+
+        # pass or punt -----------------------------------------------------------
+
+        if [ $LATEST_VERSION == $CURRENT_VERSION ]; then
+            echo -e ""
+            echo -e "${C_GREEN}dash successfully upgraded to version ${LATEST_VERSION}$C_NORM"
+            echo -e ""
+            echo -e "${C_GREEN}Installed in ${INSTALL_DIR}$C_NORM"
+            echo -e ""
+            ls -l --color {$DOWNLOAD_FILE,${DOWNLOAD_FILE}.DIGESTS.txt,dash-cli,dashd,dash-qt,dash*$LATEST_VERSION}
+            echo -e ""
+
+            if [ ! -z "$SUDO_USER" ]; then
+                echo -e "${C_GREEN}Symlinked to: ${LINK_TO_SYSTEM_DIR}$C_NORM"
+                echo -e ""
+                ls -l --color $LINK_TO_SYSTEM_DIR/{dashd,dash-cli}
+                echo -e ""
+            fi
+
+            quit
+        else
+            echo -e "${C_RED}dash version $CURRENT_VERSION is not up to date. ($LATEST_VERSION) Exiting.$C_NORM"
+        fi
+
+    else
+        echo -e ""
+        echo -e "${C_GREEN}dash version $CURRENT_VERSION is up to date. Exiting.$C_NORM"
+    fi
+
+    exit 0
+}
+
+install_dashd(){
+
+    INSTALL_DIR=$HOME/.dash
+    DASH_CLI="$INSTALL_DIR/dash-cli"
+
+    if [ -e $INSTALL_DIR ] ; then
+        die "\n - pre-existing directory $INSTALL_DIR found. Run 'dashman reinstall' to overwrite. Exiting."
+    fi
+
+    pending " - download $DOWNLOAD_URL\n - and install to $INSTALL_DIR?"
+
+    if ! confirm " [${C_GREEN}y${C_NORM}/${C_RED}N${C_NORM}]"; then
+        echo -e "${C_RED}Exiting.$C_NORM"
+        echo ""
+        exit 0
+    fi
+
+    echo ""
+
+    # prep it ----------------------------------------------------------------
+
+    mkdir -p $INSTALL_DIR
+
+    if [ ! -e $INSTALL_DIR/dash.conf ] ; then
+        pending " --> creating dash.conf..."
+        IPADDR=`ifconfig eth0 | grep 'inet addr' | cut -d' ' -f12 | sed -e 's/addr://g'`
+        RPCUSER=`echo $(dd status=none if=/dev/urandom bs=128 count=1) | sha256sum | awk '{print $1}'`
+        RPCPASS=`echo $(dd status=none if=/dev/urandom bs=128 count=1) | sha256sum | awk '{print $1}'`
+        while read; do
+            eval echo "$REPLY"
+        done < $DASHMAN_GITDIR/.dash.conf.template > $INSTALL_DIR/dash.conf
+        ok 'DONE!'
+    fi
+
+    # push it ----------------------------------------------------------------
+
+    cd $INSTALL_DIR
+
+    # pull it ----------------------------------------------------------------
+
+    pending " --> downloading ${DOWNLOAD_URL}..."
+    wget --no-check-certificate -q -r $DOWNLOAD_URL -O $DOWNLOAD_FILE
+    wget --no-check-certificate -q -r ${DOWNLOAD_URL}.DIGESTS.txt -O ${DOWNLOAD_FILE}.DIGESTS.txt
+    if [ ! -e $DOWNLOAD_FILE ] ; then
+        echo -e "${C_RED}error downloading file"
+        echo -e "tried to get $DOWNLOAD_URL$C_NORM"
+        exit 1
+    else
+        ok "DONE!"
+    fi
+
+    # prove it ---------------------------------------------------------------
+
+    pending " --> checksumming ${DOWNLOAD_FILE}..."
+    SHA256SUM=$( sha256sum $DOWNLOAD_FILE )
+    MD5SUM=$( md5sum $DOWNLOAD_FILE )
+    SHA256PASS=$( grep $SHA256SUM ${DOWNLOAD_FILE}.DIGESTS.txt | wc -l )
+    MD5SUMPASS=$( grep $MD5SUM ${DOWNLOAD_FILE}.DIGESTS.txt | wc -l )
+    if [ $SHA256PASS -lt 1 ] ; then
+        echo -e " ${C_RED} SHA256 checksum FAILED! Try again later. Exiting.$C_NORM"
+        exit 1
+    fi
+    if [ $MD5SUMPASS -lt 1 ] ; then
+        echo -e " ${C_RED} MD5 checksum FAILED! Try again later. Exiting.$C_NORM"
+        exit 1
+    fi
+    ok "DONE!"
+
+    # produce it -------------------------------------------------------------
+
+    pending " --> unpacking ${DOWNLOAD_FILE}..." && \
+    tar zxf $DOWNLOAD_FILE && \
+    ok "DONE!"
+
+    # pummel it --------------------------------------------------------------
+
+    if [ $DASHD_RUNNING == 1 ]; then
+        pending " --> stopping dashd. please wait..."
+        $DASH_CLI stop >/dev/null 2>&1
+        sleep 15
+        killall -9 dashd dash-shutoff >/dev/null 2>&1
+        ok "DONE!"
+    fi
+
+    # prune it ---------------------------------------------------------------
+
+    pending " --> Removing old version..."
+    rm -f \
+        debug.log \
+        mncache.dat \
+        peers.dat \
+        dashd \
+        dashd-$CURRENT_VERSION \
+        dash-qt \
+        dash-qt-$CURRENT_VERSION \
+        dash-cli \
+        dash-cli-$CURRENT_VERSION
+    ok "DONE!"
+
+    # place it ---------------------------------------------------------------
+
+    mv dash-0.12.0/bin/dashd dashd-$LATEST_VERSION
+    mv dash-0.12.0/bin/dash-cli dash-cli-$LATEST_VERSION
+    mv dash-0.12.0/bin/dash-qt dash-qt-$LATEST_VERSION
+    ln -s dashd-$LATEST_VERSION dashd
+    ln -s dash-cli-$LATEST_VERSION dash-cli
+    ln -s dash-qt-$LATEST_VERSION dash-qt
+
+    # permission it ----------------------------------------------------------
+
+    if [ ! -z "$SUDO_USER" ]; then
+        chown -h $SUDO_USER:$SUDO_USER {$DOWNLOAD_FILE,${DOWNLOAD_FILE}.DIGESTS.txt,dash-cli,dashd,dash-qt,dash*$LATEST_VERSION}
+    fi
+
+    # purge it ---------------------------------------------------------------
+
+    rm -rf dash-0.12.0
+
+    # punch it ---------------------------------------------------------------
+
+    pending " --> Launching dashd..."
+    $INSTALL_DIR/dashd > /dev/null
+    ok "DONE!"
+
+    # probe it ---------------------------------------------------------------
+
+    pending " --> Waiting for dashd to respond..."
+    echo -en "${C_YELLOW}"
+    while [ $DASHD_RUNNING == 0 ]; do
+        echo -n "."
+        _check_dashd_running
+        sleep 5
+    done
+    ok "DONE!"
+
+    # poll it ----------------------------------------------------------------
+
+    _get_versions
+
+    # pass or punt -----------------------------------------------------------
+
+    if [ $LATEST_VERSION == $CURRENT_VERSION ]; then
+        echo -e ""
+        echo -e "${C_GREEN}dash ${LATEST_VERSION} successfully installed!$C_NORM"
+        echo -e ""
+        echo -e "${C_GREEN}Installed in ${INSTALL_DIR}$C_NORM"
+        echo -e ""
+        ls -l --color {$DOWNLOAD_FILE,${DOWNLOAD_FILE}.DIGESTS.txt,dash-cli,dashd,dash-qt,dash*$LATEST_VERSION}
+        echo -e ""
+
+        if [ ! -z "$SUDO_USER" ]; then
+            echo -e "${C_GREEN}Symlinked to: ${LINK_TO_SYSTEM_DIR}$C_NORM"
+            echo -e ""
+            ls -l --color $LINK_TO_SYSTEM_DIR/{dashd,dash-cli}
+            echo -e ""
+        fi
+
+        quit
+    else
+        echo -e "${C_RED}dash version $CURRENT_VERSION is not up to date. ($LATEST_VERSION) Exiting.$C_NORM"
+    fi
+
+
+    exit 0
+}
+
+
+# scrap, ignore --------------------------------------------------------------
+
+#cmd_prompt() {
+#    DASHMAN_PROMPT='dashman> '
+#    echo -en $DASHMAN_PROMPT
+#    read command
+#    exec $DASHMAN_GITDIR/dashman $command
+
+#usage(){
+#    cat<<EOF
+#    usage: ${0##*/} [-hqvV] [command]
+#
+#    switches:
+#
+#        -q, --quiet
+#
+#            suppresses all output
+#
+#        -h, --help
+#
+#            this help text
+#
+#        -v, --verbose
+#
+#            extra logging to screen
+#
+#        -V, --version
+#
+#            show dashman version
+#
+#    commands: restart install reinstall
+#
+#        restart [now]
+#
+#            will restart dashd and delete:
+#                budget.dat, debug.log, fee_estimates.dat, mncache.dat,
+#                mnpayments.dat, peers.dat
+#
+#            will prompt user if not given the 'now' argument
+#
+#        install
+#
+#            blah
+#
+#        reinstall
+#
+#            blah
+#
+#EOF
+#}
+#        status)
+#            dashman_status
+#            ;;
+#        autoupdate)
+#            ok 'update. --auto'
+#            ;;
+#        check)
+#            ok 'check.'
+#            ;;
+#        update)
+#            ok 'update'
+#            ;;
+#        die)
+#            die 'Exiting.'
+#            ;;
+#        interactive)
+#            cmd_prompt
+#            ;;
