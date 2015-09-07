@@ -47,13 +47,17 @@ echo -e "${C_CYAN}${0##*/} version $DASHMAN_VERSION${C_NORM}"
 # do awesome stuff -----------------------------------------------------------
 case "$1" in
         restart)
+            _find_dash_directory
+            _check_dashd_running
+            # TODO, show uptime: ps --no-header -o pid,etime $(cat $INSTALL_DIR/dash.pid) | awk '{print $2}'
             case "$2" in
                 now)
                     restart_dashd
                     ;;
                 *)
+                    echo
                     pending "restart dashd? "
-                    confirm "[${C_GREEN}y${C_NORM}/${C_RED}N${C_NORM}]" && \
+                    confirm "[${C_GREEN}y${C_NORM}/${C_RED}N${C_NORM}] " && \
                         restart_dashd
                     ;;
             esac

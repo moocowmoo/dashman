@@ -30,11 +30,15 @@ To update dashman to the latest version, do:
 
     ./dashman sync
 
+To restart (or start) dashd, do:
+
+    ./dashman restart
+
 # Commands
 
 ## sync
 
-"dashman sync" updates the dashman to the latest version from github
+"dashman sync" updates dashman to the latest version from github
 
 ## install
 
@@ -53,6 +57,12 @@ executibles in the current directory, ~/.dash, and $PATH.  It will prompt to
 install in the first directory found containing both dashd and dash-cli.
 Multiple wallet directories are not supported. The script assumes the host runs
 a single instance of dashd.
+
+## restart
+
+"dashman restart [now]" restarts (or starts) dashd. Searches for dash-cli/dashd
+the current directory, ~/.dash, and $PATH. It will prompt to restart if not
+given the optional 'now' argument.
 
 # Dependencies
 
@@ -73,6 +83,10 @@ a single instance of dashd.
 ### reinstall
 
 <img src="https://raw.githubusercontent.com/moocowmoo/dashman/master/screencaps/dashman_0.1-reinstall.png">
+
+### restart
+
+<img src="https://raw.githubusercontent.com/moocowmoo/dashman/master/screencaps/dashman_0.1-restart.png">
 
 # Contact
 

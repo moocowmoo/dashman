@@ -71,7 +71,7 @@ EOF
 
 
 # attempt to locate dash-cli executable.
-# search current dir, ~/.dash, `which dash-cli` ($PATH), finally recurive
+# search current dir, ~/.dash, `which dash-cli` ($PATH), finally recursive
 _find_dash_directory() {
 
     INSTALL_DIR=''
@@ -187,8 +187,35 @@ _check_dashd_running() {
 
 restart_dashd(){
 
-    pending 'restarting...'
+    if [ $DASHD_RUNNING == 1 ]; then
+        pending " --> Stopping dashd..."
+        $DASH_CLI stop 2>&1 >/dev/null
+        sleep 10
+        killall -9 dashd dash-shutoff 2>/dev/null
+        ok 'DONE!'
+        DASHD_RUNNING=0
+    fi
+
+    pending ' --> Deleting cache files, debug.log...'
+    cd $INSTALL_DIR
+    rm -f budget.dat debug.log fee_estimates.dat mncache.dat mnpayments.dat peers.dat
     ok 'DONE!'
+
+    pending ' --> Starting dashd...'
+    $INSTALL_DIR/dashd 2>&1 >/dev/null
+    ok 'DONE!'
+    pending " --> Waiting for dashd to respond..."
+    echo -en "${C_YELLOW}"
+    while [ $DASHD_RUNNING == 0 ]; do
+        echo -n "."
+        _check_dashd_running
+        sleep 5
+    done
+    ok "DONE!"
+    pending " --> dash-cli getinfo"
+    echo
+    $DASH_CLI getinfo
+    echo
 
 }
 
@@ -214,7 +241,7 @@ update_dashd(){
         fi
 
 
-        if ! confirm " [${C_GREEN}y${C_NORM}/${C_RED}N${C_NORM}]"; then
+        if ! confirm " [${C_GREEN}y${C_NORM}/${C_RED}N${C_NORM}] "; then
             echo -e "${C_RED}Exiting.$C_NORM"
             echo ""
             exit 0
@@ -385,7 +412,7 @@ install_dashd(){
 
     pending " - download $DOWNLOAD_URL\n - and install to $INSTALL_DIR?"
 
-    if ! confirm " [${C_GREEN}y${C_NORM}/${C_RED}N${C_NORM}]"; then
+    if ! confirm " [${C_GREEN}y${C_NORM}/${C_RED}N${C_NORM}] "; then
         echo -e "${C_RED}Exiting.$C_NORM"
         echo ""
         exit 0
