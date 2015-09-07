@@ -1,4 +1,8 @@
 
+0.1.1 - Mon Sep 7 00:12:24 2015 +0000
+
+    added statua function, screencaps
+
 0.1.0 - Mon Sep 7 00:12:24 2015 +0000
 
     created new top-level script 'dashman'

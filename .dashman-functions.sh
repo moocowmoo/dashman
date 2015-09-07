@@ -19,13 +19,14 @@ DASHMAN_VERSION=$(cat $DASHMAN_GITDIR/VERSION)
 
 # (mostly) functioning functions -- lots of refactoring to do ----------------
 
-pending(){ [[ $QUIET ]] || echo -en $C_YELLOW$1$C_NORM ; }
+pending(){ [[ $QUIET ]] || echo -en "$C_YELLOW$1$C_NORM" ; }
 
-ok(){ [[ $QUIET ]] || echo -e $C_GREEN$1$C_NORM ; }
+ok(){ [[ $QUIET ]] || echo -e "$C_GREEN$1$C_NORM" ; }
 
-die() { [[ $QUIET ]] || echo -e $C_RED$1$C_NORM ; exit 1 ; }
+err() { [[ $QUIET ]] || echo -e "$C_RED$1$C_NORM" ; }
+die() { [[ $QUIET ]] || echo -e "$C_RED$1$C_NORM" ; exit 1 ; }
 
-quit(){ [[ $QUIET ]] || echo -e $C_GREEN${1:-Exiting.}$C_NORM ; exit 0 ; }
+quit(){ [[ $QUIET ]] || echo -e "$C_GREEN${1:-Exiting.}$C_NORM" ; exit 0 ; }
 
 confirm() { read -r -p "$(echo -e "${1:-Are you sure? [y/N]}")" ; [[ ${REPLY:0:1} = [Yy] ]]; }
 
@@ -319,8 +320,11 @@ update_dashd(){
 
         pending " --> Removing old version..."
         rm -f \
+            budget.dat \
             debug.log \
+            fee_estimates.dat \
             mncache.dat \
+            mnpayments.dat \
             peers.dat \
             dashd \
             dashd-$CURRENT_VERSION \
@@ -489,8 +493,11 @@ install_dashd(){
 
     pending " --> Removing old version..."
     rm -f \
+        budget.dat \
         debug.log \
+        fee_estimates.dat \
         mncache.dat \
+        mnpayments.dat \
         peers.dat \
         dashd \
         dashd-$CURRENT_VERSION \
@@ -566,6 +573,45 @@ install_dashd(){
 
     exit 0
 }
+
+get_dashd_status(){
+
+    DASHD_HASPID=0
+    if [ -e ~/.dash/dashd.pid ] ; then
+        DASHD_HASPID=`ps --no-header \`cat ~/.dash/dashd.pid 2>/dev/null\` | wc -l`;
+    fi
+    DASHD_LISTENING=`netstat -nat | grep LIST | grep 9999 | wc -l`;
+    DASHD_CONNECTIONS=`netstat -nat | grep ESTA | grep 9999 | wc -l`;
+    DASHD_CURRENT_BLOCK=`$DASH_CLI getblockcount 2>/dev/null`
+    if [ -z "$DASHD_CURRENT_BLOCK" ] ; then DASHD_CURRENT_BLOCK=0 ; fi
+    DASHD_GETINFO=`$DASH_CLI getinfo 2>/dev/null`;
+
+    WEB_MNIP=`wget -qO- http://ipecho.net/plain`;
+    WEB_BLOCK_COUNT=`wget --no-check-certificat -qO- https://chainz.cryptoid.info/dash/api.dws?q=getblockcount`;
+
+    DASHD_SYNCED=0
+    if [ $(($WEB_BLOCK_COUNT - 2)) -lt $DASHD_CURRENT_BLOCK ]; then DASHD_SYNCED=1 ; fi
+
+    DASHD_CONNECTED=0
+    if [ $DASHD_CONNECTIONS -gt 0 ]; then DASHD_CONNECTED=1 ; fi
+
+    if [ $LATEST_VERSION == $CURRENT_VERSION ]; then
+        DASHD_UP_TO_DATE=1
+    fi
+
+    PUBLIC_PORT_CLOSED=$( nc -z $WEB_MNIP 9999; echo $? )
+
+    MN_MISSING_INPUT=$($DASH_CLI masternode debug 2>&1 | grep -i missing | wc -l)
+    MN_STARTED=`$DASH_CLI masternode debug 2>&1 | grep 'successfully started' | wc -l`
+    MN_LIST=`$DASH_CLI masternode list full 2>/dev/null`
+    MN_VISIBLE=$(  echo "$MN_LIST" | grep $WEB_MNIP | wc -l)
+    MN_ENABLED=$(  echo "$MN_LIST" | grep -c ENABLED)
+    MN_UNHEALTHY=$(echo "$MN_LIST" | grep -c POS_ERROR)
+    MN_EXPIRED=$(  echo "$MN_LIST" | grep -c EXPIRED)
+    MN_TOTAL=$(( $MN_ENABLED + $MN_UNHEALTHY ))
+
+}
+
 
 
 # scrap, ignore --------------------------------------------------------------

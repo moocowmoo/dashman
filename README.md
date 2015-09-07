@@ -1,13 +1,13 @@
 # dashman
 
-DASH wallet/daemon management utilities - version 0.1.0
+DASH wallet/daemon management utilities - version 0.1.1
 
 * This script installs, updates, and manages dash daemons and wallets
 * It is currently only compatible with 32/64 bit linux.
 
 # Install/Usage
 
-To download dashman do: 
+To download dashman do:
 
     sudo apt-get install git
     git clone https://github.com/moocowmoo/dashman.git
@@ -33,6 +33,10 @@ To update dashman to the latest version, do:
 To restart (or start) dashd, do:
 
     ./dashman restart
+
+To get the current status of dashd, do:
+
+    ./dashman status
 
 # Commands
 
@@ -64,8 +68,14 @@ a single instance of dashd.
 the current directory, ~/.dash, and $PATH. It will prompt to restart if not
 given the optional 'now' argument.
 
+## status
+
+"dashman status" interrogates the locally running dashd and displays its status
+(see screencap below)
+
 # Dependencies
 
+* nc (netcat)
 * wget
 * perl
 * dashd, dash-cli - version 12 or greater to update
@@ -87,6 +97,10 @@ given the optional 'now' argument.
 ### restart
 
 <img src="https://raw.githubusercontent.com/moocowmoo/dashman/master/screencaps/dashman_0.1-restart.png">
+
+### status
+
+<img src="https://raw.githubusercontent.com/moocowmoo/dashman/master/screencaps/dashman_0.1-status.png">
 
 # Contact
 

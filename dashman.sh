@@ -31,7 +31,7 @@ shift $(($OPTIND - 1))
 # load common functions ------------------------------------------------------
 
 DASHMAN_GITDIR=${0%%/${0##*/}}
-source $DASHMAN_GITDIR/.dashman.functions
+source $DASHMAN_GITDIR/.dashman-functions.sh
 
 # show help and exit if requested or no command supplied - TODO make command specific
 [[ $HELP || -z $1 ]] && usage && exit 0
@@ -97,6 +97,34 @@ case "$1" in
             git checkout master
             git reset --hard origin/master
             quit 'Up to date.'
+            ;;
+        status)
+            pending "gathering info, please wait..."
+            _find_dash_directory
+            _get_versions
+            _check_dashd_running
+            get_dashd_status
+            ok "DONE!"
+            echo
+            pending " --> public IP address        : " ; ok "$WEB_MNIP"
+            pending " --> dashd version            : " ; ok "$CURRENT_VERSION"
+            pending " --> dashd up-to-date         : " ; [ $DASHD_UP_TO_DATE -gt 0 ] && ok 'YES' || err 'NO'
+            pending " --> dashd running            : " ; [ $DASHD_HASPID     -gt 0 ] && ok 'YES' || err 'NO'
+            pending " --> dashd responding (rpc)   : " ; [ $DASHD_RUNNING    -gt 0 ] && ok 'YES' || err 'NO'
+            pending " --> dashd listening  (ip)    : " ; [ $DASHD_LISTENING  -gt 0 ] && ok 'YES' || err 'NO'
+            pending " --> dashd connecting (peers) : " ; [ $DASHD_CONNECTED  -gt 0 ] && ok 'YES' || err 'NO'
+            pending " --> dashd blocks synced      : " ; [ $DASHD_SYNCED     -gt 0 ] && ok 'YES' || err 'NO'
+
+            if [ $DASHD_RUNNING -gt 0 ] && [ $MN_MISSING_INPUT -lt 1 ] ; then
+                pending " --> masternode started       : " ; [ $MN_STARTED -gt 0  ] && ok 'YES' || err 'NO'
+                pending " --> masternode visible       : " ; [ $MN_VISIBLE -gt 0  ] && ok 'YES' || err 'NO'
+            fi
+            pending " --> public IP port open      : " ; [ $PUBLIC_PORT_CLOSED  -lt 1 ] && ok 'YES' || err 'NO'
+            pending " --> dashd connections        : " ; [ $DASHD_CONNECTIONS   -gt 0 ] && ok $DASHD_CONNECTIONS || err $DASHD_CONNECTIONS
+            pending " --> total masternodes        : " ; [ $MN_TOTAL            -gt 0 ] && ok $MN_TOTAL || err $MN_TOTAL
+            pending " --> dashd last block         : " ; [ $DASHD_CURRENT_BLOCK -gt 0 ] && ok $DASHD_CURRENT_BLOCK || err $DASHD_CURRENT_BLOCK
+            pending " --> chainz last block        : " ; [ $WEB_BLOCK_COUNT     -gt 0 ] && ok $WEB_BLOCK_COUNT || err $WEB_BLOCK_COUNT
+            quit 'Exiting.'
             ;;
         *)
             usage
