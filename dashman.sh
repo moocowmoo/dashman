@@ -91,6 +91,7 @@ case "$1" in
             ;;
         sync)
             cd $DASHMAN_GITDIR
+            git remote update -p
             git fetch
             git fetch -t
             git stash
