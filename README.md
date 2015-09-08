@@ -2,8 +2,9 @@
 
 DASH wallet/daemon management utilities - version 0.1.2
 
-* This script installs, updates, and manages dash daemons and wallets
+* This script installs, updates, and manages single-user dash daemons and wallets
 * It is currently only compatible with 32/64 bit linux.
+* Multi-user (system directory) installs are not yet supported
 
 # Install/Usage
 
