@@ -579,6 +579,8 @@ get_dashd_status(){
     DASHD_HASPID=0
     if [ -e $INSTALL_DIR/dashd.pid ] ; then
         DASHD_HASPID=`ps --no-header \`cat $INSTALL_DIR/dashd.pid 2>/dev/null\` | wc -l`;
+    else
+        DASHD_HASPID=$(pidof dashd)
     fi
     DASHD_LISTENING=`netstat -nat | grep LIST | grep 9999 | wc -l`;
     DASHD_CONNECTIONS=`netstat -nat | grep ESTA | grep 9999 | wc -l`;
