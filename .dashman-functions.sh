@@ -242,7 +242,7 @@ update_dashd(){
         fi
 
 
-        if ! confirm " [${C_GREEN}y${C_NORM}/${C_RED}N${C_NORM}] "; then
+        if ! confirm " [${C_GREEN}y${C_NORM}/${C_RED}N${C_NORM}] $C_CYAN"; then
             echo -e "${C_RED}Exiting.$C_NORM"
             echo ""
             exit 0
@@ -416,7 +416,7 @@ install_dashd(){
 
     pending " - download $DOWNLOAD_URL\n - and install to $INSTALL_DIR?"
 
-    if ! confirm " [${C_GREEN}y${C_NORM}/${C_RED}N${C_NORM}] "; then
+    if ! confirm " [${C_GREEN}y${C_NORM}/${C_RED}N${C_NORM}] $C_CYAN"; then
         echo -e "${C_RED}Exiting.$C_NORM"
         echo ""
         exit 0

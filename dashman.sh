@@ -57,7 +57,7 @@ case "$1" in
                 *)
                     echo
                     pending "restart dashd? "
-                    confirm "[${C_GREEN}y${C_NORM}/${C_RED}N${C_NORM}] " && \
+                    confirm "[${C_GREEN}y${C_NORM}/${C_RED}N${C_NORM}] $C_CYAN" && \
                         restart_dashd
                     ;;
             esac
