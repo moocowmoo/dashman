@@ -123,7 +123,7 @@ case "$1" in
             pending " --> public IP port open      : " ; [ $PUBLIC_PORT_CLOSED  -lt 1 ] && ok 'YES' || err 'NO'
             pending " --> dashd connections        : " ; [ $DASHD_CONNECTIONS   -gt 0 ] && ok $DASHD_CONNECTIONS || err $DASHD_CONNECTIONS
             pending " --> total masternodes        : " ; [ $MN_TOTAL            -gt 0 ] && ok $MN_TOTAL || err $MN_TOTAL
-            pending " --> dashd last block         : " ; [ $DASHD_CURRENT_BLOCK -gt 0 ] && ok $DASHD_CURRENT_BLOCK || err $DASHD_CURRENT_BLOCK
+            pending " --> last block (dashd)       : " ; [ $DASHD_CURRENT_BLOCK -gt 0 ] && ok $DASHD_CURRENT_BLOCK || err $DASHD_CURRENT_BLOCK
             pending " --> last block (web)         : " ; [ $WEB_BLOCK_COUNT     -gt 0 ] && ok $WEB_BLOCK_COUNT || err $WEB_BLOCK_COUNT
             quit 'Exiting.'
             ;;
