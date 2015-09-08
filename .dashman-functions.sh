@@ -589,7 +589,11 @@ get_dashd_status(){
     DASHD_GETINFO=`$DASH_CLI getinfo 2>/dev/null`;
 
     WEB_MNIP=`wget -qO- http://ipecho.net/plain`;
-    WEB_BLOCK_COUNT=`wget --no-check-certificat -qO- https://chainz.cryptoid.info/dash/api.dws?q=getblockcount`;
+
+    # chainz is stuck on superblock minus one
+    # WEB_BLOCK_COUNT=`wget --no-check-certificate -qO- https://chainz.cryptoid.info/dash/api.dws?q=getblockcount`;
+
+    WEB_BLOCK_COUNT=`wget --no-check-certificate -qO- http://explorer.darkcoin.qa/chain/Dash/q/getblockcount`;
 
     DASHD_SYNCED=0
     if [ $(($WEB_BLOCK_COUNT - 2)) -lt $DASHD_CURRENT_BLOCK ]; then DASHD_SYNCED=1 ; fi

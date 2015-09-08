@@ -124,7 +124,7 @@ case "$1" in
             pending " --> dashd connections        : " ; [ $DASHD_CONNECTIONS   -gt 0 ] && ok $DASHD_CONNECTIONS || err $DASHD_CONNECTIONS
             pending " --> total masternodes        : " ; [ $MN_TOTAL            -gt 0 ] && ok $MN_TOTAL || err $MN_TOTAL
             pending " --> dashd last block         : " ; [ $DASHD_CURRENT_BLOCK -gt 0 ] && ok $DASHD_CURRENT_BLOCK || err $DASHD_CURRENT_BLOCK
-            pending " --> chainz last block        : " ; [ $WEB_BLOCK_COUNT     -gt 0 ] && ok $WEB_BLOCK_COUNT || err $WEB_BLOCK_COUNT
+            pending " --> last block (web)         : " ; [ $WEB_BLOCK_COUNT     -gt 0 ] && ok $WEB_BLOCK_COUNT || err $WEB_BLOCK_COUNT
             quit 'Exiting.'
             ;;
         *)
