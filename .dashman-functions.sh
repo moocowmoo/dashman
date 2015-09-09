@@ -83,6 +83,10 @@ _find_dash_directory() {
         INSTALL_DIR=$(readlink -f `which dash-cli`)
         INSTALL_DIR=${INSTALL_DIR%%/dash-cli*};
 
+
+        #TODO prompt for single-user or multi-user install
+
+
         # if copied to /usr/*
         if [[ $INSTALL_DIR =~ \/usr.* ]]; then
             LINK_TO_SYSTEM_DIR=$INSTALL_DIR
@@ -596,13 +600,12 @@ get_dashd_status(){
 
     WEB_MNIP=`wget -qO- http://ipecho.net/plain`;
 
-    # chainz is stuck on superblock minus one
-    # WEB_BLOCK_COUNT=`wget --no-check-certificate -qO- https://chainz.cryptoid.info/dash/api.dws?q=getblockcount`;
+    WEB_BLOCK_COUNT_CHAINZ=`wget --no-check-certificate -qO- https://chainz.cryptoid.info/dash/api.dws?q=getblockcount`;
 
-    WEB_BLOCK_COUNT=`wget --no-check-certificate -qO- http://explorer.darkcoin.qa/chain/Dash/q/getblockcount`;
+    WEB_BLOCK_COUNT_DQA=`wget --no-check-certificate -qO- http://explorer.darkcoin.qa/chain/Dash/q/getblockcount`;
 
     DASHD_SYNCED=0
-    if [ $(($WEB_BLOCK_COUNT - 2)) -lt $DASHD_CURRENT_BLOCK ]; then DASHD_SYNCED=1 ; fi
+    if [ $(($WEB_BLOCK_COUNT_CHAINZ - 2)) -lt $DASHD_CURRENT_BLOCK ]; then DASHD_SYNCED=1 ; fi
 
     DASHD_CONNECTED=0
     if [ $DASHD_CONNECTIONS -gt 0 ]; then DASHD_CONNECTED=1 ; fi

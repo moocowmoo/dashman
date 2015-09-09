@@ -119,7 +119,8 @@ case "$1" in
             pending " --> dashd connections          : " ; [ $DASHD_CONNECTIONS   -gt 0 ] && ok $DASHD_CONNECTIONS || err $DASHD_CONNECTIONS
             pending " --> total masternodes          : " ; [ $MN_TOTAL            -gt 0 ] && ok $MN_TOTAL || err $MN_TOTAL
             pending " --> last block (dashd)         : " ; [ $DASHD_CURRENT_BLOCK -gt 0 ] && ok $DASHD_CURRENT_BLOCK || err $DASHD_CURRENT_BLOCK
-            pending " --> last block (web)           : " ; [ $WEB_BLOCK_COUNT     -gt 0 ] && ok $WEB_BLOCK_COUNT || err $WEB_BLOCK_COUNT
+            pending " --> last block (chainz)        : " ; [ $WEB_BLOCK_COUNT_CHAINZ -gt 0 ] && ok $WEB_BLOCK_COUNT_CHAINZ || err $WEB_BLOCK_COUNT_CHAINZ
+            pending " --> last block (darkcoin.qa)   : " ; [ $WEB_BLOCK_COUNT_DQA    -gt 0 ] && ok $WEB_BLOCK_COUNT_DQA || err $WEB_BLOCK_COUNT_DQA
 
             if [ $DASHD_RUNNING -gt 0 ] && [ $MN_CONF_ENABLED -gt 0 ] ; then
                 pending " --> masternode started         : " ; [ $MN_STARTED -gt 0  ] && ok 'YES' || err 'NO'
