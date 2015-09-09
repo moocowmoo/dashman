@@ -140,8 +140,14 @@ _check_dashman_updates() {
     GITHUB_DASHMAN_VERSION=$( wget --no-check-certificate -q https://raw.githubusercontent.com/moocowmoo/dashman/master/VERSION -O - )
     if [ "$DASHMAN_VERSION" != "$GITHUB_DASHMAN_VERSION" ]; then
         echo -e "\n"
-        echo -e "${C_RED}${0##*/} requires updating. Latest version is: $C_GREEN$GITHUB_DASHMAN_VERSION$C_RED\nIn dashman directory, do 'dashman sync' and try again. Exiting.$C_NORM\n"
-        exit 1
+        echo -e "${C_RED}${0##*/} requires updating. Latest version is: $C_GREEN$GITHUB_DASHMAN_VERSION$C_RED\nDo 'dashman sync' manually, or choose yes below.$C_NORM\n"
+
+        pending "sync dashman to github now?"
+
+        if confirm " [${C_GREEN}y${C_NORM}/${C_RED}N${C_NORM}] $C_CYAN"; then
+            exec ${0##*/} sync
+        fi
+        die 'Exiting.'
     fi
 }
 
