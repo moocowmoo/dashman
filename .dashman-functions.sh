@@ -178,6 +178,7 @@ _get_platform_info() {
 }
 
 _get_versions() {
+    _get_platform_info
     DOWNLOAD_HTML=$( wget --no-check-certificate -q $DOWNLOAD_PAGE -O - )
     local IFS=' '
     read -a DOWNLOAD_URLS <<< $( echo $DOWNLOAD_HTML | sed -e 's/ /\n/g' | grep binaries | grep Download | grep linux | perl -ne '/.*"([^"]+)".*/; print "$1 ";' 2>/dev/null )

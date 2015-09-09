@@ -66,7 +66,6 @@ case "$1" in
             pending "gathering info..."
             _check_dashman_updates
             _find_dash_directory
-            _get_platform_info
             _get_versions
             _check_dashd_running
             ok "DONE!"
