@@ -35,7 +35,7 @@ usage(){
 
     USAGE: ${0##*/} [command]
 
-        installs, updates, and manages dash daemons and wallets
+        installs, updates, and manages single-user dash daemons and wallets
 
     COMMANDS
 
@@ -62,6 +62,10 @@ usage(){
                 peers.dat
 
             will prompt user if not given the 'now' argument
+
+        status
+
+            polls local and web sources and displays current status
 
         version
 
