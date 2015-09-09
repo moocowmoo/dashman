@@ -1,6 +1,6 @@
 # dashman
 
-DASH wallet/daemon management utilities - version 0.1.2
+DASH wallet/daemon management utilities - version 0.1.3
 
 * This script installs, updates, and manages single-user dash daemons and wallets
 * It is currently only compatible with 32/64 bit linux.
@@ -79,6 +79,7 @@ given the optional 'now' argument.
 * nc (netcat)
 * wget
 * perl
+* python
 * dashd, dash-cli - version 12 or greater to update
 
 # Screencaps

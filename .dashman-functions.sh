@@ -607,6 +607,8 @@ get_dashd_status(){
 
     PUBLIC_PORT_CLOSED=$( nc -z $WEB_MNIP 9999; echo $? )
 
+    # masternode specific
+
     MN_CONF_ENABLED=$( egrep 'masternode\s*=\s*1' $INSTALL_DIR/dash.conf |wc -l)
     MN_STARTED=`$DASH_CLI masternode debug 2>&1 | grep 'successfully started' | wc -l`
     MN_LIST=`$DASH_CLI masternode list full 2>/dev/null`
@@ -615,6 +617,16 @@ get_dashd_status(){
     MN_UNHEALTHY=$(echo "$MN_LIST" | grep -c POS_ERROR)
     MN_EXPIRED=$(  echo "$MN_LIST" | grep -c EXPIRED)
     MN_TOTAL=$(( $MN_ENABLED + $MN_UNHEALTHY ))
+
+    if [ $MN_CONF_ENABLED -gt 0 ] ; then
+        WEB_NINJA_API=`wget --no-check-certificate -qO- https://dashninja.pl/api/masternodes?ips=[\"${WEB_MNIP}:9999\"]\&portcheck=1`;
+        WEB_NINJA_JSON_TEXT=$(echo $WEB_NINJA_API | python -m json.tool)
+        WEB_NINJA_SEES_OPEN=$(echo "$WEB_NINJA_JSON_TEXT" | grep '"Result"' | grep open | wc -l)
+        WEB_NINJA_MN_ADDY=$(echo "$WEB_NINJA_JSON_TEXT" | grep MasternodePubkey | awk '{print $2}' | sed -e 's/[",]//g')
+        WEB_NINJA_MN_VIN=$(echo "$WEB_NINJA_JSON_TEXT" | grep MasternodeOutputHash | awk '{print $2}' | sed -e 's/[",]//g')
+        WEB_NINJA_MN_VIDX=$(echo "$WEB_NINJA_JSON_TEXT" | grep MasternodeOutputIndex | awk '{print $2}' | sed -e 's/[",]//g')
+    fi
+
 
 }
 
