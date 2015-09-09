@@ -622,7 +622,7 @@ get_dashd_status(){
 
     # masternode specific
 
-    MN_CONF_ENABLED=$( egrep 'masternode\s*=\s*1' $INSTALL_DIR/dash.conf |wc -l)
+    MN_CONF_ENABLED=$( egrep '^[^#]*\s*masternode\s*=\s*1' $INSTALL_DIR/dash.conf |wc -l)
     MN_STARTED=`$DASH_CLI masternode debug 2>&1 | grep 'successfully started' | wc -l`
     MN_LIST=`$DASH_CLI masternode list full 2>/dev/null`
     MN_VISIBLE=$(  echo "$MN_LIST" | grep $WEB_MNIP | wc -l)
