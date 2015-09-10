@@ -615,6 +615,7 @@ get_dashd_status(){
     DASHD_CONNECTED=0
     if [ $DASHD_CONNECTIONS -gt 0 ]; then DASHD_CONNECTED=1 ; fi
 
+    DASHD_UP_TO_DATE=0
     if [ $LATEST_VERSION == $CURRENT_VERSION ]; then
         DASHD_UP_TO_DATE=1
     fi
