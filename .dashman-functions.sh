@@ -182,6 +182,7 @@ _get_versions() {
     DOWNLOAD_HTML=$( wget --no-check-certificate -q $DOWNLOAD_PAGE -O - )
     local IFS=' '
     read -a DOWNLOAD_URLS <<< $( echo $DOWNLOAD_HTML | sed -e 's/ /\n/g' | grep binaries | grep Download | grep linux | perl -ne '/.*"([^"]+)".*/; print "$1 ";' 2>/dev/null )
+    #$( <-- vim syntax highlighting fix
     LATEST_VERSION=$( echo ${DOWNLOAD_URLS[0]} | perl -ne '/dash-([0-9.]+)-/; print $1;' 2>/dev/null )
     if [ -z "$DASH_CLI" ]; then DASH_CLI='echo'; fi
     CURRENT_VERSION=$( $DASH_CLI --version | perl -ne '/v([0-9.]+)-/; print $1;' 2>/dev/null ) 2>/dev/null
@@ -609,6 +610,14 @@ get_dashd_status(){
 
     WEB_BLOCK_COUNT_DQA=`wget --no-check-certificate -qO- http://explorer.darkcoin.qa/chain/Dash/q/getblockcount`;
 
+    WEB_DASHWHALE=`wget --no-check-certificate -qO- https://www.dashwhale.org/api/v1/public`;
+    WEB_DASHWHALE_JSON_TEXT=$(echo $WEB_DASHWHALE | python -m json.tool)
+    WEB_BLOCK_COUNT_DWHALE=$(echo "$WEB_DASHWHALE_JSON_TEXT" | grep consensus_blockheight | awk '{print $2}' | sed -e 's/[",]//g')
+
+    WEB_ME=`wget --no-check-certificate -qO- https://www.masternode.me/data/block_state.txt`;
+    WEB_ME_BLOCK_COUNT=$( echo $WEB_ME_BLOCK_COUNT | awk '{print $1}')
+    WEB_ME_FORK_DETECT=$( echo $WEB_ME_BLOCK_COUNT | awk '{print $3}' | grep 'fork detected' | wc -l )
+
     DASHD_SYNCED=0
     if [ $(($WEB_BLOCK_COUNT_CHAINZ - 2)) -lt $DASHD_CURRENT_BLOCK ]; then DASHD_SYNCED=1 ; fi
 
@@ -647,27 +656,30 @@ get_dashd_status(){
 
 
 print_status() {
-    pending " --> public IP address          : " ; ok "$WEB_MNIP"
-    pending " --> dashd version              : " ; ok "$CURRENT_VERSION"
-    pending " --> dashd up-to-date           : " ; [ $DASHD_UP_TO_DATE -gt 0 ] && ok 'YES' || err 'NO'
-    pending " --> dashd running              : " ; [ $DASHD_HASPID     -gt 0 ] && ok 'YES' || err 'NO'
-    pending " --> dashd responding (rpc)     : " ; [ $DASHD_RUNNING    -gt 0 ] && ok 'YES' || err 'NO'
-    pending " --> dashd listening  (ip)      : " ; [ $DASHD_LISTENING  -gt 0 ] && ok 'YES' || err 'NO'
-    pending " --> dashd connecting (peers)   : " ; [ $DASHD_CONNECTED  -gt 0 ] && ok 'YES' || err 'NO'
-    pending " --> dashd blocks synced        : " ; [ $DASHD_SYNCED     -gt 0 ] && ok 'YES' || err 'NO'
-    pending " --> public IP port open        : " ; [ $PUBLIC_PORT_CLOSED  -lt 1 ] && ok 'YES' || err 'NO'
-    pending " --> dashd connections          : " ; [ $DASHD_CONNECTIONS   -gt 0 ] && ok $DASHD_CONNECTIONS || err $DASHD_CONNECTIONS
-    pending " --> total masternodes          : " ; [ $MN_TOTAL            -gt 0 ] && ok $MN_TOTAL || err $MN_TOTAL
-    pending " --> last block (dashd)         : " ; [ $DASHD_CURRENT_BLOCK -gt 0 ] && ok $DASHD_CURRENT_BLOCK || err $DASHD_CURRENT_BLOCK
-    pending " --> last block (chainz)        : " ; [ $WEB_BLOCK_COUNT_CHAINZ -gt 0 ] && ok $WEB_BLOCK_COUNT_CHAINZ || err $WEB_BLOCK_COUNT_CHAINZ
-    pending " --> last block (darkcoin.qa)   : " ; [ $WEB_BLOCK_COUNT_DQA    -gt 0 ] && ok $WEB_BLOCK_COUNT_DQA || err $WEB_BLOCK_COUNT_DQA
+    pending " --> public IP address        : " ; ok "$WEB_MNIP"
+    pending " --> dashd version            : " ; ok "$CURRENT_VERSION"
+    pending " --> dashd up-to-date         : " ; [ $DASHD_UP_TO_DATE -gt 0 ] && ok 'YES' || err 'NO'
+    pending " --> dashd running            : " ; [ $DASHD_HASPID     -gt 0 ] && ok 'YES' || err 'NO'
+    pending " --> dashd responding (rpc)   : " ; [ $DASHD_RUNNING    -gt 0 ] && ok 'YES' || err 'NO'
+    pending " --> dashd listening  (ip)    : " ; [ $DASHD_LISTENING  -gt 0 ] && ok 'YES' || err 'NO'
+    pending " --> dashd connecting (peers) : " ; [ $DASHD_CONNECTED  -gt 0 ] && ok 'YES' || err 'NO'
+    pending " --> dashd blocks synced      : " ; [ $DASHD_SYNCED     -gt 0 ] && ok 'YES' || err 'NO'
+    pending " --> public IP port open      : " ; [ $PUBLIC_PORT_CLOSED  -lt 1 ] && ok 'YES' || err 'NO'
+    pending " --> dashd connections        : " ; [ $DASHD_CONNECTIONS   -gt 0 ] && ok $DASHD_CONNECTIONS || err $DASHD_CONNECTIONS
+    pending " --> total masternodes        : " ; [ $MN_TOTAL            -gt 0 ] && ok $MN_TOTAL || err $MN_TOTAL
+    pending " --> last block"; echo
+    pending "  --> (local dashd)           : " ; [ $DASHD_CURRENT_BLOCK -gt 0 ] && ok $DASHD_CURRENT_BLOCK || err $DASHD_CURRENT_BLOCK
+    pending "  --> (web-chainz)            : " ; [ $WEB_BLOCK_COUNT_CHAINZ -gt 0 ] && ok $WEB_BLOCK_COUNT_CHAINZ || err $WEB_BLOCK_COUNT_CHAINZ
+    pending "  --> (web-darkcoin.qa)       : " ; [ $WEB_BLOCK_COUNT_DQA    -gt 0 ] && ok $WEB_BLOCK_COUNT_DQA || err $WEB_BLOCK_COUNT_DQA
+    pending "  --> (web-dashwhale-rollup)  : " ; [ $WEB_BLOCK_COUNT_DWHALE -gt 0 ] && ok $WEB_BLOCK_COUNT_DWHALE || err $WEB_BLOCK_COUNT_DWHALE
+    pending "  --> (web-masternode.me)     : " ; [ $WEB_ME_FORK_DETECT -gt 0 ] && err "$WEB_ME" || ok "$WEB_ME"
 
     if [ $DASHD_RUNNING -gt 0 ] && [ $MN_CONF_ENABLED -gt 0 ] ; then
-        pending " --> masternode started         : " ; [ $MN_STARTED -gt 0  ] && ok 'YES' || err 'NO'
-        pending " --> masternode visible (local) : " ; [ $MN_VISIBLE -gt 0  ] && ok 'YES' || err 'NO'
-        pending " --> masternode visible (ninja) : " ; [ $WEB_NINJA_SEES_OPEN -gt 0  ] && ok 'YES' || err 'NO'
-        pending " --> masternode address         : " ; ok $WEB_NINJA_MN_ADDY
-        pending " --> masternode funding txn     : " ; ok "$WEB_NINJA_MN_VIN-$WEB_NINJA_MN_VIDX"
+        pending " --> masternode started           : " ; [ $MN_STARTED -gt 0  ] && ok 'YES' || err 'NO'
+        pending " --> masternode visible (local)   : " ; [ $MN_VISIBLE -gt 0  ] && ok 'YES' || err 'NO'
+        pending " --> masternode visible (ninja)   : " ; [ $WEB_NINJA_SEES_OPEN -gt 0  ] && ok 'YES' || err 'NO'
+        pending " --> masternode address           : " ; ok $WEB_NINJA_MN_ADDY
+        pending " --> masternode funding txn       : " ; ok "$WEB_NINJA_MN_VIN-$WEB_NINJA_MN_VIDX"
     fi
 
 }
@@ -741,3 +753,21 @@ print_status() {
 #        interactive)
 #            cmd_prompt
 #            ;;
+
+#variants:
+#
+#    multi-user install
+#        installed in system dir
+#        installed in other dir?
+#        runas root
+#        runas sudo
+#        single daemon
+#        multiple daemons
+#
+#    single-user install
+#        installed in system dir
+#        installed in other dir
+#        runas root
+#        runas sudo
+#        single daemon
+#        multiple daemons?
