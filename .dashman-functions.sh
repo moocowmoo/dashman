@@ -184,6 +184,10 @@ _get_versions() {
     read -a DOWNLOAD_URLS <<< $( echo $DOWNLOAD_HTML | sed -e 's/ /\n/g' | grep binaries | grep Download | grep linux | perl -ne '/.*"([^"]+)".*/; print "$1 ";' 2>/dev/null )
     #$( <-- vim syntax highlighting fix
     LATEST_VERSION=$( echo ${DOWNLOAD_URLS[0]} | perl -ne '/dash-([0-9.]+)-/; print $1;' 2>/dev/null )
+    if [ -z "$LATEST_VERSION" ]; then
+        die "\nCould not find latest version from $DOWNLOAD_PAGE -- Exiting."
+    fi
+
     if [ -z "$DASH_CLI" ]; then DASH_CLI='echo'; fi
     CURRENT_VERSION=$( $DASH_CLI --version | perl -ne '/v([0-9.]+)-/; print $1;' 2>/dev/null ) 2>/dev/null
     for url in "${DOWNLOAD_URLS[@]}"
