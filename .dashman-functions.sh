@@ -656,30 +656,29 @@ get_dashd_status(){
 
 
 print_status() {
-    pending " --> public IP address        : " ; ok "$WEB_MNIP"
-    pending " --> dashd version            : " ; ok "$CURRENT_VERSION"
-    pending " --> dashd up-to-date         : " ; [ $DASHD_UP_TO_DATE -gt 0 ] && ok 'YES' || err 'NO'
-    pending " --> dashd running            : " ; [ $DASHD_HASPID     -gt 0 ] && ok 'YES' || err 'NO'
-    pending " --> dashd responding (rpc)   : " ; [ $DASHD_RUNNING    -gt 0 ] && ok 'YES' || err 'NO'
-    pending " --> dashd listening  (ip)    : " ; [ $DASHD_LISTENING  -gt 0 ] && ok 'YES' || err 'NO'
-    pending " --> dashd connecting (peers) : " ; [ $DASHD_CONNECTED  -gt 0 ] && ok 'YES' || err 'NO'
-    pending " --> dashd blocks synced      : " ; [ $DASHD_SYNCED     -gt 0 ] && ok 'YES' || err 'NO'
-    pending " --> public IP port open      : " ; [ $PUBLIC_PORT_CLOSED  -lt 1 ] && ok 'YES' || err 'NO'
-    pending " --> dashd connections        : " ; [ $DASHD_CONNECTIONS   -gt 0 ] && ok $DASHD_CONNECTIONS || err $DASHD_CONNECTIONS
-    pending " --> total masternodes        : " ; [ $MN_TOTAL            -gt 0 ] && ok $MN_TOTAL || err $MN_TOTAL
-    pending " --> last block"; echo
-    pending "  --> (local dashd)           : " ; [ $DASHD_CURRENT_BLOCK -gt 0 ] && ok $DASHD_CURRENT_BLOCK || err $DASHD_CURRENT_BLOCK
-    pending "  --> (web-chainz)            : " ; [ $WEB_BLOCK_COUNT_CHAINZ -gt 0 ] && ok $WEB_BLOCK_COUNT_CHAINZ || err $WEB_BLOCK_COUNT_CHAINZ
-    pending "  --> (web-darkcoin.qa)       : " ; [ $WEB_BLOCK_COUNT_DQA    -gt 0 ] && ok $WEB_BLOCK_COUNT_DQA || err $WEB_BLOCK_COUNT_DQA
-    pending "  --> (web-dashwhale-rollup)  : " ; [ $WEB_BLOCK_COUNT_DWHALE -gt 0 ] && ok $WEB_BLOCK_COUNT_DWHALE || err $WEB_BLOCK_COUNT_DWHALE
-    pending "  --> (web-masternode.me)     : " ; [ $WEB_ME_FORK_DETECT -gt 0 ] && err "$WEB_ME" || ok "$WEB_ME"
+    pending "  public IP address          : " ; ok "$WEB_MNIP"
+    pending "  dashd version              : " ; ok "$CURRENT_VERSION"
+    pending "  dashd up-to-date           : " ; [ $DASHD_UP_TO_DATE -gt 0 ] && ok 'YES' || err 'NO'
+    pending "  dashd running              : " ; [ $DASHD_HASPID     -gt 0 ] && ok 'YES' || err 'NO'
+    pending "  dashd responding (rpc)     : " ; [ $DASHD_RUNNING    -gt 0 ] && ok 'YES' || err 'NO'
+    pending "  dashd listening  (ip)      : " ; [ $DASHD_LISTENING  -gt 0 ] && ok 'YES' || err 'NO'
+    pending "  dashd connecting (peers)   : " ; [ $DASHD_CONNECTED  -gt 0 ] && ok 'YES' || err 'NO'
+    pending "  dashd blocks synced        : " ; [ $DASHD_SYNCED     -gt 0 ] && ok 'YES' || err 'NO'
+    pending "  public IP port open        : " ; [ $PUBLIC_PORT_CLOSED  -lt 1 ] && ok 'YES' || err 'NO'
+    pending "  dashd connections          : " ; [ $DASHD_CONNECTIONS   -gt 0 ] && ok $DASHD_CONNECTIONS || err $DASHD_CONNECTIONS
+    pending "  total masternodes          : " ; [ $MN_TOTAL            -gt 0 ] && ok $MN_TOTAL || err $MN_TOTAL
+    pending "  last block (local dashd)   : " ; [ $DASHD_CURRENT_BLOCK -gt 0 ] && ok $DASHD_CURRENT_BLOCK || err $DASHD_CURRENT_BLOCK
+    pending "             (chainz)        : " ; [ $WEB_BLOCK_COUNT_CHAINZ -gt 0 ] && ok $WEB_BLOCK_COUNT_CHAINZ || err $WEB_BLOCK_COUNT_CHAINZ
+    pending "             (darkcoin.qa)   : " ; [ $WEB_BLOCK_COUNT_DQA    -gt 0 ] && ok $WEB_BLOCK_COUNT_DQA || err $WEB_BLOCK_COUNT_DQA
+    pending "             (dashwhale)     : " ; [ $WEB_BLOCK_COUNT_DWHALE -gt 0 ] && ok $WEB_BLOCK_COUNT_DWHALE || err $WEB_BLOCK_COUNT_DWHALE
+    pending "             (masternode.me) : " ; [ $WEB_ME_FORK_DETECT -gt 0 ] && err "$WEB_ME" || ok "$WEB_ME"
 
     if [ $DASHD_RUNNING -gt 0 ] && [ $MN_CONF_ENABLED -gt 0 ] ; then
-        pending " --> masternode started           : " ; [ $MN_STARTED -gt 0  ] && ok 'YES' || err 'NO'
-        pending " --> masternode visible (local)   : " ; [ $MN_VISIBLE -gt 0  ] && ok 'YES' || err 'NO'
-        pending " --> masternode visible (ninja)   : " ; [ $WEB_NINJA_SEES_OPEN -gt 0  ] && ok 'YES' || err 'NO'
-        pending " --> masternode address           : " ; ok $WEB_NINJA_MN_ADDY
-        pending " --> masternode funding txn       : " ; ok "$WEB_NINJA_MN_VIN-$WEB_NINJA_MN_VIDX"
+        pending "  masternode started         : " ; [ $MN_STARTED -gt 0  ] && ok 'YES' || err 'NO'
+        pending "  masternode visible (local) : " ; [ $MN_VISIBLE -gt 0  ] && ok 'YES' || err 'NO'
+        pending "  masternode visible (ninja) : " ; [ $WEB_NINJA_SEES_OPEN -gt 0  ] && ok 'YES' || err 'NO'
+        pending "  masternode address         : " ; ok $WEB_NINJA_MN_ADDY
+        pending "  masternode funding txn     : " ; ok "$WEB_NINJA_MN_VIN-$WEB_NINJA_MN_VIDX"
     fi
 
 }
