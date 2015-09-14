@@ -19,7 +19,7 @@ do case "$1" in
 esac; shift; done
 OPTIND=1
 while getopts "hqvV" o ; do # set $o to the next passed option
-  case "$o" in 
+  case "$o" in
     q) QUIET=1 ;;
     v) VERBOSE=1 ;;
     V) VERSION=1 ;;
@@ -99,8 +99,6 @@ case "$1" in
             COMMAND=$1
             cd $DASHMAN_GITDIR
             git remote update -p
-            git fetch
-            git fetch -t
             if [ -z $(git config user.email) ] ; then
                 git config user.email "dashmanuser"
                 git config user.name "dashmanuser"
@@ -112,6 +110,23 @@ case "$1" in
                 exec $DASHMAN_GITDIR/${0##*/} $2
             fi
             quit 'Up to date.'
+            ;;
+        branch)
+            COMMAND=$1
+            cd $DASHMAN_GITDIR
+            git remote update -p
+            if [ -z $(git config user.email) ] ; then
+                git config user.email "dashmanuser"
+                git config user.name "dashmanuser"
+            fi
+            BRANCH_OK=$(git for-each-ref --format='%(refname)' refs/remotes/origin | sed -e 's|refs/remotes/origin/||g' | grep "^${2}\$" | wc -l)
+            if [ $BRANCH_OK -gt 0 ];then
+                git stash
+                pending "Switing to git branch "; ok $2
+                git checkout $2
+            else
+                die "Branch $2 not found. Exiting."
+            fi
             ;;
         status)
             COMMAND=$1
