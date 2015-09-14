@@ -153,7 +153,7 @@ _check_dashman_updates() {
         pending "sync dashman to github now?"
 
         if confirm " [${C_GREEN}y${C_NORM}/${C_RED}N${C_NORM}] $C_CYAN"; then
-            exec $DASHMAN_GITDIR/${0##*/} sync
+            exec $DASHMAN_GITDIR/${0##*/} sync $COMMAND
         fi
         die 'Exiting.'
     fi

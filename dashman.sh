@@ -45,8 +45,10 @@ source $DASHMAN_GITDIR/.dashman-functions.sh
 echo -e "${C_CYAN}${0##*/} version $DASHMAN_VERSION${C_NORM}"
 
 # do awesome stuff -----------------------------------------------------------
+COMMAND=''
 case "$1" in
         restart)
+            COMMAND=$1
             _find_dash_directory
             _check_dashd_running
             # TODO, show uptime: ps --no-header -o pid,etime $(cat $INSTALL_DIR/dash.pid) | awk '{print $2}'
@@ -63,6 +65,7 @@ case "$1" in
             esac
             ;;
         update)
+            COMMAND=$1
             pending "gathering info..."
             _check_dashman_updates
             _find_dash_directory
@@ -72,6 +75,7 @@ case "$1" in
             update_dashd
             ;;
         install)
+            COMMAND=$1
             pending "gathering info..."
             _check_dashman_updates
             _get_versions
@@ -79,6 +83,7 @@ case "$1" in
             install_dashd
             ;;
         reinstall)
+            COMMAND=$1
             pending "gathering info..."
             _check_dashman_updates
             _find_dash_directory
@@ -89,6 +94,7 @@ case "$1" in
             ok "DONE!"
             ;;
         sync)
+            COMMAND=$1
             cd $DASHMAN_GITDIR
             git remote update -p
             git fetch
@@ -96,9 +102,13 @@ case "$1" in
             git stash
             git checkout master
             git reset --hard origin/master
+            if [ ! -z "$2" ]; then
+                exec $DASHMAN_GITDIR/${0##*/} $2
+            fi
             quit 'Up to date.'
             ;;
         status)
+            COMMAND=$1
             pending "gathering info, please wait..."
             _check_dashman_updates
             _find_dash_directory
