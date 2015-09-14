@@ -581,13 +581,12 @@ install_dashd(){
             echo -e ""
         fi
 
-        quit
     else
         echo -e "${C_RED}dash version $CURRENT_VERSION is not up to date. ($LATEST_VERSION) Exiting.$C_NORM"
+        exit 1
     fi
 
 
-    exit 0
 }
 
 get_dashd_status(){
@@ -683,6 +682,18 @@ print_status() {
 
 }
 
+show_message_configure() {
+    echo
+    ok "To enable your masternode,"
+    ok "uncomment and configure the masternode lines in:"
+    echo
+         pending "    $HOME/.dash/dash.conf" ; echo
+    echo
+    echo -e "$C_GREEN then run:$C_NORM"
+    echo
+    echo -e "    ${C_YELLOW}dashman restart now$C_NORM"
+    echo
+}
 
 # scrap, ignore --------------------------------------------------------------
 

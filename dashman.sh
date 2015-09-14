@@ -81,6 +81,8 @@ case "$1" in
             _get_versions
             ok "DONE!"
             install_dashd
+            show_message_configure
+            quit
             ;;
         reinstall)
             COMMAND=$1
