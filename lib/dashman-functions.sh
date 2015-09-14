@@ -39,6 +39,10 @@ usage(){
 
     COMMANDS
 
+        init
+
+            adds $DASHMAN_GITDIR to your PATH in ~/.bashrc
+
         install
 
             creates a fresh dash installation and starts dashd

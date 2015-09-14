@@ -19,7 +19,7 @@ do case "$1" in
 esac; shift; done
 OPTIND=1
 while getopts "hqvV" o ; do # set $o to the next passed option
-  case "$o" in 
+  case "$o" in
     q) QUIET=1 ;;
     v) VERBOSE=1 ;;
     V) VERSION=1 ;;
@@ -31,7 +31,7 @@ shift $(($OPTIND - 1))
 # load common functions ------------------------------------------------------
 
 DASHMAN_GITDIR=${0%%/${0##*/}}
-source $DASHMAN_GITDIR/.dashman-functions.sh
+source $DASHMAN_GITDIR/lib/dashman-functions.sh
 
 # show help and exit if requested or no command supplied - TODO make command specific
 [[ $HELP || -z $1 ]] && usage && exit 0
@@ -47,6 +47,12 @@ echo -e "${C_CYAN}${0##*/} version $DASHMAN_VERSION${C_NORM}"
 # do awesome stuff -----------------------------------------------------------
 COMMAND=''
 case "$1" in
+        init)
+            COMMAND=$1
+            DASHMAN_GITDIR=$(readlink -f $DASHMAN_GITDIR)
+            echo "export PATH=$DASHMAN_GITDIR:$PATH" >> $HOME/.bashrc
+            ok "path $DASHMAN_GITDIR added to ~/.bashrc"
+            ;;
         restart)
             COMMAND=$1
             _find_dash_directory

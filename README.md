@@ -6,6 +6,17 @@ DASH wallet/daemon management utilities - version 0.1.7
 * It is currently only compatible with 32/64 bit linux.
 * Multi-user (system directory) installs are not yet supported
 
+# Quickstart
+
+To perform a fresh install on a new server, do:
+
+    sudo apt-get -qq -y install git ; \
+    git clone https://github.com/moocowmoo/dashman.git ; \
+    cd dashman ; \
+    ./dashman init ; \
+    source ~/.bashrc ; \
+    dashman install
+
 # Install/Usage
 
 To download dashman do:
@@ -13,6 +24,10 @@ To download dashman do:
     sudo apt-get install git
     git clone https://github.com/moocowmoo/dashman.git
     cd dashman
+
+To install dashman into your PATH (run anywhere), do:
+
+    ./dashman init
 
 To update your existing version 12 32/64bit linux dash wallet to the latest
 dashd, do:
