@@ -66,6 +66,7 @@ case "$1" in
             ;;
         update)
             COMMAND=$1
+            if [ ! -z "$RPI" ];then die "not supported yet" ;fi
             pending "gathering info..."
             _check_dashman_updates
             _find_dash_directory
@@ -76,6 +77,7 @@ case "$1" in
             ;;
         install)
             COMMAND=$1
+            if [ ! -z "$RPI" ];then die "not supported yet" ;fi
             pending "gathering info..."
             _check_dashman_updates
             _get_versions
@@ -86,6 +88,7 @@ case "$1" in
             ;;
         reinstall)
             COMMAND=$1
+            if [ ! -z "$RPI" ];then die "not supported yet" ;fi
             pending "gathering info..."
             _check_dashman_updates
             _find_dash_directory
@@ -124,6 +127,7 @@ case "$1" in
                 git stash
                 pending "Switing to git branch "; ok $2
                 git checkout $2
+                git reset --hard origin/$2
             else
                 die "Branch $2 not found. Exiting."
             fi

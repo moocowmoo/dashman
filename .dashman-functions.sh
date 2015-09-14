@@ -168,11 +168,14 @@ _get_platform_info() {
         x86_64)
             BITS=64
             ;;
+        armv7l)
+            BITS=32
+            RPI=1
+            ;;
         *)
-            echo "unknown platform: $PLATFORM"
-            echo "dashman currently only supports 32/64bit linux"
-            echo "-- Exiting."
-            exit 1
+            err "unknown platform: $PLATFORM"
+            err "dashman currently only supports 32/64bit linux"
+            die "Exiting."
             ;;
     esac
 }
