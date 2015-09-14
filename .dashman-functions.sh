@@ -243,9 +243,9 @@ restart_dashd(){
 
 update_dashd(){
 
-    if [ $LATEST_VERSION != $CURRENT_VERSION ] || [ $REINSTALL ] ; then
+    if [ $LATEST_VERSION != $CURRENT_VERSION ] || [ ! -z "$REINSTALL" ] ; then
 
-        if [ $REINSTALL ];then
+        if [ ! -z "$REINSTALL" ];then
             echo -e ""
             echo -e "$C_GREEN*** dash version $CURRENT_VERSION is up-to-date. ***$C_NORM"
             echo -e ""
