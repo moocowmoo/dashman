@@ -72,6 +72,9 @@ case "$1" in
             _get_versions
             _check_dashd_running
             ok "DONE!"
+            if [ ! -z "$RPI" ]; then
+                die "$COMMAND not supported yet on this platform."
+            fi
             update_dashd
             ;;
         install)
@@ -80,6 +83,9 @@ case "$1" in
             _check_dashman_updates
             _get_versions
             ok "DONE!"
+            if [ ! -z "$RPI" ]; then
+                die "$COMMAND not supported yet on this platform."
+            fi
             install_dashd
             show_message_configure
             quit
@@ -92,8 +98,11 @@ case "$1" in
             _get_versions
             _check_dashd_running
             REINSTALL=1
-            update_dashd
             ok "DONE!"
+            if [ ! -z "$RPI" ]; then
+                die "$COMMAND not supported yet on this platform."
+            fi
+            update_dashd
             ;;
         sync)
             COMMAND=$1
