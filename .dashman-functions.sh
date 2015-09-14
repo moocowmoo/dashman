@@ -629,7 +629,7 @@ get_dashd_status(){
         DASHD_UP_TO_DATE=1
     fi
 
-    PUBLIC_PORT_CLOSED=$( nc -z $WEB_MNIP 9999; echo $? )
+    PUBLIC_PORT_CLOSED=$( timeout 5 nc -z $WEB_MNIP 9999; echo $? )
 
     # masternode specific
 
