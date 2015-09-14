@@ -1,4 +1,25 @@
 
+0.1.6 - Tue Sep 8 07:07:57 2015 +0000
+
+    added dashninja masternode visibility
+
+0.1.5 - Thu Sep 10 21:34:29 2015 +0000
+
+    added dashwhale, masternode.me polling
+
+0.1.4 - Wed Sep 9 07:55:44 2015 +0000
+
+    fix download file selection
+    check for updates on all commands
+
+0.1.3 - Wed Sep 9 05:02:29 2015 +0000
+
+    added dashninja masternode visibility
+
+0.1.2 - Tue Sep 8 07:07:57 2015 +0000
+
+    chainz hung - use darkcoin.qa explorer api
+
 0.1.1 - Mon Sep 7 00:12:24 2015 +0000
 
     added statua function, screencaps
