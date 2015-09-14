@@ -1,4 +1,9 @@
 
+0.1.7 - Mon Sep 14 02:59:05 2015 +0000
+
+    re-run after needed sync
+    fix git-stash on uninitialized systems
+
 0.1.6 - Tue Sep 8 07:07:57 2015 +0000
 
     added dashninja masternode visibility

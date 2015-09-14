@@ -99,6 +99,10 @@ case "$1" in
             git remote update -p
             git fetch
             git fetch -t
+            if [ -z $(git config user.email) ] ; then
+                git config user.email "dashmanuser"
+                git config user.name "dashmanuser"
+            fi
             git stash
             git checkout master
             git reset --hard origin/master
