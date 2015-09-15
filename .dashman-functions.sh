@@ -620,7 +620,10 @@ get_dashd_status(){
     WEB_DASHWHALE_JSON_TEXT=$(echo $WEB_DASHWHALE | python -m json.tool)
     WEB_BLOCK_COUNT_DWHALE=$(echo "$WEB_DASHWHALE_JSON_TEXT" | grep consensus_blockheight | awk '{print $2}' | sed -e 's/[",]//g')
 
-    WEB_ME=`wget --no-check-certificate -qO- https://www.masternode.me/data/block_state.txt`;
+    WEB_ME=`wget --no-check-certificate -qO- https://www.masternode.me/data/block_state.txt 2>/dev/null`;
+    if [ -z "$WEB_ME" ]; then
+        WEB_ME=`wget -qO- http://www.masternode.me/data/block_state.txt 2>/dev/null`;
+    fi
     WEB_ME_BLOCK_COUNT=$( echo $WEB_ME_BLOCK_COUNT | awk '{print $1}')
     WEB_ME_FORK_DETECT=$( echo $WEB_ME_BLOCK_COUNT | awk '{print $3}' | grep 'fork detected' | wc -l )
 
