@@ -1,4 +1,14 @@
 
+0.1.8 - Mon Sep 14 02:59:05 2015 +0000
+
+    raspberry pi support - status command only
+    integrated git branch switching for experimental branches
+    added instructions for enabling masternode (conf edits) after install
+
+    bugfix - better boolean test for reinstall mode
+    bugfix - die if cannot determine latest-version from/retrieve dashpay downloads page
+    bugfix - five second connect timeout for public port test
+
 0.1.7 - Mon Sep 14 02:59:05 2015 +0000
 
     re-run after needed sync
