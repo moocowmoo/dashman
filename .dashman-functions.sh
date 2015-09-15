@@ -673,7 +673,7 @@ print_status() {
     pending "  public IP port open        : " ; [ $PUBLIC_PORT_CLOSED  -lt 1 ] && ok 'YES' || err 'NO'
     pending "  dashd connections          : " ; [ $DASHD_CONNECTIONS   -gt 0 ] && ok $DASHD_CONNECTIONS || err $DASHD_CONNECTIONS
     pending "  total masternodes          : " ; [ $MN_TOTAL            -gt 0 ] && ok $MN_TOTAL || err $MN_TOTAL
-    pending "  last block (local dashd)   : " ; [ $DASHD_CURRENT_BLOCK -gt 0 ] && ok $DASHD_CURRENT_BLOCK || err $DASHD_CURRENT_BLOCK
+    pending "  last block (local dashd)   : " ; [ $DASHD_SYNCED -gt 0 ] && ok $DASHD_CURRENT_BLOCK || err $DASHD_CURRENT_BLOCK
     pending "             (chainz)        : " ; [ $WEB_BLOCK_COUNT_CHAINZ -gt 0 ] && ok $WEB_BLOCK_COUNT_CHAINZ || err $WEB_BLOCK_COUNT_CHAINZ
     pending "             (darkcoin.qa)   : " ; [ $WEB_BLOCK_COUNT_DQA    -gt 0 ] && ok $WEB_BLOCK_COUNT_DQA || err $WEB_BLOCK_COUNT_DQA
     pending "             (dashwhale)     : " ; [ $WEB_BLOCK_COUNT_DWHALE -gt 0 ] && ok $WEB_BLOCK_COUNT_DWHALE || err $WEB_BLOCK_COUNT_DWHALE
