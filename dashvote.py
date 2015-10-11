@@ -85,19 +85,20 @@ if curses.has_colors():
     for i in range(0, curses.COLORS):
         curses.init_pair(i + 1, i, -1)
 
-votewin = curses.newwin(votecount+7, max_proposal_len + len(str(len(masternodes))) + 28, 1, 2)
+votewin = curses.newwin(votecount+8, max_proposal_len + len(str(len(masternodes))) + 28, 1, 2)
 votewin.keypad(1)
 votewin.border()
 
 votewin.addstr(1, 2, 'dashvote version: ' + VERSION, curses.color_pair(3))
 votewin.addstr(2, 2, 'use arrow keys to set votes for %s masternodes' % len(masternodes), curses.color_pair(4))
-_y = 3
+votewin.addstr(3, 2, 'hit enter on CONFIRM to vote', curses.color_pair(4))
+_y = 4
 for entry in ballot_entries:
     _y += 1
     votewin.addstr(_y, 4, entry, curses.color_pair(7))
     votewin.addstr(_y, max_proposal_len + 6, 'ABSTAIN', curses.color_pair(4))
 votewin.addstr(_y + 2, max_proposal_len + 6, 'confirm', curses.color_pair(4))
-votewin.move(0 + 4, max_proposal_len + 6)
+votewin.move(0 + 5, max_proposal_len + 6)
 
 votewin.refresh()
 
@@ -138,17 +139,17 @@ def update_vote_display(win, sel_ent, vote):
     }
     if vote == '':
         sel_ent += 1
-        win.move(sel_ent + 4, max_proposal_len + 6)
+        win.move(sel_ent + 5, max_proposal_len + 6)
         win.addstr('       ')
-        win.move(sel_ent + 4, max_proposal_len + 6)
+        win.move(sel_ent + 5, max_proposal_len + 6)
         win.addstr('CONFIRM', _color_yes)
-        win.move(sel_ent + 4, max_proposal_len + 6)
+        win.move(sel_ent + 5, max_proposal_len + 6)
     else:
-        win.move(sel_ent + 4, max_proposal_len + 6)
+        win.move(sel_ent + 5, max_proposal_len + 6)
         win.addstr('       ')
-        win.move(sel_ent + 4, max_proposal_len + 6)
+        win.move(sel_ent + 5, max_proposal_len + 6)
         win.addstr(vote, vote_colors[vote])
-        win.move(sel_ent + 4, max_proposal_len + 6)
+        win.move(sel_ent + 5, max_proposal_len + 6)
 
 
 def submit_votes(win, ballot, s):
