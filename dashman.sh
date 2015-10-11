@@ -31,7 +31,7 @@ shift $(($OPTIND - 1))
 # load common functions ------------------------------------------------------
 
 DASHMAN_GITDIR=${0%%/${0##*/}}
-source $DASHMAN_GITDIR/.dashman-functions.sh
+source $DASHMAN_GITDIR/lib/dashman_functions.sh
 
 # show help and exit if requested or no command supplied - TODO make command specific
 [[ $HELP || -z $1 ]] && usage && exit 0
