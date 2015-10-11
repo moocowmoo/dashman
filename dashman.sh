@@ -138,6 +138,18 @@ case "$1" in
                 die "Branch $2 not found. Exiting."
             fi
             ;;
+        vote)
+            COMMAND=$1
+            pending "gathering info, please wait..."
+            _check_dashman_updates
+            _find_dash_directory
+            _get_versions
+            _check_dashd_running
+            ok " DONE!"
+            echo
+            /usr/bin/env python $DASHMAN_GITDIR/dashvote.py
+            quit 'Exiting.'
+            ;;
         status)
             COMMAND=$1
             pending "gathering info, please wait..."
