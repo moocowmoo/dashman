@@ -613,8 +613,14 @@ get_dashd_status(){
     WEB_MNIP=`wget -qO- http://ipecho.net/plain`;
 
     WEB_BLOCK_COUNT_CHAINZ=`wget --no-check-certificate -qO- https://chainz.cryptoid.info/dash/api.dws?q=getblockcount`;
+    if [ -z "$WEB_BLOCK_COUNT_CHAINZ" ]; then
+        WEB_BLOCK_COUNT_CHAINZ=0
+    fi
 
     WEB_BLOCK_COUNT_DQA=`wget --no-check-certificate -qO- http://explorer.darkcoin.qa/chain/Dash/q/getblockcount`;
+    if [ -z "$WEB_BLOCK_COUNT_DQA" ]; then
+        WEB_BLOCK_COUNT_DQA=0
+    fi
 
     WEB_DASHWHALE=`wget --no-check-certificate -qO- https://www.dashwhale.org/api/v1/public`;
     WEB_DASHWHALE_JSON_TEXT=$(echo $WEB_DASHWHALE | python -m json.tool)
