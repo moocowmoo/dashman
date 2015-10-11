@@ -130,6 +130,9 @@ def submit_votes(win, ballot, s):
                 stdout = run_command(command)
                 stdscr.addstr(stdout.rstrip("\n") + "\n")
                 stdscr.refresh()
+
+    stdscr.addstr("Hit any key to exit." + "\n")
+    votewin.getch()
     quit()
 
 
@@ -192,9 +195,9 @@ def main(screen):
             curses.init_pair(i + 1, i, -1)
 
     votewin = curses.newwin(votecount +
-                            8, max_proposal_len +
-                            len(str(len(masternodes))) +
-                            28, 1, 2)
+                            8, max(max_proposal_len +
+                                   len(str(len(masternodes))) +
+                                   28, 49), 1, 2)
     votewin.keypad(1)
     votewin.border()
 
