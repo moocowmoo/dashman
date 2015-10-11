@@ -1,0 +1,9 @@
+__pycache__
+*.pyc
+*~
+dist
+build
+files.txt
+*egg-info
+.DS_STORE
+.tox
