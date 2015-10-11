@@ -69,13 +69,10 @@ def set_vote(b, s, dir):
 
 
 def update_vote_display(win, sel_ent, vote):
-    _color_abs = curses.color_pair(4)
-    _color_yes = curses.color_pair(3)
-    _color_no = curses.color_pair(2)
     vote_colors = {
-        "YES": _color_yes,
-        "NO": _color_no,
-        "ABSTAIN": _color_abs,
+        "YES": C_GREEN,
+        "NO": C_RED,
+        "ABSTAIN": C_YELLOW,
         '': 3
     }
     if vote == '':
@@ -83,7 +80,7 @@ def update_vote_display(win, sel_ent, vote):
         win.move(sel_ent + 5, max_proposal_len + 6)
         win.addstr('       ')
         win.move(sel_ent + 5, max_proposal_len + 6)
-        win.addstr('CONFIRM', _color_yes)
+        win.addstr('CONFIRM', C_GREEN)
         win.move(sel_ent + 5, max_proposal_len + 6)
     else:
         win.move(sel_ent + 5, max_proposal_len + 6)
@@ -106,18 +103,20 @@ def submit_votes(win, ballot, s):
     stdscr.move(0, 0)
 
     if votes_to_send.keys():
-        stdscr.addstr("sending time-randomized votes\n")
+        stdscr.addstr("sending time-randomized votes\n\n", C_GREEN)
         stdscr.refresh()
         for vote in sorted(votes_to_send, key=lambda s: s.lower()):
-            stdscr.addstr(vote +
-                          " --> " +
-                          str(votes_to_send[vote][u'vote']) +
-                          "\n")
+            castvote = str(votes_to_send[vote][u'vote'])
+            stdscr.addstr('  ' + vote, C_YELLOW)
+            stdscr.addstr(" --> ")
+            stdscr.addstr(castvote, castvote == 'YES' and C_GREEN or C_RED )
+            stdscr.addstr("\n")
             for mn in sorted(masternodes):
                 node = masternodes[mn]
                 random_ts = random_timestamp()
                 ts = datetime.datetime.fromtimestamp(random_ts)
-                stdscr.addstr('    ' + mn + ' ' + str(ts) + ' ')
+                stdscr.addstr('    ' + mn, C_CYAN)
+                stdscr.addstr(' ' + str(ts) + ' ', C_YELLOW)
                 netvote = str(node['fundtx']) + str(votes_to_send
                                                     [vote][u'Hash']) + str(votes_to_send[vote][u'vote'] ==
                                                                            'YES' and 1 or 2) + str(random_ts)
@@ -128,11 +127,12 @@ def submit_votes(win, ballot, s):
     #            print netvote + ' ' + signature
     #            print command
                 stdout = run_command(command)
-                stdscr.addstr(stdout.rstrip("\n") + "\n")
+                stdscr.addstr(stdout.rstrip("\n") + "\n", 'successfully' in stdout and C_GREEN or C_RED )
                 stdscr.refresh()
 
-    stdscr.addstr("Hit any key to exit." + "\n")
-    votewin.getch()
+    stdscr.addstr("\nHit any key to exit." + "\n", C_GREEN)
+    stdscr.refresh()
+    stdscr.getch()
     quit()
 
 
@@ -144,7 +144,26 @@ def main(screen):
     global ballot_entries
     global votewin
     global masternodes
+    global C_YELLOW, C_GREEN, C_RED, C_CYAN
+
     stdscr = screen
+
+    try:
+        curses.curs_set(2)
+    except:
+        pass
+    if curses.has_colors():
+        curses.start_color()
+        curses.use_default_colors()
+        for i in range(0, curses.COLORS):
+            curses.init_pair(i + 1, i, -1)
+
+    C_CYAN = curses.color_pair(7)
+    C_YELLOW = curses.color_pair(4)
+    C_GREEN = curses.color_pair(3)
+    C_RED = curses.color_pair(2)
+
+
 
     # test dash-cli in path -- TODO make robust
     stdout = run_command('dash-cli getinfo')
@@ -183,17 +202,6 @@ def main(screen):
 
     # TODO open previous votes/local storage something
 
-    try:
-        curses.curs_set(2)
-    except:
-        pass
-    screen.keypad(1)
-    if curses.has_colors():
-        curses.start_color()
-        curses.use_default_colors()
-        for i in range(0, curses.COLORS):
-            curses.init_pair(i + 1, i, -1)
-
     votewin = curses.newwin(votecount +
                             8, max(max_proposal_len +
                                    len(str(len(masternodes))) +
@@ -201,29 +209,29 @@ def main(screen):
     votewin.keypad(1)
     votewin.border()
 
-    votewin.addstr(1, 2, 'dashvote version: ' + VERSION, curses.color_pair(3))
+    votewin.addstr(1, 2, 'dashvote version: ' + VERSION, C_CYAN)
     votewin.addstr(
         2,
         2,
         'use arrow keys to set votes for %s masternodes' %
         len(masternodes),
-        curses.color_pair(4))
-    votewin.addstr(3, 2, 'hit enter on CONFIRM to vote', curses.color_pair(4))
+        C_YELLOW)
+    votewin.addstr(3, 2, 'hit enter on CONFIRM to vote', C_YELLOW)
     _y = 4
     for entry in ballot_entries:
         _y += 1
-        votewin.addstr(_y, 4, entry, curses.color_pair(7))
+        votewin.addstr(_y, 4, entry, C_CYAN)
         votewin.addstr(
             _y,
             max_proposal_len +
             6,
             'ABSTAIN',
-            curses.color_pair(4))
+            C_YELLOW)
     votewin.addstr(
         _y + 2,
         max_proposal_len + 6,
         'confirm',
-        curses.color_pair(4))
+        C_YELLOW)
     votewin.move(0 + 5, max_proposal_len + 6)
 
     votewin.refresh()
