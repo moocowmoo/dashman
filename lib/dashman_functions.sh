@@ -67,6 +67,10 @@ usage(){
 
             polls local and web sources and displays current status
 
+        vote
+
+            cast masternode votes for distributed budget ballot items
+
         version
 
             prints dashmans version number and exit
