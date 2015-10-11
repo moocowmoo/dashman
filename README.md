@@ -74,6 +74,12 @@ given the optional 'now' argument.
 "dashman status" interrogates the locally running dashd and displays its status
 (see screencap below)
 
+## vote (beta)
+
+"dashman vote" automates voting and randomizes vote timestamps to help disassociate ownership
+Requires masternode.conf in $HOME/.dash
+(see screencap below)
+
 # Dependencies
 
 * nc (netcat)
@@ -103,6 +109,12 @@ given the optional 'now' argument.
 ### status
 
 <img src="https://raw.githubusercontent.com/moocowmoo/dashman/master/screencaps/dashman_0.1-status.png">
+
+### vote
+
+<img src="https://raw.githubusercontent.com/moocowmoo/dashman/master/screencaps/dashman_0.1-vote.png">
+
+<img src="https://raw.githubusercontent.com/moocowmoo/dashman/master/screencaps/dashman_0.1-vote-out.png">
 
 # Contact
 

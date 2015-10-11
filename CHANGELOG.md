@@ -1,4 +1,8 @@
 
+0.1.9 - Sun Oct 11 04:05:54 2015 +0000
+
+    added dashvote - time-randomized voting, initial curses UI
+
 0.1.8 - Mon Sep 14 02:59:05 2015 +0000
 
     raspberry pi support - status command only
