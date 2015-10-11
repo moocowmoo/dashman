@@ -1,6 +1,6 @@
 # dashman
 
-DASH wallet/daemon management utilities - version 0.1.8
+DASH wallet/daemon management utilities - version 0.1.9
 
 * This script installs, updates, and manages single-user dash daemons and wallets
 * It is currently only compatible with 32/64 bit linux.
@@ -39,6 +39,10 @@ To get the current status of dashd, do:
 
     ./dashman status
 
+To cast votes using your masternode(s), do:
+
+    ./dashman vote
+
 # Commands
 
 ## sync
@@ -69,16 +73,23 @@ a single instance of dashd.
 the current directory, ~/.dash, and $PATH. It will prompt to restart if not
 given the optional 'now' argument.
 
+<a href="#restart-1">screencap</a>
+
 ## status
 
 "dashman status" interrogates the locally running dashd and displays its status
-(see screencap below)
+
+<a href="#status-1">screencap</a>
 
 ## vote (beta)
 
 "dashman vote" automates voting and randomizes vote timestamps to help disassociate ownership
-Requires masternode.conf in $HOME/.dash
-(see screencap below)
+Requires:
+  * dash-cli in $PATH
+  * masternode.conf in $HOME/.dash
+  * python 2
+
+<a href="#vote">screencap</a>
 
 # Dependencies
 
