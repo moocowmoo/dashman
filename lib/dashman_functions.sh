@@ -17,6 +17,8 @@ DOWNLOAD_PAGE='https://www.dashpay.io/downloads/'
 DASHD_RUNNING=0
 DASHMAN_VERSION=$(cat $DASHMAN_GITDIR/VERSION)
 
+wget_cmd='timeout 4 wget --no-check-certificate -qO-'
+
 # (mostly) functioning functions -- lots of refactoring to do ----------------
 
 pending(){ [[ $QUIET ]] || echo -en "$C_YELLOW$1$C_NORM" ; }
@@ -149,7 +151,7 @@ _find_dash_directory() {
 
 
 _check_dashman_updates() {
-    GITHUB_DASHMAN_VERSION=$( wget --no-check-certificate -q https://raw.githubusercontent.com/moocowmoo/dashman/master/VERSION -O - )
+    GITHUB_DASHMAN_VERSION=$( $wget_cmd https://raw.githubusercontent.com/moocowmoo/dashman/master/VERSION )
     if [ "$DASHMAN_VERSION" != "$GITHUB_DASHMAN_VERSION" ]; then
         echo -e "\n"
         echo -e "${C_RED}${0##*/} requires updating. Latest version is: $C_GREEN$GITHUB_DASHMAN_VERSION$C_RED\nDo 'dashman sync' manually, or choose yes below.$C_NORM\n"
@@ -187,7 +189,7 @@ _get_platform_info() {
 
 _get_versions() {
     _get_platform_info
-    DOWNLOAD_HTML=$( wget --no-check-certificate -q $DOWNLOAD_PAGE -O - )
+    DOWNLOAD_HTML=$( $wget_cmd $DOWNLOAD_PAGE )
     local IFS=' '
     read -a DOWNLOAD_URLS <<< $( echo $DOWNLOAD_HTML | sed -e 's/ /\n/g' | grep binaries | grep Download | grep linux | perl -ne '/.*"([^"]+)".*/; print "$1 ";' 2>/dev/null )
     #$( <-- vim syntax highlighting fix
@@ -617,23 +619,23 @@ get_dashd_status(){
 
     WEB_MNIP=`wget -qO- http://ipecho.net/plain`;
 
-    WEB_BLOCK_COUNT_CHAINZ=`wget --no-check-certificate -qO- https://chainz.cryptoid.info/dash/api.dws?q=getblockcount`;
+    WEB_BLOCK_COUNT_CHAINZ=`$wget_cmd https://chainz.cryptoid.info/dash/api.dws?q=getblockcount`;
     if [ -z "$WEB_BLOCK_COUNT_CHAINZ" ]; then
         WEB_BLOCK_COUNT_CHAINZ=0
     fi
 
-    WEB_BLOCK_COUNT_DQA=`wget --no-check-certificate -qO- http://explorer.darkcoin.qa/chain/Dash/q/getblockcount`;
+    WEB_BLOCK_COUNT_DQA=`$wget_cmd http://explorer.darkcoin.qa/chain/Dash/q/getblockcount`;
     if [ -z "$WEB_BLOCK_COUNT_DQA" ]; then
         WEB_BLOCK_COUNT_DQA=0
     fi
 
-    WEB_DASHWHALE=`wget --no-check-certificate -qO- https://www.dashwhale.org/api/v1/public`;
+    WEB_DASHWHALE=`$wget_cmd https://www.dashwhale.org/api/v1/public`;
     WEB_DASHWHALE_JSON_TEXT=$(echo $WEB_DASHWHALE | python -m json.tool)
     WEB_BLOCK_COUNT_DWHALE=$(echo "$WEB_DASHWHALE_JSON_TEXT" | grep consensus_blockheight | awk '{print $2}' | sed -e 's/[",]//g')
 
-    WEB_ME=`wget --no-check-certificate -qO- https://www.masternode.me/data/block_state.txt 2>/dev/null`;
+    WEB_ME=`$wget_cmd https://www.masternode.me/data/block_state.txt 2>/dev/null`;
     if [ -z "$WEB_ME" ]; then
-        WEB_ME=`wget -qO- http://www.masternode.me/data/block_state.txt 2>/dev/null`;
+        WEB_ME=`$wget_cmd http://www.masternode.me/data/block_state.txt 2>/dev/null`;
     fi
     WEB_ME_BLOCK_COUNT=$( echo $WEB_ME_BLOCK_COUNT | awk '{print $1}')
     WEB_ME_FORK_DETECT=$( echo $WEB_ME_BLOCK_COUNT | awk '{print $3}' | grep 'fork detected' | wc -l )
@@ -663,7 +665,7 @@ get_dashd_status(){
     MN_TOTAL=$(( $MN_ENABLED + $MN_UNHEALTHY ))
 
     if [ $MN_CONF_ENABLED -gt 0 ] ; then
-        WEB_NINJA_API=`wget --no-check-certificate -qO- https://dashninja.pl/api/masternodes?ips=[\"${WEB_MNIP}:9999\"]\&portcheck=1`;
+        WEB_NINJA_API=`$wget_cmd https://dashninja.pl/api/masternodes?ips=[\"${WEB_MNIP}:9999\"]\&portcheck=1`;
         WEB_NINJA_JSON_TEXT=$(echo $WEB_NINJA_API | python -m json.tool)
         WEB_NINJA_SEES_OPEN=$(echo "$WEB_NINJA_JSON_TEXT" | grep '"Result"' | grep open | wc -l)
         WEB_NINJA_MN_ADDY=$(echo "$WEB_NINJA_JSON_TEXT" | grep MasternodePubkey | awk '{print $2}' | sed -e 's/[",]//g')
