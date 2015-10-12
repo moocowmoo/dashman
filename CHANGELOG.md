@@ -3,6 +3,14 @@
 
     added dashvote - time-randomized voting, initial curses UI
 
+    enh - display changelog output on sync update
+    enh - remove stale local git tags on sync
+
+    style - show local blocks red if not syncd
+
+    bugfix - fail gracefully when block explorer(s) down
+    bugfix - masternode.me pull, downgrade to http (gnutls issue) if needed
+
 0.1.8 - Mon Sep 14 02:59:05 2015 +0000
 
     raspberry pi support - status command only
