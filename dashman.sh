@@ -116,6 +116,14 @@ case "$1" in
             git stash
             git checkout master
             git reset --hard origin/master
+
+            if [ -e $DASHMAN_GITDIR/PREVIOUS_VERSION ]; then
+                echo '--------------'
+                cat_until "^$( cat $DASHMAN_GITDIR/PREVIOUS_VERSION ) " $DASHMAN_GITDIR/CHANGELOG.md
+                echo '--------------'
+                rm $DASHMAN_GITDIR/PREVIOUS_VERSION
+            fi
+
             if [ ! -z "$2" ]; then
                 exec $DASHMAN_GITDIR/${0##*/} $2
             fi

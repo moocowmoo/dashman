@@ -157,6 +157,7 @@ _check_dashman_updates() {
         pending "sync dashman to github now?"
 
         if confirm " [${C_GREEN}y${C_NORM}/${C_RED}N${C_NORM}] $C_CYAN"; then
+            echo $DASHMAN_VERSION > $DASHMAN_GITDIR/PREVIOUS_VERSION
             exec $DASHMAN_GITDIR/${0##*/} sync $COMMAND
         fi
         die 'Exiting.'
@@ -713,6 +714,18 @@ show_message_configure() {
     echo
     echo -e "    ${C_YELLOW}dashman restart now$C_NORM"
     echo
+}
+
+cat_until() {
+    PATTERN=$1
+    FILE=$2
+    while read; do
+        if [[ "$REPLY" =~ $PATTERN ]]; then
+            return
+        else
+            echo "$REPLY"
+        fi
+    done < $FILE
 }
 
 # scrap, ignore --------------------------------------------------------------
