@@ -94,7 +94,7 @@ Requires:
 # Dependencies
 
 * nc (netcat)
-* wget
+* curl
 * perl
 * python
 * dashd, dash-cli - version 12 or greater to update
