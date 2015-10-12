@@ -673,11 +673,22 @@ get_dashd_status(){
         WEB_NINJA_MN_VIDX=$(echo "$WEB_NINJA_JSON_TEXT" | grep MasternodeOutputIndex | awk '{print $2}' | sed -e 's/[",]//g')
     fi
 
+}
+
+get_host_status(){
+
+    HOST_LOAD_AVERAGE=$(cat /proc/loadavg | awk '{print $1" "$2" "$3}')
+
+    uptime=$(</proc/uptime)
+    uptime=${uptime%%.*}
+    HOST_UPTIME_DAYS=$(( uptime/60/60/24 ))
 
 }
 
 
 print_status() {
+    pending "  host uptime                : " ; ok "$HOST_UPTIME_DAYS days"
+    pending "  host load average          : " ; ok "$HOST_LOAD_AVERAGE"
     pending "  public IP address          : " ; ok "$WEB_MNIP"
     pending "  dashd version              : " ; ok "$CURRENT_VERSION"
     pending "  dashd up-to-date           : " ; [ $DASHD_UP_TO_DATE -gt 0 ] && ok 'YES' || err 'NO'

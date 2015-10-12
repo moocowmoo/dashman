@@ -168,6 +168,7 @@ case "$1" in
             _get_versions
             _check_dashd_running
             get_dashd_status
+            get_host_status
             ok " DONE!"
             echo
             print_status
