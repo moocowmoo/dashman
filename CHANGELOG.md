@@ -1,4 +1,18 @@
 
+0.1.10 -  Tue Oct 13 07:18:29 2015 +0000
+
+    added ipv6 support - use icanhazip for ipv4/6 polling
+    added dashd uptime calculation
+    added support for hot-node (Internet server) dash.conf voting
+    added initial host metrics: uptime/load average
+    added dependency check on launch
+    added last masternode payment display
+
+    style - consolidated output
+    switch to using curl. much faster
+    refactor wgets -- add 4 second timeout to pulls
+    bugfix - make sure we have an ipv6 before attempting local connection
+
 0.1.9 - Sun Oct 11 04:05:54 2015 +0000
 
     added dashvote - time-randomized voting, initial curses UI
