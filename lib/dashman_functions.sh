@@ -80,6 +80,12 @@ usage(){
 EOF
 }
 
+_check_dependencies() {
+    which curl >/dev/null || die 'missing dependency: curl - sudo apt-get install curl'
+    which python >/dev/null || die 'missing dependency: python - sudo apt-get install python'
+    which nc >/dev/null || die 'missing dependency: netcat - sudo apt-get install netcat'
+    which perl >/dev/null || die 'missing dependency: perl - sudo apt-get install perl'
+}
 
 # attempt to locate dash-cli executable.
 # search current dir, ~/.dash, `which dash-cli` ($PATH), finally recursive

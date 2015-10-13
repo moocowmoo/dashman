@@ -39,6 +39,8 @@ source $DASHMAN_GITDIR/lib/dashman_functions.sh
 # show version and exit if requested
 [[ $VERSION ]] && echo $DASHMAN_VERSION && exit 0
 
+# see if users are missing anything critical
+_check_dependencies
 
 # have command, will travel... -----------------------------------------------
 
