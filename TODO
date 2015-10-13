@@ -1,0 +1,9 @@
+
+ - ipv6 support
+
+ - system lib (/usr/bin /usr/local/bin) support
+
+ - notification when protocol is updated (to resend masternode starts)
+
+ - testnet support (which will probably require arbitrary directory location support first)
+

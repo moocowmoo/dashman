@@ -86,7 +86,7 @@ given the optional 'now' argument.
 "dashman vote" automates voting and randomizes vote timestamps to help disassociate ownership
 Requires:
   * dash-cli in $PATH
-  * masternode.conf in $HOME/.dash
+  * masternode.conf in $HOME/.dash (or a dash.conf with masternode entries (Internet node voting))
   * python 2
 
 <a href="#vote">screencap</a>

@@ -199,6 +199,41 @@ def main(screen):
                 conf[4],
                 "txid": conf[3],
                 "txout": conf[4]}
+    if not masternodes:
+        # fallback to dash.conf entries if no masternode.conf entries
+        with open(os.path.join(dash_conf_dir, 'dash.conf'), 'r') as f:
+            lines = list(
+                line
+                for line in
+                (l.strip() for l in f)
+                if line and not line.startswith('#'))
+            conf = {}
+            for line in lines:
+                n, v = line.split('=')
+                conf[n.strip(' ')] = v.strip(' ')
+            if all(k in conf for k in ('masternode', 'masternodeaddr', 'masternodeprivkey')):
+                # get funding tx from dashninja
+                import urllib2
+                mninfo = urllib2.urlopen(
+                    "https://dashninja.pl/api/masternodes?ips=[\"" +
+                    conf['masternodeaddr'] +
+                    "\"]&portcheck=1").read()
+                try:
+                    mndata = json.loads(mninfo)
+                except:
+                    quit('cannot retrieve masternode info from dashninja')
+                d = mndata[u'data'][0]
+                vin = str(d[u'MasternodeOutputHash'])
+                vidx = str(d[u'MasternodeOutputIndex'])
+                masternodes[conf['masternodeaddr']] = {
+                    "mnprivkey": conf['masternodeprivkey'],
+                    "fundtx": vin +
+                    '-' +
+                    vidx,
+                    "txid": vin,
+                    "txout": vidx}
+            else:
+                quit('cannot find masternode information in dash.conf')
 
     # TODO open previous votes/local storage something
 
