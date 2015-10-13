@@ -25,6 +25,8 @@ pending(){ [[ $QUIET ]] || echo -en "$C_YELLOW$1$C_NORM" ; }
 
 ok(){ [[ $QUIET ]] || echo -e "$C_GREEN$1$C_NORM" ; }
 
+warn() { [[ $QUIET ]] || echo -e "$C_YELLOW$1$C_NORM" ; }
+
 err() { [[ $QUIET ]] || echo -e "$C_RED$1$C_NORM" ; }
 die() { [[ $QUIET ]] || echo -e "$C_RED$1$C_NORM" ; exit 1 ; }
 
@@ -710,18 +712,51 @@ get_dashd_status(){
         WEB_NINJA_MN_ADDY=$(echo "$WEB_NINJA_JSON_TEXT" | grep MasternodePubkey | awk '{print $2}' | sed -e 's/[",]//g')
         WEB_NINJA_MN_VIN=$(echo "$WEB_NINJA_JSON_TEXT" | grep MasternodeOutputHash | awk '{print $2}' | sed -e 's/[",]//g')
         WEB_NINJA_MN_VIDX=$(echo "$WEB_NINJA_JSON_TEXT" | grep MasternodeOutputIndex | awk '{print $2}' | sed -e 's/[",]//g')
+        WEB_NINJA_API_PAYMENTS=$($curl_cmd "https://dashninja.pl/api/blocks?testnet=0&pubkeys=\[\"${WEB_NINJA_MN_ADDY}\"\]&interval=P1M")
+        WEB_NINJA_PAYMENTS_JSON_TEXT=$(echo $WEB_NINJA_API_PAYMENTS | python -m json.tool)
+        WEB_NINJA_LAST_PAYMENT_BLOCK=$(echo "$WEB_NINJA_PAYMENTS_JSON_TEXT" | grep BlockId | head -1 | awk '{print $2}' | sed -e 's/,//')
+        WEB_NINJA_LAST_PAYMENT_AMOUNT=$(echo "$WEB_NINJA_PAYMENTS_JSON_TEXT" | grep BlockMNValue | head -1 | awk '{print $2}' | sed -e 's/,//')
+        WEB_NINJA_LAST_PAYMENT_TIME_EPOCH=$(echo "$WEB_NINJA_PAYMENTS_JSON_TEXT" | grep BlockTime | head -1 | awk '{print $2}' | sed -e 's/,//')
+        WEB_NINJA_LAST_PAYMENT_TIME=$(date -d @${WEB_NINJA_LAST_PAYMENT_TIME_EPOCH} '+%m/%d/%Y %H:%M:%S')
+
+        if [ ! -z "$WEB_NINJA_LAST_PAYMENT_TIME" ]; then
+            local daysago=$(dateDiff -d now "$WEB_NINJA_LAST_PAYMENT_TIME")
+            local hoursago=$(dateDiff -h now "$WEB_NINJA_LAST_PAYMENT_TIME")
+            hoursago=$(( hoursago - (24 * daysago) ))
+            WEB_NINJA_LAST_PAYMENT_TIME="$WEB_NINJA_LAST_PAYMENT_TIME ($daysago days, $hoursago hours ago)"
+        fi
     fi
 
 }
 
+date2stamp () {
+    date --utc --date "$1" +%s
+}
+
+stamp2date (){
+    date --utc --date "1970-01-01 $1 sec" "+%Y-%m-%d %T"
+}
+
+dateDiff (){
+    case $1 in
+        -s)   sec=1;      shift;;
+        -m)   sec=60;     shift;;
+        -h)   sec=3600;   shift;;
+        -d)   sec=86400;  shift;;
+        *)    sec=86400;;
+    esac
+    dte1=$(date2stamp $1)
+    dte2=$(date2stamp $2)
+    diffSec=$((dte2-dte1))
+    if ((diffSec < 0)); then abs=-1; else abs=1; fi
+    echo $((diffSec/sec*abs))
+}
+
 get_host_status(){
-
     HOST_LOAD_AVERAGE=$(cat /proc/loadavg | awk '{print $1" "$2" "$3}')
-
     uptime=$(</proc/uptime)
     uptime=${uptime%%.*}
     HOST_UPTIME_DAYS=$(( uptime/60/60/24 ))
-
 }
 
 
@@ -745,13 +780,15 @@ print_status() {
     pending "             (darkcoin.qa)   : " ; [ $WEB_BLOCK_COUNT_DQA    -gt 0 ] && ok $WEB_BLOCK_COUNT_DQA || err $WEB_BLOCK_COUNT_DQA
     pending "             (dashwhale)     : " ; [ $WEB_BLOCK_COUNT_DWHALE -gt 0 ] && ok $WEB_BLOCK_COUNT_DWHALE || err $WEB_BLOCK_COUNT_DWHALE
     pending "             (masternode.me) : " ; [ $WEB_ME_FORK_DETECT -gt 0 ] && err "$WEB_ME" || ok "$WEB_ME"
-
     if [ $DASHD_RUNNING -gt 0 ] && [ $MN_CONF_ENABLED -gt 0 ] ; then
         pending "  masternode started         : " ; [ $MN_STARTED -gt 0  ] && ok 'YES' || err 'NO'
         pending "  masternode visible (local) : " ; [ $MN_VISIBLE -gt 0  ] && ok 'YES' || err 'NO'
         pending "  masternode visible (ninja) : " ; [ $WEB_NINJA_SEES_OPEN -gt 0  ] && ok 'YES' || err 'NO'
         pending "  masternode address         : " ; ok $WEB_NINJA_MN_ADDY
         pending "  masternode funding txn     : " ; ok "$WEB_NINJA_MN_VIN-$WEB_NINJA_MN_VIDX"
+        pending "  masternode last payment    : " ; [ ! -z "$WEB_NINJA_LAST_PAYMENT_AMOUNT" ] && \
+            ok "$WEB_NINJA_LAST_PAYMENT_AMOUNT in $WEB_NINJA_LAST_PAYMENT_BLOCK on $WEB_NINJA_LAST_PAYMENT_TIME " || warn 'never'
+
     fi
 
 }
