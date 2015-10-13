@@ -611,6 +611,18 @@ get_dashd_status(){
     else
         DASHD_HASPID=$(pidof dashd)
     fi
+    DASHD_PID=$(pidof dashd)
+    DASHD_UPTIME=$(ps -p $DASHD_PID -o etime= | sed -e 's/ //g')
+    DASHD_UPTIME_TIMES=$(echo "$DASHD_UPTIME" | perl -ne 'chomp ; s/-/:/ ; print join ":", reverse split /:/')
+    DASHD_UPTIME_SECS=$( echo "$DASHD_UPTIME_TIMES" | cut -d: -f1 )
+    DASHD_UPTIME_MINS=$( echo "$DASHD_UPTIME_TIMES" | cut -d: -f2 )
+    DASHD_UPTIME_HOURS=$( echo "$DASHD_UPTIME_TIMES" | cut -d: -f3 )
+    DASHD_UPTIME_DAYS=$( echo "$DASHD_UPTIME_TIMES" | cut -d: -f4 )
+    if [ -z "$DASHD_UPTIME_DAYS" ]; then DASHD_UPTIME_DAYS=0 ; fi
+    if [ -z "$DASHD_UPTIME_HOURS" ]; then DASHD_UPTIME_HOURS=0 ; fi
+    if [ -z "$DASHD_UPTIME_MINS" ]; then DASHD_UPTIME_MINS=0 ; fi
+    if [ -z "$DASHD_UPTIME_SECS" ]; then DASHD_UPTIME_SECS=0 ; fi
+
     DASHD_LISTENING=`netstat -nat | grep LIST | grep 9999 | wc -l`;
     DASHD_CONNECTIONS=`netstat -nat | grep ESTA | grep 9999 | wc -l`;
     DASHD_CURRENT_BLOCK=`$DASH_CLI getblockcount 2>/dev/null`
@@ -693,6 +705,7 @@ print_status() {
     pending "  dashd version              : " ; ok "$CURRENT_VERSION"
     pending "  dashd up-to-date           : " ; [ $DASHD_UP_TO_DATE -gt 0 ] && ok 'YES' || err 'NO'
     pending "  dashd running              : " ; [ $DASHD_HASPID     -gt 0 ] && ok 'YES' || err 'NO'
+    pending "  dashd uptime               : " ; ok "$DASHD_UPTIME_DAYS days, $DASHD_UPTIME_HOURS hours, $DASHD_UPTIME_MINS mins, $DASHD_UPTIME_SECS secs"
     pending "  dashd responding (rpc)     : " ; [ $DASHD_RUNNING    -gt 0 ] && ok 'YES' || err 'NO'
     pending "  dashd listening  (ip)      : " ; [ $DASHD_LISTENING  -gt 0 ] && ok 'YES' || err 'NO'
     pending "  dashd connecting (peers)   : " ; [ $DASHD_CONNECTED  -gt 0 ] && ok 'YES' || err 'NO'
