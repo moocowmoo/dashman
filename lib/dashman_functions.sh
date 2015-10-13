@@ -452,6 +452,16 @@ install_dashd(){
         exit 0
     fi
 
+    get_public_ips
+    # prompt for ipv4 or ipv6 install
+    if [ ! -z "$PUBLIC_IPV6" ] && [ ! -z "$PUBLIC_IPV4" ]; then
+        pending " --- " ; echo
+        pending " - Host has both ipv4 and ipv6 addresses.\n - Use ipv6 for install?"
+        if confirm " [${C_GREEN}y${C_NORM}/${C_RED}N${C_NORM}] $C_CYAN"; then
+            USE_IPV6=1
+        fi
+    fi
+
     echo ""
 
     # prep it ----------------------------------------------------------------
@@ -460,7 +470,11 @@ install_dashd(){
 
     if [ ! -e $INSTALL_DIR/dash.conf ] ; then
         pending " --> creating dash.conf..."
-        IPADDR=`ifconfig eth0 | grep 'inet addr' | cut -d' ' -f12 | sed -e 's/addr://g'`
+
+        IPADDR=$PUBLIC_IPV4
+        if [ ! -z "$USE_IPV6" ]; then
+            IPADDR='['$PUBLIC_IPV6']'
+        fi
         RPCUSER=`echo $(dd status=none if=/dev/urandom bs=128 count=1) | sha256sum | awk '{print $1}'`
         RPCPASS=`echo $(dd status=none if=/dev/urandom bs=128 count=1) | sha256sum | awk '{print $1}'`
         while read; do
@@ -600,7 +614,6 @@ install_dashd(){
         exit 1
     fi
 
-
 }
 
 get_dashd_status(){
@@ -628,8 +641,6 @@ get_dashd_status(){
     DASHD_CURRENT_BLOCK=`$DASH_CLI getblockcount 2>/dev/null`
     if [ -z "$DASHD_CURRENT_BLOCK" ] ; then DASHD_CURRENT_BLOCK=0 ; fi
     DASHD_GETINFO=`$DASH_CLI getinfo 2>/dev/null`;
-
-    WEB_MNIP=`wget -qO- http://ipecho.net/plain`;
 
     WEB_BLOCK_COUNT_CHAINZ=`$curl_cmd https://chainz.cryptoid.info/dash/api.dws?q=getblockcount`;
     if [ -z "$WEB_BLOCK_COUNT_CHAINZ" ]; then
@@ -663,21 +674,31 @@ get_dashd_status(){
         DASHD_UP_TO_DATE=1
     fi
 
-    PUBLIC_PORT_CLOSED=$( timeout 5 nc -z $WEB_MNIP 9999; echo $? )
+    get_public_ips
+
+    PUBLIC_PORT_CLOSED=$( timeout 1 nc -4 -z $PUBLIC_IPV4 9999 2>/dev/null ; echo $? )
+    if [ $PUBLIC_PORT_CLOSED -ne 0 ]; then
+        PUBLIC_PORT_CLOSED=$( timeout 1 nc -6 -z $PUBLIC_IPV6 9999; echo $? )
+        if [ $PUBLIC_PORT_CLOSED -eq 0 ]; then
+            MASTERNODE_BIND_IP=$PUBLIC_IPV6
+        fi
+    else
+        MASTERNODE_BIND_IP=$PUBLIC_IPV4
+    fi
 
     # masternode specific
 
     MN_CONF_ENABLED=$( egrep '^[^#]*\s*masternode\s*=\s*1' $HOME/.dash/dash.conf | wc -l 2>/dev/null)
     MN_STARTED=`$DASH_CLI masternode debug 2>&1 | grep 'successfully started' | wc -l`
     MN_LIST=`$DASH_CLI masternode list full 2>/dev/null`
-    MN_VISIBLE=$(  echo "$MN_LIST" | grep $WEB_MNIP | wc -l)
+    MN_VISIBLE=$(  echo "$MN_LIST" | grep $MASTERNODE_BIND_IP | wc -l)
     MN_ENABLED=$(  echo "$MN_LIST" | grep -c ENABLED)
     MN_UNHEALTHY=$(echo "$MN_LIST" | grep -c POS_ERROR)
     MN_EXPIRED=$(  echo "$MN_LIST" | grep -c EXPIRED)
     MN_TOTAL=$(( $MN_ENABLED + $MN_UNHEALTHY ))
 
     if [ $MN_CONF_ENABLED -gt 0 ] ; then
-        WEB_NINJA_API=$($curl_cmd "https://dashninja.pl/api/masternodes?ips=\[\"${WEB_MNIP}:9999\"\]&portcheck=1")
+        WEB_NINJA_API=$($curl_cmd "https://dashninja.pl/api/masternodes?ips=\[\"${MASTERNODE_BIND_IP}:9999\"\]&portcheck=1")
         WEB_NINJA_JSON_TEXT=$(echo $WEB_NINJA_API | python -m json.tool)
         WEB_NINJA_SEES_OPEN=$(echo "$WEB_NINJA_JSON_TEXT" | grep '"Result"' | grep open | wc -l)
         WEB_NINJA_MN_ADDY=$(echo "$WEB_NINJA_JSON_TEXT" | grep MasternodePubkey | awk '{print $2}' | sed -e 's/[",]//g')
@@ -701,7 +722,7 @@ get_host_status(){
 print_status() {
     pending "  host uptime                : " ; ok "$HOST_UPTIME_DAYS days"
     pending "  host load average          : " ; ok "$HOST_LOAD_AVERAGE"
-    pending "  public IP address          : " ; ok "$WEB_MNIP"
+    pending "  public IP address          : " ; ok "$MASTERNODE_BIND_IP"
     pending "  dashd version              : " ; ok "$CURRENT_VERSION"
     pending "  dashd up-to-date           : " ; [ $DASHD_UP_TO_DATE -gt 0 ] && ok 'YES' || err 'NO'
     pending "  dashd running              : " ; [ $DASHD_HASPID     -gt 0 ] && ok 'YES' || err 'NO'
@@ -740,6 +761,11 @@ show_message_configure() {
     echo
     echo -e "    ${C_YELLOW}dashman restart now$C_NORM"
     echo
+}
+
+get_public_ips() {
+    PUBLIC_IPV4=$($curl_cmd -4 https://icanhazip.com/)
+    PUBLIC_IPV6=$($curl_cmd -6 https://icanhazip.com/)
 }
 
 cat_until() {
