@@ -164,7 +164,7 @@ _check_dashman_updates() {
         echo -e "\n"
         echo -e "${C_RED}${0##*/} requires updating. Latest version is: $C_GREEN$GITHUB_DASHMAN_VERSION$C_RED\nDo 'dashman sync' manually, or choose yes below.$C_NORM\n"
 
-        pending "sync dashman to github now?"
+        pending "sync dashman to github now? "
 
         if confirm " [${C_GREEN}y${C_NORM}/${C_RED}N${C_NORM}] $C_CYAN"; then
             echo $DASHMAN_VERSION > $DASHMAN_GITDIR/PREVIOUS_VERSION
