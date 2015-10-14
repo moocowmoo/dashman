@@ -13,7 +13,7 @@ import tty
 
 
 VERSION = '0.0.1'
-git_dir = os.path.dirname(os.path.abspath(__file__))
+git_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 dash_conf_dir = os.path.join(os.getenv('HOME'), '.dash')
 
 sys.path.append(git_dir + '/lib')

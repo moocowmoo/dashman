@@ -159,7 +159,7 @@ case "$1" in
             _check_dashd_running
             ok " DONE!"
             echo
-            /usr/bin/env python $DASHMAN_GITDIR/dashvote.py
+            /usr/bin/env python $DASHMAN_GITDIR/bin/dashvote.py
             quit 'Exiting.'
             ;;
         status)
