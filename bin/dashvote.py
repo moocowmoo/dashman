@@ -128,7 +128,7 @@ def submit_votes(win, ballot, s):
     #            print netvote + ' ' + signature
     #            print command
                 stdout = run_command(command)
-                stdscr.addstr(stdout.rstrip("\n") + "\n", 'successfully' in stdout and C_GREEN or C_RED )
+                stdscr.addstr(stdout.rstrip("\n") + "\n", 'successfully' in stdout and C_GREEN or C_RED)
                 stdscr.refresh()
 
     stdscr.addstr("\nHit any key to exit." + "\n", C_GREEN)
@@ -165,11 +165,9 @@ def main(screen):
     C_GREEN = curses.color_pair(3)
     C_RED = curses.color_pair(2)
 
-
-
     # test dash-cli in path -- TODO make robust
     try:
-        stdout = run_command('dash-cli getinfo')
+        run_command('dash-cli getinfo')
     except subprocess.CalledProcessError:
         quit(
             "--> cannot find dash-cli in $PATH\n" +
