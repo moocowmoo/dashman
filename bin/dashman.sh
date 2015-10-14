@@ -30,7 +30,7 @@ shift $(($OPTIND - 1))
 
 # load common functions ------------------------------------------------------
 
-DASHMAN_GITDIR=${0%%/${0##*/}}
+DASHMAN_GITDIR=$(readlink -f ${0%%/${0##*/}})
 source $DASHMAN_GITDIR/lib/dashman_functions.sh
 
 # show help and exit if requested or no command supplied - TODO make command specific
