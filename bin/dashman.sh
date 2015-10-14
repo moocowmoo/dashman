@@ -127,7 +127,9 @@ case "$1" in
             fi
 
             if [ ! -z "$2" ]; then
-                exec $DASHMAN_GITDIR/${0##*/} $2
+                self=${0##*/};
+                shift;
+                exec $DASHMAN_GITDIR/$self $@
             fi
             quit 'Up to date.'
             ;;
@@ -147,7 +149,7 @@ case "$1" in
                 git checkout $2
                 git reset --hard origin/$2
             else
-                die "Branch $2 not found. Exiting."
+                die "git branch '$2' not found. Exiting."
             fi
             ;;
         vote)
