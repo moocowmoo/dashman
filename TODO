@@ -5,3 +5,4 @@
 
  - testnet support (which will probably require arbitrary directory location support first)
 
+ - fix sync command chaining when called from outside dashman dir 'dashman/dashman'

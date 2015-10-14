@@ -167,10 +167,13 @@ def main(screen):
 
 
     # test dash-cli in path -- TODO make robust
-    stdout = run_command('dash-cli getinfo')
-
-    if not stdout:
-        raise OSError('cannot find dash-cli in $PATH')
+    try:
+        stdout = run_command('dash-cli getinfo')
+    except subprocess.CalledProcessError:
+        quit(
+            "--> cannot find dash-cli in $PATH\n" +
+            "    do: export PATH=/path/to/dash-cli-folder:$PATH\n" +
+            "    and try again\n")
 
     # get ballot
     ballot = json.loads(run_command('dash-cli mnbudget show'))
