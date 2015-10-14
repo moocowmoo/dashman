@@ -631,9 +631,12 @@ get_dashd_status(){
         DASHD_HASPID=`ps --no-header \`cat $INSTALL_DIR/dashd.pid 2>/dev/null\` | wc -l`;
     else
         DASHD_HASPID=$(pidof dashd)
+        if [ $? -gt 0 ]; then
+            DASHD_HASPID=0
+        fi
     fi
     DASHD_PID=$(pidof dashd)
-    DASHD_UPTIME=$(ps -p $DASHD_PID -o etime= | sed -e 's/ //g')
+    DASHD_UPTIME=$(ps -p $DASHD_PID -o etime= 2>/dev/null | sed -e 's/ //g')
     DASHD_UPTIME_TIMES=$(echo "$DASHD_UPTIME" | perl -ne 'chomp ; s/-/:/ ; print join ":", reverse split /:/')
     DASHD_UPTIME_SECS=$( echo "$DASHD_UPTIME_TIMES" | cut -d: -f1 )
     DASHD_UPTIME_MINS=$( echo "$DASHD_UPTIME_TIMES" | cut -d: -f2 )
@@ -684,6 +687,7 @@ get_dashd_status(){
 
     get_public_ips
 
+    MASTERNODE_BIND_IP='none'
     PUBLIC_PORT_CLOSED=$( timeout 1 nc -4 -z $PUBLIC_IPV4 9999 2>/dev/null ; echo $? )
     if [ $PUBLIC_PORT_CLOSED -ne 0 ] && [ ! -z "$PUBLIC_IPV6" ]; then
         PUBLIC_PORT_CLOSED=$( timeout 1 nc -6 -z $PUBLIC_IPV6 9999; echo $? )
@@ -762,7 +766,7 @@ get_host_status(){
 
 print_status() {
     pending "  host uptime/load average   : " ; ok "$HOST_UPTIME_DAYS days, $HOST_LOAD_AVERAGE"
-    pending "  dashd bind ip address      : " ; ok "$MASTERNODE_BIND_IP"
+    pending "  dashd bind ip address      : " ; [ $MASTERNODE_BIND_IP != 'none' ] && ok $MASTERNODE_BIND_IP || err $MASTERNODE_BIND_IP
     pending "  dashd version              : " ; ok "$CURRENT_VERSION"
     pending "  dashd up-to-date           : " ; [ $DASHD_UP_TO_DATE -gt 0 ] && ok 'YES' || err 'NO'
     pending "  dashd running              : " ; [ $DASHD_HASPID     -gt 0 ] && ok 'YES' || err 'NO'
