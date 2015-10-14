@@ -1,4 +1,17 @@
 
+0.1.11 -  Wed Oct 14 08:19:10 2015 +0000
+
+    added balance display
+
+    bugfix - proper sync exec when called from relative path
+    bugfix - voting - fail gracefully when dash-cli not in path
+    bugfix - use initial api pull values for last payment
+    bugfix - proper ipv6 formatting for hot-node voting
+
+    support multiple sync exec arguments
+    moved scripts to bin directory
+    style - unify all gathering messages
+
 0.1.10 -  Tue Oct 13 07:18:29 2015 +0000
 
     added ipv6 support - use icanhazip for ipv4/6 polling
