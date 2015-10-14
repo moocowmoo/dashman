@@ -4,11 +4,12 @@ import curses
 import datetime
 import json
 import os
+import re
 import subprocess
 import sys
+import termios
 import time
 import tty
-import termios
 
 
 VERSION = '0.0.1'
@@ -211,6 +212,7 @@ def main(screen):
             for line in lines:
                 n, v = line.split('=')
                 conf[n.strip(' ')] = v.strip(' ')
+            conf['masternodeaddr'] = re.sub('[\[\]]', '', conf['masternodeaddr'])
             if all(k in conf for k in ('masternode', 'masternodeaddr', 'masternodeprivkey')):
                 # get funding tx from dashninja
                 import urllib2
