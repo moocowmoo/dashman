@@ -148,6 +148,7 @@ def main(screen):
     global C_YELLOW, C_GREEN, C_RED, C_CYAN
 
     stdscr = screen
+    stdscr.scrollok(1)
 
     try:
         curses.curs_set(2)
