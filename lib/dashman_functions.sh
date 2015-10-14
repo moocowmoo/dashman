@@ -712,12 +712,11 @@ get_dashd_status(){
         WEB_NINJA_MN_ADDY=$(echo "$WEB_NINJA_JSON_TEXT" | grep MasternodePubkey | awk '{print $2}' | sed -e 's/[",]//g')
         WEB_NINJA_MN_VIN=$(echo "$WEB_NINJA_JSON_TEXT" | grep MasternodeOutputHash | awk '{print $2}' | sed -e 's/[",]//g')
         WEB_NINJA_MN_VIDX=$(echo "$WEB_NINJA_JSON_TEXT" | grep MasternodeOutputIndex | awk '{print $2}' | sed -e 's/[",]//g')
-        WEB_NINJA_API_PAYMENTS=$($curl_cmd "https://dashninja.pl/api/blocks?testnet=0&pubkeys=\[\"${WEB_NINJA_MN_ADDY}\"\]&interval=P1M")
-        WEB_NINJA_PAYMENTS_JSON_TEXT=$(echo $WEB_NINJA_API_PAYMENTS | python -m json.tool)
-        WEB_NINJA_LAST_PAYMENT_BLOCK=$(echo "$WEB_NINJA_PAYMENTS_JSON_TEXT" | grep BlockId | head -1 | awk '{print $2}' | sed -e 's/,//')
-        WEB_NINJA_LAST_PAYMENT_AMOUNT=$(echo "$WEB_NINJA_PAYMENTS_JSON_TEXT" | grep BlockMNValue | head -1 | awk '{print $2}' | sed -e 's/,//')
-        WEB_NINJA_LAST_PAYMENT_TIME_EPOCH=$(echo "$WEB_NINJA_PAYMENTS_JSON_TEXT" | grep BlockTime | head -1 | awk '{print $2}' | sed -e 's/,//')
-        WEB_NINJA_LAST_PAYMENT_TIME=$(date -d @${WEB_NINJA_LAST_PAYMENT_TIME_EPOCH} '+%m/%d/%Y %H:%M:%S')
+        WEB_NINJA_MN_LAST_PAID_TIME_EPOCH=$(echo "$WEB_NINJA_JSON_TEXT" | grep MNLastPaidTime | awk '{print $2}' | sed -e 's/[",]//g')
+        WEB_NINJA_MN_LAST_PAID_AMOUNT=$(echo "$WEB_NINJA_JSON_TEXT" | grep MNLastPaidAmount | awk '{print $2}' | sed -e 's/[",]//g')
+        WEB_NINJA_MN_LAST_PAID_BLOCK=$(echo "$WEB_NINJA_JSON_TEXT" | grep MNLastPaidBlock | awk '{print $2}' | sed -e 's/[",]//g')
+
+        WEB_NINJA_LAST_PAYMENT_TIME=$(date -d @${WEB_NINJA_MN_LAST_PAID_TIME_EPOCH} '+%m/%d/%Y %H:%M:%S')
 
         if [ ! -z "$WEB_NINJA_LAST_PAYMENT_TIME" ]; then
             local daysago=$(dateDiff -d now "$WEB_NINJA_LAST_PAYMENT_TIME")
@@ -785,8 +784,8 @@ print_status() {
     pending "  masternode visible (ninja) : " ; [ $WEB_NINJA_SEES_OPEN -gt 0  ] && ok 'YES' || err 'NO'
     pending "  masternode address         : " ; ok $WEB_NINJA_MN_ADDY
     pending "  masternode funding txn     : " ; ok "$WEB_NINJA_MN_VIN-$WEB_NINJA_MN_VIDX"
-    pending "  masternode last payment    : " ; [ ! -z "$WEB_NINJA_LAST_PAYMENT_AMOUNT" ] && \
-        ok "$WEB_NINJA_LAST_PAYMENT_AMOUNT in $WEB_NINJA_LAST_PAYMENT_BLOCK on $WEB_NINJA_LAST_PAYMENT_TIME " || warn 'never'
+    pending "  masternode last payment    : " ; [ ! -z "$WEB_NINJA_MN_LAST_PAID_AMOUNT" ] && \
+        ok "$WEB_NINJA_MN_LAST_PAID_AMOUNT in $WEB_NINJA_MN_LAST_PAID_BLOCK on $WEB_NINJA_LAST_PAYMENT_TIME " || warn 'never'
 
     fi
 
