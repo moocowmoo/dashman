@@ -68,12 +68,12 @@ case "$1" in
             ;;
         update)
             COMMAND=$1
-            pending "gathering info..."
+            pending "gathering info, please wait..."
             _check_dashman_updates
             _find_dash_directory
             _get_versions
             _check_dashd_running
-            ok "DONE!"
+            ok " DONE!"
             if [ ! -z "$RPI" ]; then
                 die "$COMMAND not supported yet on this platform."
             fi
@@ -81,10 +81,10 @@ case "$1" in
             ;;
         install)
             COMMAND=$1
-            pending "gathering info..."
+            pending "gathering info, please wait..."
             _check_dashman_updates
             _get_versions
-            ok "DONE!"
+            ok " DONE!"
             if [ ! -z "$RPI" ]; then
                 die "$COMMAND not supported yet on this platform."
             fi
@@ -94,13 +94,13 @@ case "$1" in
             ;;
         reinstall)
             COMMAND=$1
-            pending "gathering info..."
+            pending "gathering info, please wait..."
             _check_dashman_updates
             _find_dash_directory
             _get_versions
             _check_dashd_running
             REINSTALL=1
-            ok "DONE!"
+            ok " DONE!"
             if [ ! -z "$RPI" ]; then
                 die "$COMMAND not supported yet on this platform."
             fi
