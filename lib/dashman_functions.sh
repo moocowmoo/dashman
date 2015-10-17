@@ -85,8 +85,18 @@ EOF
 _check_dependencies() {
     which curl >/dev/null || die 'missing dependency: curl - sudo apt-get install curl'
     which python >/dev/null || die 'missing dependency: python - sudo apt-get install python'
-    which nc >/dev/null || die 'missing dependency: netcat - sudo apt-get install netcat'
     which perl >/dev/null || die 'missing dependency: perl - sudo apt-get install perl'
+
+    # make sure we have the right netcat version (-4,-6 flags)
+    if [ ! -z "$(which nc)" ]; then
+        nc -z -4 8.8.8.8 53 2>/dev/null
+        if [ $? -gt 0 ]; then
+            die 'missing dependency: netcat6 - sudo apt-get install netcat6'
+        fi
+    else
+        die 'missing dependency: netcat - sudo apt-get install netcat'
+    fi
+
 }
 
 # attempt to locate dash-cli executable.
