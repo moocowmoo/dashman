@@ -109,8 +109,8 @@ case "$1" in
         sync)
             COMMAND=$1
             cd $DASHMAN_GITDIR
-            git remote update -p
             git fetch --prune origin +refs/tags/*:refs/tags/*
+            git remote update -p
             if [ -z $(git config user.email) ] ; then
                 git config user.email "dashmanuser"
                 git config user.name "dashmanuser"
@@ -136,8 +136,8 @@ case "$1" in
         branch)
             COMMAND=$1
             cd $DASHMAN_GITDIR
-            git remote update -p
             git fetch --prune origin +refs/tags/*:refs/tags/*
+            git remote update -p
             if [ -z $(git config user.email) ] ; then
                 git config user.email "dashmanuser"
                 git config user.name "dashmanuser"

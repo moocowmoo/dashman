@@ -17,7 +17,7 @@ DOWNLOAD_PAGE='https://www.dashpay.io/downloads/'
 DASHD_RUNNING=0
 DASHMAN_VERSION=$(cat $DASHMAN_GITDIR/VERSION)
 
-curl_cmd='timeout 5 curl -s'
+curl_cmd='timeout 7 curl -s'
 
 # (mostly) functioning functions -- lots of refactoring to do ----------------
 
@@ -89,7 +89,7 @@ _check_dependencies() {
 
     # make sure we have the right netcat version (-4,-6 flags)
     if [ ! -z "$(which nc)" ]; then
-        nc -z -4 8.8.8.8 53 2>/dev/null
+        nc -z -4 8.8.8.8 53 2>&1 >/dev/null
         if [ $? -gt 0 ]; then
             die 'missing dependency: netcat6 - sudo apt-get install netcat6'
         fi
@@ -107,7 +107,7 @@ _find_dash_directory() {
 
     # dash-cli in PATH
 
-    if [ ! -z $(which dash-cli) ] ; then
+    if [ ! -z $(which dash-cli 2>/dev/null) ] ; then
         INSTALL_DIR=$(readlink -f `which dash-cli`)
         INSTALL_DIR=${INSTALL_DIR%%/dash-cli*};
 
@@ -493,8 +493,8 @@ install_dashd(){
         if [ ! -z "$USE_IPV6" ]; then
             IPADDR='['$PUBLIC_IPV6']'
         fi
-        RPCUSER=`echo $(dd status=none if=/dev/urandom bs=128 count=1) | sha256sum | awk '{print $1}'`
-        RPCPASS=`echo $(dd status=none if=/dev/urandom bs=128 count=1) | sha256sum | awk '{print $1}'`
+        RPCUSER=`echo $(dd if=/dev/urandom bs=128 count=1 2>/dev/null) | sha256sum | awk '{print $1}'`
+        RPCPASS=`echo $(dd if=/dev/urandom bs=128 count=1 2>/dev/null) | sha256sum | awk '{print $1}'`
         while read; do
             eval echo "$REPLY"
         done < $DASHMAN_GITDIR/.dash.conf.template > $INSTALL_DIR/dash.conf
@@ -698,9 +698,9 @@ get_dashd_status(){
     get_public_ips
 
     MASTERNODE_BIND_IP='none'
-    PUBLIC_PORT_CLOSED=$( timeout 1 nc -4 -z $PUBLIC_IPV4 9999 2>/dev/null ; echo $? )
+    PUBLIC_PORT_CLOSED=$( timeout 2 nc -4 -z $PUBLIC_IPV4 9999 2>&1 >/dev/null; echo $? )
     if [ $PUBLIC_PORT_CLOSED -ne 0 ] && [ ! -z "$PUBLIC_IPV6" ]; then
-        PUBLIC_PORT_CLOSED=$( timeout 1 nc -6 -z $PUBLIC_IPV6 9999; echo $? )
+        PUBLIC_PORT_CLOSED=$( timeout 2 nc -6 -z $PUBLIC_IPV6 9999 2>&1 >/dev/null; echo $? )
         if [ $PUBLIC_PORT_CLOSED -eq 0 ]; then
             MASTERNODE_BIND_IP=$PUBLIC_IPV6
         fi
