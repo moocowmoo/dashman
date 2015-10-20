@@ -84,7 +84,7 @@ EOF
 
 _check_dependencies() {
 
-    which python 2>&1 >/dev/null || die 'missing dependency: python - sudo apt-get install python'
+    (which python 2>&1) >/dev/null || die 'missing dependency: python - sudo apt-get install python'
 
     PLATFORM=$(/usr/bin/env python -mplatform | sed -e 's/.*with-//g')
     if [[ $PLATFORM == *"Ubuntu"* ]] || [[ $PLATFORM == *"debian"* ]]; then
@@ -94,17 +94,17 @@ _check_dependencies() {
     fi
 
     if [ -z "$PKG_MANAGER" ]; then
-        which apt-get 2>&1 >/dev/null || \
-            which yum 2>&1 >/dev/null || \
+        (which apt-get 2>&1) >/dev/null || \
+            (which yum 2>&1) >/dev/null || \
             die 'cannot determine platform/package manager'
     fi
 
-    which curl 2>&1 >/dev/null || die "missing dependency: curl - sudo $PKG_MANAGER install curl"
-    which perl 2>&1 >/dev/null || die "missing dependency: perl - sudo $PKG_MANAGER install perl"
+    (which curl 2>&1) >/dev/null || die "missing dependency: curl - sudo $PKG_MANAGER install curl"
+    (which perl 2>&1) >/dev/null || die "missing dependency: perl - sudo $PKG_MANAGER install perl"
 
     # make sure we have the right netcat version (-4,-6 flags)
     if [ ! -z "$(which nc)" ]; then
-        nc -z -4 8.8.8.8 53 2>&1 >/dev/null
+        (nc -z -4 8.8.8.8 53 2>&1) >/dev/null
         if [ $? -gt 0 ]; then
             die "missing dependency: netcat6 - sudo $PKG_MANAGER install netcat6"
         fi
