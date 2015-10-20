@@ -739,6 +739,12 @@ get_dashd_status(){
     MN_EXPIRED=$(  echo "$MN_LIST" | grep -c EXPIRED)
     MN_TOTAL=$(( $MN_ENABLED + $MN_UNHEALTHY ))
 
+    if [ $MN_VISIBLE -gt 0 ]; then
+        MN_QUEUE_LENGTH=$(echo "$MN_LIST" | grep ENABLED | wc -l)
+        MN_QUEUE_POSITION=$(echo "$MN_LIST" | grep ENABLED | sort -r -n -k10 | grep -A9999999 $MASTERNODE_BIND_IP | wc -l)
+        MN_QUEUE_IN_SELECTION=$(( $MN_QUEUE_POSITION <= $(( $MN_QUEUE_LENGTH / 10 )) ))
+    fi
+
     if [ $MN_CONF_ENABLED -gt 0 ] ; then
         WEB_NINJA_API=$($curl_cmd "https://dashninja.pl/api/masternodes?ips=\[\"${MASTERNODE_BIND_IP}:9999\"\]&portcheck=1&balance=1")
         if [ -z "$WEB_NINJA_API" ]; then
@@ -823,6 +829,7 @@ print_status() {
     pending "  masternode visible (ninja) : " ; [ $WEB_NINJA_SEES_OPEN -gt 0  ] && ok 'YES' || err 'NO'
     pending "  masternode address         : " ; ok $WEB_NINJA_MN_ADDY
     pending "  masternode funding txn     : " ; ok "$WEB_NINJA_MN_VIN-$WEB_NINJA_MN_VIDX"
+    pending "  masternode queue position  : " ; [ $MN_QUEUE_IN_SELECTION -gt 0  ] && ok "$MN_QUEUE_POSITION/$MN_QUEUE_LENGTH (selection pending)" || (pending "$MN_QUEUE_POSITION" && ok "/$MN_QUEUE_LENGTH")
     pending "  masternode last payment    : " ; [ ! -z "$WEB_NINJA_MN_LAST_PAID_AMOUNT" ] && \
         ok "$WEB_NINJA_MN_LAST_PAID_AMOUNT in $WEB_NINJA_MN_LAST_PAID_BLOCK on $WEB_NINJA_LAST_PAYMENT_TIME " || warn 'never'
     pending "  masternode balance         : " ; [ ! -z "$WEB_NINJA_MN_BALANCE" ] && ok "$WEB_NINJA_MN_BALANCE" || warn '0'
