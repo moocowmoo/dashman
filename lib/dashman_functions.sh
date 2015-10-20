@@ -674,6 +674,11 @@ get_dashd_status(){
     fi
 
     WEB_DASHWHALE=`$curl_cmd https://www.dashwhale.org/api/v1/public`;
+    if [ -z "$WEB_DASHWHALE" ]; then
+        sleep 3
+        WEB_DASHWHALE=`$curl_cmd https://www.dashwhale.org/api/v1/public`;
+    fi
+
     WEB_DASHWHALE_JSON_TEXT=$(echo $WEB_DASHWHALE | python -m json.tool)
     WEB_BLOCK_COUNT_DWHALE=$(echo "$WEB_DASHWHALE_JSON_TEXT" | grep consensus_blockheight | awk '{print $2}' | sed -e 's/[",]//g')
 
@@ -721,6 +726,10 @@ get_dashd_status(){
 
     if [ $MN_CONF_ENABLED -gt 0 ] ; then
         WEB_NINJA_API=$($curl_cmd "https://dashninja.pl/api/masternodes?ips=\[\"${MASTERNODE_BIND_IP}:9999\"\]&portcheck=1&balance=1")
+        if [ -z "$WEB_NINJA_API" ]; then
+            sleep 3
+            WEB_NINJA_API=$($curl_cmd "https://dashninja.pl/api/masternodes?ips=\[\"${MASTERNODE_BIND_IP}:9999\"\]&portcheck=1&balance=1")
+        fi
         WEB_NINJA_JSON_TEXT=$(echo $WEB_NINJA_API | python -m json.tool)
         WEB_NINJA_SEES_OPEN=$(echo "$WEB_NINJA_JSON_TEXT" | grep '"Result"' | grep open | wc -l)
         WEB_NINJA_MN_ADDY=$(echo "$WEB_NINJA_JSON_TEXT" | grep MasternodePubkey | awk '{print $2}' | sed -e 's/[",]//g')
@@ -823,6 +832,11 @@ show_message_configure() {
 get_public_ips() {
     PUBLIC_IPV4=$($curl_cmd -4 https://icanhazip.com/)
     PUBLIC_IPV6=$($curl_cmd -6 https://icanhazip.com/)
+    if [ -z "$PUBLIC_IPV4" ] && [ -z "$PUBLIC_IPV6" ]; then
+        err "  --> failed to resolve public ip. retrying..."
+        sleep 3
+        get_public_ips
+    fi
 }
 
 cat_until() {
