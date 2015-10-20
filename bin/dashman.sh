@@ -88,8 +88,16 @@ case "$1" in
             if [ ! -z "$RPI" ]; then
                 die "$COMMAND not supported yet on this platform."
             fi
-            install_dashd
-            show_message_configure
+            if [ ! -z "$2" ]; then
+                # check command matches:
+                # monit
+                # dashman
+                # ???
+                echo "installing $2"
+            else
+                install_dashd
+                show_message_configure
+            fi
             quit
             ;;
         reinstall)
