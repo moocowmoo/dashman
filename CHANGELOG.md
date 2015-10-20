@@ -1,4 +1,19 @@
 
+0.1.12 -  Tue Oct 20 21:14:51 2015 +0000
+
+    added payment queue position display
+
+    bugfix - detect netcat -4,-6 switch support before embarking, prompt to install appropriate package
+    bugfix - hide stderr output during dependency tests
+    bugfix - retry web pulls once on failure - retry public ip lookup on failure
+    bugfix - status - fail gracefully if dashd not running
+    bugfix - vote - dont crash when masternode votes exceeds screen height
+    compat - fixes for older oses - stderr and git syntax
+
+    initial platform detection code
+    style - pep8 formatting
+    style - space after sync prompt
+
 0.1.11 -  Wed Oct 14 08:19:10 2015 +0000
 
     added balance display
