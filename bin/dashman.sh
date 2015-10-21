@@ -153,7 +153,7 @@ case "$1" in
             BRANCH_OK=$(git for-each-ref --format='%(refname)' refs/remotes/origin | sed -e 's|refs/remotes/origin/||g' | grep "^${2}\$" | wc -l)
             if [ $BRANCH_OK -gt 0 ];then
                 git stash
-                pending "Switing to git branch "; ok $2
+                pending "Switching to git branch "; ok $2
                 git checkout $2
                 git reset --hard origin/$2
             else
