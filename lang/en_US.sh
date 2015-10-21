@@ -1,0 +1,126 @@
+
+#echo "en_US"
+
+messages=(
+
+    ["dashman_version"]="dashman version"
+    ["gathering_info"]="gathering info, please wait..."
+    ["done"]="DONE!"
+    ["exiting"]="Exiting."
+
+    ["days"]="days"
+    ["hours"]="hours"
+    ["mins"]="mins"
+    ["secs"]="secs"
+
+    ["YES"]="YES"
+    ["NO"]="NO"
+    ["FAILED"]="FAILED!"
+
+    ["prompt_are_you_sure"]="Are you sure?"
+    ["prompt_ipv4_ipv6"]="Host has both ipv4 and ipv6 addresses.\n - Use ipv6 for install?"
+
+    ["download"]="download"
+    ["downloading"]="downloading"
+    ["creating"]="creating"
+    ["checksum"]="checksum"
+    ["checksumming"]="checksumming"
+    ["unpacking"]="unpacking"
+    ["stopping"]="stopping"
+    ["removing_old_version"]="Removing old version..."
+    ["please_wait"]="Please wait..."
+    ["try_again_later"]="Try again later."
+    ["launching"]="Launching"
+    ["waiting_for_dashd_to_respond"]="Waiting for dashd to respond..."
+    ["deleting_cache_files"]="Deleting cache files, debug.log..."
+    ["starting_dashd"]="Starting dashd..."
+
+    ["err_downloading_file"]="error downloading file"
+    ["err_tried_to_get"]="tried to get"
+    ["err_no_pkg_mgr"]="cannot determine platform/package manager"
+    ["err_missing_dependency"]="missing dependency:"
+    ["err_unknown_platform"]="unknown platform:"
+    ["err_dashman_supports"]="dashman currently only supports 32/64bit linux"
+    ["err_could_not_get_version"]="Could not find latest version from"
+    ["err_failed_ip_resolve"]="failed to resolve public ip. retrying..."
+
+    ["newer_dash_available"]="a newer version of dash is available."
+    ["successfully_upgraded"]="dash successfully upgraded to version"
+    ["successfully_installed"]="successfully installed!"
+    ["installed_in"]="Installed in"
+    ["dash_version"]="dash version"
+    ["is_not_uptodate"]="is not up to date."
+    ["is_uptodate"]="is up to date."
+    ["preexisting_dir"]="pre-existing directory"
+    ["run_reinstall"]="Run 'dashman reinstall' to overwrite."
+    ["reinstall_to"]="reinstall to"
+    ["and_install_to"]="and install to"
+
+    ["exec_found_in_system_dir"]="dash executables found in system dir"
+    ["run_dashman_as_root"]=". Run dashman as root (sudo dashman command) to continue."
+    ["dashd_not_found"]="dashd not found in"
+    ["dashcli_not_found"]="dash-cli not found in"
+    ["dashcli_not_found_in_cwd"]="cannot find dash-cli in current directory"
+
+    ["sync_to_github"]="sync dashman to github now?"
+
+    ["usage"]="USAGE"
+    ["commands"]="COMMANDS"
+    ["usage_title"]="installs, updates, and manages single-user dash daemons and wallets"
+    ["usage_install_description"]="installs, updates, and manages single-user dash daemons and wallets"
+    ["usage_update_description"]="updates dash to latest version and restarts (see below)"
+    ["usage_restart_description"]="restarts dashd and deletes:"
+    ["usage_restart_description_now"]="will prompt user if not given the 'now' argument"
+    ["usage_status_description"]="polls local and web sources and displays current status"
+    ["usage_vote_description"]="cast masternode votes for distributed budget ballot items"
+    ["usage_reinstall_description"]="overwrites dash with latest version and restarts (see below)"
+    ["usage_version_description"]="prints dashmans version number and exits"
+
+
+    ["to_enable_masternode"]="To enable your masternode,"
+    ["uncomment_conf_lines"]="uncomment and configure the masternode lines in:"
+    ["then_run"]="then run:"
+
+    ["quit_uptodate"]="Up to date."
+
+    ["requires_updating"]="requires updating. Latest version is:"
+    ["requires_sync"]="Do 'dashman sync' manually, or choose yes below."
+
+    ["no_forks_detected"]="no forks detected"
+
+    # space aligned strings. pay attention to spaces!
+    ["currnt_version"]="  current version: "
+    ["latest_version"]="   latest version: "
+
+    ["status_uptimeh"]="  host uptime/load average   : "
+    ["status_dashdip"]="  dashd bind ip address      : "
+    ["status_dashdve"]="  dashd version              : "
+    ["status_uptodat"]="  dashd up-to-date           : "
+    ["status_running"]="  dashd running              : "
+    ["status_uptimed"]="  dashd uptime               : "
+    ["status_drespon"]="  dashd responding (rpc)     : "
+    ["status_dlisten"]="  dashd listening  (ip)      : "
+    ["status_dconnec"]="  dashd connecting (peers)   : "
+    ["status_dportop"]="  dashd port open            : "
+    ["status_dconcnt"]="  dashd connection count     : "
+    ["status_dblsync"]="  dashd blocks synced        : "
+    ["status_dbllast"]="  last block (local dashd)   : "
+    ["status_webchai"]="             (chainz)        : "
+    ["status_webdark"]="             (darkcoin.qa)   : "
+    ["status_webdash"]="             (dashwhale)     : "
+    ["status_webmast"]="             (masternode.me) : "
+    ["status_dcurdif"]="  dashd current difficulty   : "
+    ["status_mncount"]="  masternode count           : "
+    ["status_mnstart"]="  masternode started         : "
+    ["status_mnvislo"]="  masternode visible (local) : "
+    ["status_mnvisni"]="  masternode visible (ninja) : "
+    ["status_mnaddre"]="  masternode address         : "
+    ["status_mnfundt"]="  masternode funding txn     : "
+    ["status_mnqueue"]="  masternode queue/count     : "
+    ["status_mnlastp"]="  masternode last payment    : "
+    ["status_mnbalan"]="  masternode balance         : "
+
+    ["ago"]=" ago"
+    ["found"]="found."
+
+)

@@ -30,34 +30,37 @@ warn() { [[ $QUIET ]] || echo -e "$C_YELLOW$1$C_NORM" ; }
 err() { [[ $QUIET ]] || echo -e "$C_RED$1$C_NORM" ; }
 die() { [[ $QUIET ]] || echo -e "$C_RED$1$C_NORM" ; exit 1 ; }
 
-quit(){ [[ $QUIET ]] || echo -e "$C_GREEN${1:-Exiting.}$C_NORM" ; exit 0 ; }
+quit(){ [[ $QUIET ]] || echo -e "$C_GREEN${1:-${messages["exiting"]}}$C_NORM" ; echo ; exit 0 ; }
 
-confirm() { read -r -p "$(echo -e "${1:-Are you sure? [y/N]}")" ; [[ ${REPLY:0:1} = [Yy] ]]; }
+confirm() { read -r -p "$(echo -e "${1:-${messages["prompt_are_you_sure"]} [y/N]}")" ; [[ ${REPLY:0:1} = [Yy] ]]; }
+
 
 usage(){
     cat<<EOF
 
-    USAGE: ${0##*/} [command]
 
-        installs, updates, and manages single-user dash daemons and wallets
 
-    COMMANDS
+    ${messages["usage"]}: ${0##*/} [command]
+
+        ${messages["usage_title"]}
+
+    ${messages["commands"]}
 
         install
 
-            creates a fresh dash installation and starts dashd
+            ${messages["usage_install_description"]}
 
         update
 
-            updates dash to latest version and restarts (see below)
+            ${messages["usage_update_description"]}
 
         reinstall
 
-            overwrites dash with latest version and restarts (see below)
+            ${messages["usage_reinstall_description"]}
 
         restart [now]
 
-            restarts dashd and deletes:
+            ${messages["usage_restart_description"]}
                 budget.dat
                 debug.log
                 fee_estimates.dat
@@ -65,26 +68,26 @@ usage(){
                 mnpayments.dat
                 peers.dat
 
-            will prompt user if not given the 'now' argument
+            ${messages["usage_restart_description_now"]}
 
         status
 
-            polls local and web sources and displays current status
+            ${messages["usage_status_description"]}
 
         vote
 
-            cast masternode votes for distributed budget ballot items
+            ${messages["usage_vote_description"]}
 
         version
 
-            prints dashmans version number and exit
+            ${messages["usage_version_description"]}
 
 EOF
 }
 
 _check_dependencies() {
 
-    (which python 2>&1) >/dev/null || die 'missing dependency: python - sudo apt-get install python'
+    (which python 2>&1) >/dev/null || die "${messages["err_missing_dependency"]} python - sudo apt-get install python"
 
     PLATFORM=$(/usr/bin/env python -mplatform | sed -e 's/.*with-//g')
     if [[ $PLATFORM == *"Ubuntu"* ]] || [[ $PLATFORM == *"debian"* ]]; then
@@ -96,20 +99,22 @@ _check_dependencies() {
     if [ -z "$PKG_MANAGER" ]; then
         (which apt-get 2>&1) >/dev/null || \
             (which yum 2>&1) >/dev/null || \
-            die 'cannot determine platform/package manager'
+            die ${messages["err_no_pkg_mgr"]}
+
     fi
 
-    (which curl 2>&1) >/dev/null || die "missing dependency: curl - sudo $PKG_MANAGER install curl"
-    (which perl 2>&1) >/dev/null || die "missing dependency: perl - sudo $PKG_MANAGER install perl"
+    (which curl 2>&1) >/dev/null || die "${messages["err_missing_dependency"]} curl - sudo $PKG_MANAGER install curl"
+    (which perl 2>&1) >/dev/null || die "${messages["err_missing_dependency"]} perl - sudo $PKG_MANAGER install perl"
 
     # make sure we have the right netcat version (-4,-6 flags)
     if [ ! -z "$(which nc)" ]; then
         (nc -z -4 8.8.8.8 53 2>&1) >/dev/null
         if [ $? -gt 0 ]; then
-            die "missing dependency: netcat6 - sudo $PKG_MANAGER install netcat6"
+
+            die "${messages["err_missing_dependency"]} netcat6 - sudo $PKG_MANAGER install netcat6"
         fi
     else
-        die "missing dependency: netcat - sudo $PKG_MANAGER install netcat"
+        die "${messages["err_missing_dependency"]} netcat - sudo $PKG_MANAGER install netcat"
     fi
 
 }
@@ -136,8 +141,11 @@ _find_dash_directory() {
 
             # if not run as root
             if [ $EUID -ne 0 ] ; then
-                die "\ndash executables found in system dir $INSTALL_DIR. Run dashman as root (sudo dashman command) to continue. Exiting."
+                die "\n${messages["exec_found_in_system_dir"]} $INSTALL_DIR${messages["run_dashman_as_root"]} ${messages["exiting"]}"
+
+
             fi
+
 
         fi
 
@@ -159,11 +167,12 @@ _find_dash_directory() {
     if [ ! -z "$INSTALL_DIR" ]; then
         INSTALL_DIR=$(readlink -f $INSTALL_DIR) 2>/dev/null
         if [ ! -e $INSTALL_DIR ]; then
-            echo -e "${C_RED}cannot find dash-cli in current directory, ~/.dash, or \$PATH. -- Exiting.$C_NORM"
+            echo -e "${C_RED}${messages["dashcli_not_found_in_cwd"]}, ~/.dash, or \$PATH. -- ${messages["exiting"]}$C_NORM"
+
             exit 1
         fi
     else
-        echo -e "${C_RED}cannot find dash-cli in current directory, ~/.dash, or \$PATH. -- Exiting.$C_NORM"
+        echo -e "${C_RED}${messages["dashcli_not_found_in_cwd"]}, ~/.dash, or \$PATH. -- ${messages["exiting"]}$C_NORM"
         exit 1
     fi
 
@@ -171,12 +180,13 @@ _find_dash_directory() {
 
     # check INSTALL_DIR has dashd and dash-cli
     if [ ! -e $INSTALL_DIR/dashd ]; then
-        echo -e "${C_RED}dashd not found in $INSTALL_DIR -- Exiting.$C_NORM"
+        echo -e "${C_RED}${messages["dashd_not_found"]} $INSTALL_DIR -- ${messages["exiting"]}$C_NORM"
+
         exit 1
     fi
 
     if [ ! -e $DASH_CLI ]; then
-        echo -e "${C_RED}dash-cli not found in $INSTALL_DIR -- Exiting.$C_NORM"
+        echo -e "${C_RED}${messages["dashcli_not_found"]} $INSTALL_DIR -- ${messages["exiting"]}$C_NORM"
         exit 1
     fi
 
@@ -187,15 +197,15 @@ _check_dashman_updates() {
     GITHUB_DASHMAN_VERSION=$( $curl_cmd https://raw.githubusercontent.com/moocowmoo/dashman/master/VERSION )
     if [ "$DASHMAN_VERSION" != "$GITHUB_DASHMAN_VERSION" ]; then
         echo -e "\n"
-        echo -e "${C_RED}${0##*/} requires updating. Latest version is: $C_GREEN$GITHUB_DASHMAN_VERSION$C_RED\nDo 'dashman sync' manually, or choose yes below.$C_NORM\n"
+        echo -e "${C_RED}${0##*/} ${messages["requires_updating"]} $C_GREEN$GITHUB_DASHMAN_VERSION$C_RED\n${messages["requires_sync"]}$C_NORM\n"
 
-        pending "sync dashman to github now? "
+        pending "${messages["sync_to_github"]} "
 
         if confirm " [${C_GREEN}y${C_NORM}/${C_RED}N${C_NORM}] $C_CYAN"; then
             echo $DASHMAN_VERSION > $DASHMAN_GITDIR/PREVIOUS_VERSION
             exec $DASHMAN_GITDIR/${0##*/} sync $COMMAND
         fi
-        die 'Exiting.'
+        die "${messages["exiting"]}"
     fi
 }
 
@@ -213,9 +223,9 @@ _get_platform_info() {
             RPI=1
             ;;
         *)
-            err "unknown platform: $PLATFORM"
-            err "dashman currently only supports 32/64bit linux"
-            die "Exiting."
+            err "${messages["err_unknown_platform"]} $PLATFORM"
+            err ${messages["err_dashman_supports"]}
+            die "${messages["exiting"]}"
             ;;
     esac
 }
@@ -228,7 +238,7 @@ _get_versions() {
     #$( <-- vim syntax highlighting fix
     LATEST_VERSION=$( echo ${DOWNLOAD_URLS[0]} | perl -ne '/dash-([0-9.]+)-/; print $1;' 2>/dev/null )
     if [ -z "$LATEST_VERSION" ]; then
-        die "\nCould not find latest version from $DOWNLOAD_PAGE -- Exiting."
+        die "\n${messages["err_could_not_get_version"]} $DOWNLOAD_PAGE -- ${messages["exiting"]}"
     fi
 
     if [ -z "$DASH_CLI" ]; then DASH_CLI='echo'; fi
@@ -252,30 +262,31 @@ _check_dashd_running() {
 restart_dashd(){
 
     if [ $DASHD_RUNNING == 1 ]; then
-        pending " --> Stopping dashd..."
+        pending " --> ${messages["stopping"]} dashd. ${messages["please_wait"]}"
         $DASH_CLI stop 2>&1 >/dev/null
         sleep 10
         killall -9 dashd dash-shutoff 2>/dev/null
-        ok 'DONE!'
+        ok ${messages["done"]}
         DASHD_RUNNING=0
     fi
 
-    pending ' --> Deleting cache files, debug.log...'
+    pending " --> ${messages["deleting_cache_files"]}"
+
     cd $INSTALL_DIR
     rm -f budget.dat debug.log fee_estimates.dat mncache.dat mnpayments.dat peers.dat
-    ok 'DONE!'
+    ok ${messages["done"]}
 
-    pending ' --> Starting dashd...'
+    pending " --> ${messages["starting_dashd"]}"
     $INSTALL_DIR/dashd 2>&1 >/dev/null
-    ok 'DONE!'
-    pending " --> Waiting for dashd to respond..."
+    ok ${messages["done"]}
+    pending " --> ${messages["waiting_for_dashd_to_respond"]}"
     echo -en "${C_YELLOW}"
     while [ $DASHD_RUNNING == 0 ]; do
         echo -n "."
         _check_dashd_running
         sleep 5
     done
-    ok "DONE!"
+    ok ${messages["done"]}
     pending " --> dash-cli getinfo"
     echo
     $DASH_CLI getinfo
@@ -290,23 +301,24 @@ update_dashd(){
 
         if [ ! -z "$REINSTALL" ];then
             echo -e ""
-            echo -e "$C_GREEN*** dash version $CURRENT_VERSION is up-to-date. ***$C_NORM"
+            echo -e "$C_GREEN*** ${messages["dash_version"]} $CURRENT_VERSION is up-to-date. ***$C_NORM"
             echo -e ""
             echo -en
-            pending "reinstall to $INSTALL_DIR$C_NORM?"
+
+            pending "${messages["reinstall_to"]} $INSTALL_DIR$C_NORM?"
         else
             echo -e ""
-            echo -e "$C_RED*** a newer version of dash is available. ***$C_NORM"
+            echo -e "$C_RED*** ${messages["newer_dash_available"]} ***$C_NORM"
             echo -e ""
-            echo -e "  current version: $C_RED$CURRENT_VERSION$C_NORM"
-            echo -e "   latest version: $C_GREEN$LATEST_VERSION$C_NORM"
+            echo -e "${messages["currnt_version"]} $C_RED$CURRENT_VERSION$C_NORM"
+            echo -e "${messages["latest_version"]} $C_GREEN$LATEST_VERSION$C_NORM"
             echo -e ""
-            pending "download $DOWNLOAD_URL\nand install to $INSTALL_DIR?"
+            pending "${messages["download"]} $DOWNLOAD_URL\n${messages["and_install_to"]} $INSTALL_DIR?"
         fi
 
 
         if ! confirm " [${C_GREEN}y${C_NORM}/${C_RED}N${C_NORM}] $C_CYAN"; then
-            echo -e "${C_RED}Exiting.$C_NORM"
+            echo -e "${C_RED}${messages["exiting"]}$C_NORM"
             echo ""
             exit 0
         fi
@@ -335,53 +347,55 @@ update_dashd(){
         # pull it ----------------------------------------------------------------
 
         echo ""
-        pending " --> downloading ${DOWNLOAD_URL}..."
+        pending " --> ${messages["downloading"]} ${DOWNLOAD_URL}..."
         wget --no-check-certificate -q -r $DOWNLOAD_URL -O $DOWNLOAD_FILE
         wget --no-check-certificate -q -r ${DOWNLOAD_URL}.DIGESTS.txt -O ${DOWNLOAD_FILE}.DIGESTS.txt
         if [ ! -e $DOWNLOAD_FILE ] ; then
-            echo -e "${C_RED}error downloading file"
-            echo -e "tried to get $DOWNLOAD_URL$C_NORM"
+            echo -e "${C_RED}${messages["err_downloading_file"]}"
+            echo -e "${messages["err_tried_to_get"]} $DOWNLOAD_URL$C_NORM"
+
             exit 1
         else
-            ok "DONE!"
+            ok ${messages["done"]}
         fi
 
         # prove it ---------------------------------------------------------------
 
-        pending " --> checksumming ${DOWNLOAD_FILE}..."
+        pending " --> ${messages["checksumming"]} ${DOWNLOAD_FILE}..."
         SHA256SUM=$( sha256sum $DOWNLOAD_FILE )
         MD5SUM=$( md5sum $DOWNLOAD_FILE )
         SHA256PASS=$( grep $SHA256SUM ${DOWNLOAD_FILE}.DIGESTS.txt | wc -l )
         MD5SUMPASS=$( grep $MD5SUM ${DOWNLOAD_FILE}.DIGESTS.txt | wc -l )
         if [ $SHA256PASS -lt 1 ] ; then
-            echo -e " ${C_RED} SHA256 checksum FAILED! Try again later. Exiting.$C_NORM"
+            echo -e " ${C_RED} SHA256 ${messages["checksum"]} ${messages["FAILED"]} ${messages["try_again_later"]} ${messages["exiting"]}$C_NORM"
+
             exit 1
         fi
         if [ $MD5SUMPASS -lt 1 ] ; then
-            echo -e " ${C_RED} MD5 checksum FAILED! Try again later. Exiting.$C_NORM"
+            echo -e " ${C_RED} MD5 ${messages["checksum"]} ${messages["FAILED"]} ${messages["try_again_later"]} ${messages["exiting"]}$C_NORM"
             exit 1
         fi
-        ok "DONE!"
+        ok ${messages["done"]}
 
         # produce it -------------------------------------------------------------
 
-        pending " --> unpacking ${DOWNLOAD_FILE}..." && \
+        pending " --> ${messages["unpacking"]} ${DOWNLOAD_FILE}..." && \
         tar zxf $DOWNLOAD_FILE && \
-        ok "DONE!"
+        ok ${messages["done"]}
 
         # pummel it --------------------------------------------------------------
 
         if [ $DASHD_RUNNING == 1 ]; then
-            pending " --> stopping dashd. please wait..."
+            pending " --> ${messages["stopping"]} dashd. ${messages["please_wait"]}"
             $DASH_CLI stop >/dev/null 2>&1
             sleep 15
             killall -9 dashd dash-shutoff >/dev/null 2>&1
-            ok "DONE!"
+            ok ${messages["done"]}
         fi
 
         # prune it ---------------------------------------------------------------
 
-        pending " --> Removing old version..."
+        pending " --> ${messages["removing_old_version"]}"
         rm -f \
             budget.dat \
             debug.log \
@@ -395,7 +409,7 @@ update_dashd(){
             dash-qt-$CURRENT_VERSION \
             dash-cli \
             dash-cli-$CURRENT_VERSION
-        ok "DONE!"
+        ok ${messages["done"]}
 
         # place it ---------------------------------------------------------------
 
@@ -418,20 +432,20 @@ update_dashd(){
 
         # punch it ---------------------------------------------------------------
 
-        pending " --> Launching dashd..."
+        pending " --> ${messages["launching"]} dashd..."
         $INSTALL_DIR/dashd > /dev/null
-        ok "DONE!"
+        ok ${messages["done"]}
 
         # probe it ---------------------------------------------------------------
 
-        pending " --> Waiting for dashd to respond..."
+        pending " --> ${messages["waiting_for_dashd_to_respond"]}"
         echo -en "${C_YELLOW}"
         while [ $DASHD_RUNNING == 0 ]; do
             echo -n "."
             _check_dashd_running
             sleep 5
         done
-        ok "DONE!"
+        ok ${messages["done"]}
 
         # poll it ----------------------------------------------------------------
 
@@ -441,9 +455,9 @@ update_dashd(){
 
         if [ $LATEST_VERSION == $CURRENT_VERSION ]; then
             echo -e ""
-            echo -e "${C_GREEN}dash successfully upgraded to version ${LATEST_VERSION}$C_NORM"
+            echo -e "${C_GREEN}${messages["successfully_upgraded"]} ${LATEST_VERSION}$C_NORM"
             echo -e ""
-            echo -e "${C_GREEN}Installed in ${INSTALL_DIR}$C_NORM"
+            echo -e "${C_GREEN}${messages["installed_in"]} ${INSTALL_DIR}$C_NORM"
             echo -e ""
             ls -l --color {$DOWNLOAD_FILE,${DOWNLOAD_FILE}.DIGESTS.txt,dash-cli,dashd,dash-qt,dash*$LATEST_VERSION}
             echo -e ""
@@ -457,12 +471,12 @@ update_dashd(){
 
             quit
         else
-            echo -e "${C_RED}dash version $CURRENT_VERSION is not up to date. ($LATEST_VERSION) Exiting.$C_NORM"
+            echo -e "${C_RED}${messages["dash_version"]} $CURRENT_VERSION ${messages["is_not_uptodate"]} ($LATEST_VERSION) ${messages["exiting"]}$C_NORM"
         fi
 
     else
         echo -e ""
-        echo -e "${C_GREEN}dash version $CURRENT_VERSION is up to date. Exiting.$C_NORM"
+        echo -e "${C_GREEN}${messages["dash_version"]} $CURRENT_VERSION ${messages["is_uptodate"]} ${messages["exiting"]}$C_NORM"
     fi
 
     exit 0
@@ -474,13 +488,13 @@ install_dashd(){
     DASH_CLI="$INSTALL_DIR/dash-cli"
 
     if [ -e $INSTALL_DIR ] ; then
-        die "\n - pre-existing directory $INSTALL_DIR found. Run 'dashman reinstall' to overwrite. Exiting."
+        die "\n - ${messages["preexisting_dir"]} $INSTALL_DIR ${messages["found"]} ${messages["run_reinstall"]} ${messages["exiting"]}"
     fi
 
-    pending " - download $DOWNLOAD_URL\n - and install to $INSTALL_DIR?"
+    pending " - ${messages["download"]} $DOWNLOAD_URL\n - ${messages["and_install_to"]} $INSTALL_DIR?"
 
     if ! confirm " [${C_GREEN}y${C_NORM}/${C_RED}N${C_NORM}] $C_CYAN"; then
-        echo -e "${C_RED}Exiting.$C_NORM"
+        echo -e "${C_RED}${messages["exiting"]}$C_NORM"
         echo ""
         exit 0
     fi
@@ -489,7 +503,7 @@ install_dashd(){
     # prompt for ipv4 or ipv6 install
     if [ ! -z "$PUBLIC_IPV6" ] && [ ! -z "$PUBLIC_IPV4" ]; then
         pending " --- " ; echo
-        pending " - Host has both ipv4 and ipv6 addresses.\n - Use ipv6 for install?"
+        pending " - ${messages["prompt_ipv4_ipv6"]}"
         if confirm " [${C_GREEN}y${C_NORM}/${C_RED}N${C_NORM}] $C_CYAN"; then
             USE_IPV6=1
         fi
@@ -502,7 +516,7 @@ install_dashd(){
     mkdir -p $INSTALL_DIR
 
     if [ ! -e $INSTALL_DIR/dash.conf ] ; then
-        pending " --> creating dash.conf..."
+        pending " --> ${messages["creating"]} dash.conf..."
 
         IPADDR=$PUBLIC_IPV4
         if [ ! -z "$USE_IPV6" ]; then
@@ -513,7 +527,7 @@ install_dashd(){
         while read; do
             eval echo "$REPLY"
         done < $DASHMAN_GITDIR/.dash.conf.template > $INSTALL_DIR/dash.conf
-        ok 'DONE!'
+        ok ${messages["done"]}
     fi
 
     # push it ----------------------------------------------------------------
@@ -522,53 +536,54 @@ install_dashd(){
 
     # pull it ----------------------------------------------------------------
 
-    pending " --> downloading ${DOWNLOAD_URL}..."
+    pending " --> ${messages["downloading"]} ${DOWNLOAD_URL}..."
     wget --no-check-certificate -q -r $DOWNLOAD_URL -O $DOWNLOAD_FILE
     wget --no-check-certificate -q -r ${DOWNLOAD_URL}.DIGESTS.txt -O ${DOWNLOAD_FILE}.DIGESTS.txt
     if [ ! -e $DOWNLOAD_FILE ] ; then
-        echo -e "${C_RED}error downloading file"
+        echo -e "${C_RED}error ${messages["downloading"]} file"
         echo -e "tried to get $DOWNLOAD_URL$C_NORM"
         exit 1
     else
-        ok "DONE!"
+        ok ${messages["done"]}
     fi
 
     # prove it ---------------------------------------------------------------
 
-    pending " --> checksumming ${DOWNLOAD_FILE}..."
+    pending " --> ${messages["checksumming"]} ${DOWNLOAD_FILE}..."
     SHA256SUM=$( sha256sum $DOWNLOAD_FILE )
     MD5SUM=$( md5sum $DOWNLOAD_FILE )
     SHA256PASS=$( grep $SHA256SUM ${DOWNLOAD_FILE}.DIGESTS.txt | wc -l )
     MD5SUMPASS=$( grep $MD5SUM ${DOWNLOAD_FILE}.DIGESTS.txt | wc -l )
     if [ $SHA256PASS -lt 1 ] ; then
-        echo -e " ${C_RED} SHA256 checksum FAILED! Try again later. Exiting.$C_NORM"
+        echo -e " ${C_RED} SHA256 ${messages["checksum"]} ${messages["FAILED"]} ${messages["try_again_later"]} ${messages["exiting"]}$C_NORM"
+
         exit 1
     fi
     if [ $MD5SUMPASS -lt 1 ] ; then
-        echo -e " ${C_RED} MD5 checksum FAILED! Try again later. Exiting.$C_NORM"
+        echo -e " ${C_RED} MD5 ${messages["checksum"]} ${messages["FAILED"]} ${messages["try_again_later"]} ${messages["exiting"]}$C_NORM"
         exit 1
     fi
-    ok "DONE!"
+    ok ${messages["done"]}
 
     # produce it -------------------------------------------------------------
 
-    pending " --> unpacking ${DOWNLOAD_FILE}..." && \
+    pending " --> ${messages["unpacking"]} ${DOWNLOAD_FILE}..." && \
     tar zxf $DOWNLOAD_FILE && \
-    ok "DONE!"
+    ok ${messages["done"]}
 
     # pummel it --------------------------------------------------------------
 
     if [ $DASHD_RUNNING == 1 ]; then
-        pending " --> stopping dashd. please wait..."
+        pending " --> ${messages["stopping"]} dashd. ${messages["please_wait"]}"
         $DASH_CLI stop >/dev/null 2>&1
         sleep 15
         killall -9 dashd dash-shutoff >/dev/null 2>&1
-        ok "DONE!"
+        ok ${messages["done"]}
     fi
 
     # prune it ---------------------------------------------------------------
 
-    pending " --> Removing old version..."
+    pending " --> ${messages["removing_old_version"]}"
     rm -f \
         budget.dat \
         debug.log \
@@ -582,7 +597,7 @@ install_dashd(){
         dash-qt-$CURRENT_VERSION \
         dash-cli \
         dash-cli-$CURRENT_VERSION
-    ok "DONE!"
+    ok ${messages["done"]}
 
     # place it ---------------------------------------------------------------
 
@@ -605,20 +620,20 @@ install_dashd(){
 
     # punch it ---------------------------------------------------------------
 
-    pending " --> Launching dashd..."
+    pending " --> ${messages["launching"]} dashd..."
     $INSTALL_DIR/dashd > /dev/null
-    ok "DONE!"
+    ok ${messages["done"]}
 
     # probe it ---------------------------------------------------------------
 
-    pending " --> Waiting for dashd to respond..."
+    pending " --> ${messages["waiting_for_dashd_to_respond"]}"
     echo -en "${C_YELLOW}"
     while [ $DASHD_RUNNING == 0 ]; do
         echo -n "."
         _check_dashd_running
         sleep 5
     done
-    ok "DONE!"
+    ok ${messages["done"]}
 
     # poll it ----------------------------------------------------------------
 
@@ -628,9 +643,10 @@ install_dashd(){
 
     if [ $LATEST_VERSION == $CURRENT_VERSION ]; then
         echo -e ""
-        echo -e "${C_GREEN}dash ${LATEST_VERSION} successfully installed!$C_NORM"
+        echo -e "${C_GREEN}dash ${LATEST_VERSION} ${messages["successfully_installed"]}$C_NORM"
+
         echo -e ""
-        echo -e "${C_GREEN}Installed in ${INSTALL_DIR}$C_NORM"
+        echo -e "${C_GREEN}${messages["installed_in"]} ${INSTALL_DIR}$C_NORM"
         echo -e ""
         ls -l --color {$DOWNLOAD_FILE,${DOWNLOAD_FILE}.DIGESTS.txt,dash-cli,dashd,dash-qt,dash*$LATEST_VERSION}
         echo -e ""
@@ -643,7 +659,7 @@ install_dashd(){
         fi
 
     else
-        echo -e "${C_RED}dash version $CURRENT_VERSION is not up to date. ($LATEST_VERSION) Exiting.$C_NORM"
+        echo -e "${C_RED}${messages["dash_version"]} $CURRENT_VERSION ${messages["is_not_uptodate"]} ($LATEST_VERSION) ${messages["exiting"]}$C_NORM"
         exit 1
     fi
 
@@ -677,6 +693,7 @@ get_dashd_status(){
     DASHD_CURRENT_BLOCK=`$DASH_CLI getblockcount 2>/dev/null`
     if [ -z "$DASHD_CURRENT_BLOCK" ] ; then DASHD_CURRENT_BLOCK=0 ; fi
     DASHD_GETINFO=`$DASH_CLI getinfo 2>/dev/null`;
+    DASHD_DIFFICULTY=$(echo "$DASHD_GETINFO" | grep difficulty | awk '{print $3}' | sed -e 's/[",]//g')
 
     WEB_BLOCK_COUNT_CHAINZ=`$curl_cmd https://chainz.cryptoid.info/dash/api.dws?q=getblockcount`;
     if [ -z "$WEB_BLOCK_COUNT_CHAINZ" ]; then
@@ -703,6 +720,8 @@ get_dashd_status(){
     fi
     WEB_ME_BLOCK_COUNT=$( echo $WEB_ME_BLOCK_COUNT | awk '{print $1}')
     WEB_ME_FORK_DETECT=$( echo $WEB_ME_BLOCK_COUNT | awk '{print $3}' | grep 'fork detected' | wc -l )
+
+    WEB_ME=$(echo $WEB_ME | sed -s "s/no forks detected/${messages["no_forks_detected"]}/")
 
     DASHD_SYNCED=0
     if [ $(($WEB_BLOCK_COUNT_CHAINZ - 2)) -lt $DASHD_CURRENT_BLOCK ]; then DASHD_SYNCED=1 ; fi
@@ -771,7 +790,8 @@ get_dashd_status(){
             local daysago=$(dateDiff -d now "$WEB_NINJA_LAST_PAYMENT_TIME")
             local hoursago=$(dateDiff -h now "$WEB_NINJA_LAST_PAYMENT_TIME")
             hoursago=$(( hoursago - (24 * daysago) ))
-            WEB_NINJA_LAST_PAYMENT_TIME="$WEB_NINJA_LAST_PAYMENT_TIME ($daysago days, $hoursago hours ago)"
+            WEB_NINJA_LAST_PAYMENT_TIME="$WEB_NINJA_LAST_PAYMENT_TIME ($daysago ${messages["days"]}, $hoursago ${messages["hours"]}${messages["ago"]})"
+
         fi
 
         WEB_NINJA_API_OFFLINE=0
@@ -815,52 +835,51 @@ get_host_status(){
 
 
 print_status() {
-    pending "  host uptime/load average   : " ; ok "$HOST_UPTIME_DAYS days, $HOST_LOAD_AVERAGE"
-    pending "  dashd bind ip address      : " ; [ $MASTERNODE_BIND_IP != 'none' ] && ok $MASTERNODE_BIND_IP || err $MASTERNODE_BIND_IP
-    pending "  dashd version              : " ; ok "$CURRENT_VERSION"
-    pending "  dashd up-to-date           : " ; [ $DASHD_UP_TO_DATE -gt 0 ] && ok 'YES' || err 'NO'
-    pending "  dashd running              : " ; [ $DASHD_HASPID     -gt 0 ] && ok 'YES' || err 'NO'
-    pending "  dashd uptime               : " ; ok "$DASHD_UPTIME_DAYS days, $DASHD_UPTIME_HOURS hours, $DASHD_UPTIME_MINS mins, $DASHD_UPTIME_SECS secs"
-    pending "  dashd responding (rpc)     : " ; [ $DASHD_RUNNING    -gt 0 ] && ok 'YES' || err 'NO'
-    pending "  dashd listening  (ip)      : " ; [ $DASHD_LISTENING  -gt 0 ] && ok 'YES' || err 'NO'
-    pending "  dashd connecting (peers)   : " ; [ $DASHD_CONNECTED  -gt 0 ] && ok 'YES' || err 'NO'
-    pending "  dashd port open            : " ; [ $PUBLIC_PORT_CLOSED  -lt 1 ] && ok 'YES' || err 'NO'
-    pending "  dashd connection count     : " ; [ $DASHD_CONNECTIONS   -gt 0 ] && ok $DASHD_CONNECTIONS || err $DASHD_CONNECTIONS
-    pending "  dashd blocks synced        : " ; [ $DASHD_SYNCED     -gt 0 ] && ok 'YES' || err 'NO'
-    pending "  last block (local dashd)   : " ; [ $DASHD_SYNCED     -gt 0 ] && ok $DASHD_CURRENT_BLOCK || err $DASHD_CURRENT_BLOCK
-    pending "             (chainz)        : " ; [ $WEB_BLOCK_COUNT_CHAINZ -gt 0 ] && ok $WEB_BLOCK_COUNT_CHAINZ || err $WEB_BLOCK_COUNT_CHAINZ
-    pending "             (darkcoin.qa)   : " ; [ $WEB_BLOCK_COUNT_DQA    -gt 0 ] && ok $WEB_BLOCK_COUNT_DQA || err $WEB_BLOCK_COUNT_DQA
-    pending "             (dashwhale)     : " ; [ $WEB_BLOCK_COUNT_DWHALE -gt 0 ] && ok $WEB_BLOCK_COUNT_DWHALE || err $WEB_BLOCK_COUNT_DWHALE
-    pending "             (masternode.me) : " ; [ $WEB_ME_FORK_DETECT -gt 0 ] && err "$WEB_ME" || ok "$WEB_ME"
-    pending "  masternode count           : " ; [ $MN_TOTAL            -gt 0 ] && ok $MN_TOTAL || err $MN_TOTAL
+    pending "${messages["status_uptimeh"]}" ; ok "$HOST_UPTIME_DAYS ${messages["days"]}, $HOST_LOAD_AVERAGE"
+    pending "${messages["status_dashdip"]}" ; [ $MASTERNODE_BIND_IP != 'none' ] && ok $MASTERNODE_BIND_IP || err $MASTERNODE_BIND_IP
+    pending "${messages["status_dashdve"]}" ; ok "$CURRENT_VERSION"
+    pending "${messages["status_uptodat"]}" ; [ $DASHD_UP_TO_DATE -gt 0 ] && ok ${messages["YES"]} || err ${messages["NO"]}
+    pending "${messages["status_running"]}" ; [ $DASHD_HASPID     -gt 0 ] && ok ${messages["YES"]} || err ${messages["NO"]}
+    pending "${messages["status_uptimed"]}" ; ok "$DASHD_UPTIME_DAYS ${messages["days"]}, $DASHD_UPTIME_HOURS ${messages["hours"]}, $DASHD_UPTIME_MINS ${messages["mins"]}, $DASHD_UPTIME_SECS ${messages["secs"]}"
+    pending "${messages["status_drespon"]}" ; [ $DASHD_RUNNING    -gt 0 ] && ok ${messages["YES"]} || err ${messages["NO"]}
+    pending "${messages["status_dlisten"]}" ; [ $DASHD_LISTENING  -gt 0 ] && ok ${messages["YES"]} || err ${messages["NO"]}
+    pending "${messages["status_dconnec"]}" ; [ $DASHD_CONNECTED  -gt 0 ] && ok ${messages["YES"]} || err ${messages["NO"]}
+    pending "${messages["status_dportop"]}" ; [ $PUBLIC_PORT_CLOSED  -lt 1 ] && ok ${messages["YES"]} || err ${messages["NO"]}
+    pending "${messages["status_dconcnt"]}" ; [ $DASHD_CONNECTIONS   -gt 0 ] && ok $DASHD_CONNECTIONS || err $DASHD_CONNECTIONS
+    pending "${messages["status_dblsync"]}" ; [ $DASHD_SYNCED     -gt 0 ] && ok ${messages["YES"]} || err ${messages["NO"]}
+    pending "${messages["status_dbllast"]}" ; [ $DASHD_SYNCED     -gt 0 ] && ok $DASHD_CURRENT_BLOCK || err $DASHD_CURRENT_BLOCK
+    pending "${messages["status_webchai"]}" ; [ $WEB_BLOCK_COUNT_CHAINZ -gt 0 ] && ok $WEB_BLOCK_COUNT_CHAINZ || err $WEB_BLOCK_COUNT_CHAINZ
+    pending "${messages["status_webdark"]}" ; [ $WEB_BLOCK_COUNT_DQA    -gt 0 ] && ok $WEB_BLOCK_COUNT_DQA || err $WEB_BLOCK_COUNT_DQA
+    pending "${messages["status_webdash"]}" ; [ $WEB_BLOCK_COUNT_DWHALE -gt 0 ] && ok $WEB_BLOCK_COUNT_DWHALE || err $WEB_BLOCK_COUNT_DWHALE
+    pending "${messages["status_webmast"]}" ; [ $WEB_ME_FORK_DETECT -gt 0 ] && err "$WEB_ME" || ok "$WEB_ME"
+    pending "${messages["status_dcurdif"]}" ; ok "$DASHD_DIFFICULTY"
     if [ $DASHD_RUNNING -gt 0 ] && [ $MN_CONF_ENABLED -gt 0 ] ; then
-    pending "  masternode started         : " ; [ $MN_STARTED -gt 0  ] && ok 'YES' || err 'NO'
-    pending "  masternode visible (local) : " ; [ $MN_VISIBLE -gt 0  ] && ok 'YES' || err 'NO'
-
-    if [ $WEB_NINJA_API_OFFLINE -eq 0 ]; then
-    pending "  masternode visible (ninja) : " ; [ $WEB_NINJA_SEES_OPEN -gt 0  ] && ok 'YES' || err 'NO'
-    pending "  masternode address         : " ; ok $WEB_NINJA_MN_ADDY
-    pending "  masternode funding txn     : " ; ok "$WEB_NINJA_MN_VIN-$WEB_NINJA_MN_VIDX"
-    pending "  masternode queue position  : " ; [ $MN_QUEUE_IN_SELECTION -gt 0  ] && ok "$MN_QUEUE_POSITION/$MN_QUEUE_LENGTH (selection pending)" || (pending "$MN_QUEUE_POSITION" && ok "/$MN_QUEUE_LENGTH")
-    pending "  masternode last payment    : " ; [ ! -z "$WEB_NINJA_MN_LAST_PAID_AMOUNT" ] && \
+    pending "${messages["status_mnstart"]}" ; [ $MN_STARTED -gt 0  ] && ok ${messages["YES"]} || err ${messages["NO"]}
+    pending "${messages["status_mnvislo"]}" ; [ $MN_VISIBLE -gt 0  ] && ok ${messages["YES"]} || err ${messages["NO"]}
+        if [ $WEB_NINJA_API_OFFLINE -eq 0 ]; then
+    pending "${messages["status_mnvisni"]}" ; [ $WEB_NINJA_SEES_OPEN -gt 0  ] && ok ${messages["YES"]} || err ${messages["NO"]}
+    pending "${messages["status_mnaddre"]}" ; ok $WEB_NINJA_MN_ADDY
+    pending "${messages["status_mnfundt"]}" ; ok "$WEB_NINJA_MN_VIN-$WEB_NINJA_MN_VIDX"
+    pending "${messages["status_mnqueue"]}" ; [ $MN_QUEUE_IN_SELECTION -gt 0  ] && ok "$MN_QUEUE_POSITION/$MN_QUEUE_LENGTH (selection pending)" || (pending "$MN_QUEUE_POSITION" && ok "/$MN_QUEUE_LENGTH")
+    pending "${messages["status_mnlastp"]}" ; [ ! -z "$WEB_NINJA_MN_LAST_PAID_AMOUNT" ] && \
         ok "$WEB_NINJA_MN_LAST_PAID_AMOUNT in $WEB_NINJA_MN_LAST_PAID_BLOCK on $WEB_NINJA_LAST_PAYMENT_TIME " || warn 'never'
-    pending "  masternode balance         : " ; [ ! -z "$WEB_NINJA_MN_BALANCE" ] && ok "$WEB_NINJA_MN_BALANCE" || warn '0'
-    else
+    pending "${messages["status_mnbalan"]}" ; [ ! -z "$WEB_NINJA_MN_BALANCE" ] && ok "$WEB_NINJA_MN_BALANCE" || warn '0'
+        else
     err     "  dashninja api offline        " ;
+        fi
+    else
+    pending "${messages["status_mncount"]}" ; [ $MN_TOTAL            -gt 0 ] && ok $MN_TOTAL || err $MN_TOTAL
     fi
-
-    fi
-
 }
 
 show_message_configure() {
     echo
-    ok "To enable your masternode,"
-    ok "uncomment and configure the masternode lines in:"
+    ok ${messages["to_enable_masternode"]}
+    ok ${messages["uncomment_conf_lines"]}
     echo
          pending "    $HOME/.dash/dash.conf" ; echo
     echo
-    echo -e "$C_GREEN then run:$C_NORM"
+    echo -e "$C_GREEN ${messages["then_run"]}$C_NORM"
     echo
     echo -e "    ${C_YELLOW}dashman restart now$C_NORM"
     echo
@@ -870,7 +889,7 @@ get_public_ips() {
     PUBLIC_IPV4=$($curl_cmd -4 https://icanhazip.com/)
     PUBLIC_IPV6=$($curl_cmd -6 https://icanhazip.com/)
     if [ -z "$PUBLIC_IPV4" ] && [ -z "$PUBLIC_IPV6" ]; then
-        err "  --> failed to resolve public ip. retrying..."
+        err "  --> ${messages["err_failed_ip_resolve"]}"
         sleep 3
         get_public_ips
     fi
@@ -887,90 +906,3 @@ cat_until() {
         fi
     done < $FILE
 }
-
-# scrap, ignore --------------------------------------------------------------
-
-#cmd_prompt() {
-#    DASHMAN_PROMPT='dashman> '
-#    echo -en $DASHMAN_PROMPT
-#    read command
-#    exec $DASHMAN_GITDIR/dashman $command
-
-#usage(){
-#    cat<<EOF
-#    usage: ${0##*/} [-hqvV] [command]
-#
-#    switches:
-#
-#        -q, --quiet
-#
-#            suppresses all output
-#
-#        -h, --help
-#
-#            this help text
-#
-#        -v, --verbose
-#
-#            extra logging to screen
-#
-#        -V, --version
-#
-#            show dashman version
-#
-#    commands: restart install reinstall
-#
-#        restart [now]
-#
-#            will restart dashd and delete:
-#                budget.dat, debug.log, fee_estimates.dat, mncache.dat,
-#                mnpayments.dat, peers.dat
-#
-#            will prompt user if not given the 'now' argument
-#
-#        install
-#
-#            blah
-#
-#        reinstall
-#
-#            blah
-#
-#EOF
-#}
-#        status)
-#            dashman_status
-#            ;;
-#        autoupdate)
-#            ok 'update. --auto'
-#            ;;
-#        check)
-#            ok 'check.'
-#            ;;
-#        update)
-#            ok 'update'
-#            ;;
-#        die)
-#            die 'Exiting.'
-#            ;;
-#        interactive)
-#            cmd_prompt
-#            ;;
-
-#variants:
-#
-#    multi-user install
-#        installed in system dir
-#        installed in other dir?
-#        runas root
-#        runas sudo
-#        single daemon
-#        multiple daemons
-#
-#    single-user install
-#        installed in system dir
-#        installed in other dir
-#        runas root
-#        runas sudo
-#        single daemon
-#        multiple daemons?

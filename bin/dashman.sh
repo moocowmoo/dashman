@@ -5,6 +5,12 @@
 
 # Copyright (c) 2015 moocowmoo - moocowmoo@masternode.me
 
+# check we're running bash 4 -------------------------------------------------
+
+if [[ ${BASH_VERSION%%.*} != '4' ]];then
+    die "dashman requires bash version 4. please update. exiting."
+fi
+
 # parse any command line switches --------------------------------------------
 
 # --quiet, --verbose don't do anything yet
@@ -33,6 +39,19 @@ shift $(($OPTIND - 1))
 DASHMAN_GITDIR=$(readlink -f ${0%%/${0##*/}})
 source $DASHMAN_GITDIR/lib/dashman_functions.sh
 
+# load language packs --------------------------------------------------------
+
+declare -A messages
+
+# set all default strings
+source $DASHMAN_GITDIR/lang/en_US.sh
+
+# override if configured
+lang_type=${LANG%%\.*}
+[[ -e $DASHMAN_GITDIR/lang/$lang_type.sh ]] && source $DASHMAN_GITDIR/lang/$lang_type.sh
+
+# process switch overrides ---------------------------------------------------
+
 # show help and exit if requested or no command supplied - TODO make command specific
 [[ $HELP || -z $1 ]] && usage && exit 0
 
@@ -44,7 +63,7 @@ _check_dependencies
 
 # have command, will travel... -----------------------------------------------
 
-echo -e "${C_CYAN}${0##*/} version $DASHMAN_VERSION${C_NORM}"
+echo -e "${C_CYAN}${messages["dashman_version"]} $DASHMAN_VERSION${C_NORM} - ${C_GREEN}$(date)${C_NORM}"
 
 # do awesome stuff -----------------------------------------------------------
 COMMAND=''
@@ -68,12 +87,12 @@ case "$1" in
             ;;
         update)
             COMMAND=$1
-            pending "gathering info, please wait..."
+            pending "${messages["gathering_info"]}"
             _check_dashman_updates
             _find_dash_directory
             _get_versions
             _check_dashd_running
-            ok " DONE!"
+            ok " ${messages["done"]}"
             if [ ! -z "$RPI" ]; then
                 die "$COMMAND not supported yet on this platform."
             fi
@@ -81,10 +100,10 @@ case "$1" in
             ;;
         install)
             COMMAND=$1
-            pending "gathering info, please wait..."
+            pending "${messages["gathering_info"]}"
             _check_dashman_updates
             _get_versions
-            ok " DONE!"
+            ok " ${messages["done"]}"
             if [ ! -z "$RPI" ]; then
                 die "$COMMAND not supported yet on this platform."
             fi
@@ -102,13 +121,13 @@ case "$1" in
             ;;
         reinstall)
             COMMAND=$1
-            pending "gathering info, please wait..."
+            pending "${messages["gathering_info"]}"
             _check_dashman_updates
             _find_dash_directory
             _get_versions
             _check_dashd_running
             REINSTALL=1
-            ok " DONE!"
+            ok " ${messages["done"]}"
             if [ ! -z "$RPI" ]; then
                 die "$COMMAND not supported yet on this platform."
             fi
@@ -139,7 +158,7 @@ case "$1" in
                 shift;
                 exec $DASHMAN_GITDIR/$self $@
             fi
-            quit 'Up to date.'
+            quit "${messages["quit_uptodate"]}"
             ;;
         branch)
             COMMAND=$1
@@ -162,26 +181,26 @@ case "$1" in
             ;;
         vote)
             COMMAND=$1
-            pending "gathering info, please wait..."
+            pending "${messages["gathering_info"]}"
             _check_dashman_updates
             _find_dash_directory
             _get_versions
             _check_dashd_running
-            ok " DONE!"
+            ok " ${messages["done"]}"
             echo
             /usr/bin/env python $DASHMAN_GITDIR/bin/dashvote.py
             quit 'Exiting.'
             ;;
         status)
             COMMAND=$1
-            pending "gathering info, please wait..."
+            pending "${messages["gathering_info"]}"
             _check_dashman_updates
             _find_dash_directory
             _get_versions
             _check_dashd_running
             get_dashd_status
             get_host_status
-            ok " DONE!"
+            ok " ${messages["done"]}"
             echo
             print_status
             quit 'Exiting.'
