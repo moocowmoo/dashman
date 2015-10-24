@@ -1,4 +1,19 @@
 
+0.1.13 -  Sun Oct 25 05:49:37 2015 +0000
+
+    initial i18n support - adding polish (thanks tombtc!)
+    enh - gather all missing dependencies before exiting
+
+    bugfix - fail gracefully when dashninja api offline
+    bugfix - proper api-down test logic, doh!
+    bugfix - silence misconfigured locale perl errors
+
+    config - added branch to usage
+    config - added sync to usage
+    config - adding hostname to output
+    typo - switching
+    updated status screencap
+
 0.1.12 -  Tue Oct 20 21:14:51 2015 +0000
 
     added payment queue position display
