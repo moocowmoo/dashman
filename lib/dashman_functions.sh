@@ -739,6 +739,9 @@ get_dashd_status(){
     MN_EXPIRED=$(  echo "$MN_LIST" | grep -c EXPIRED)
     MN_TOTAL=$(( $MN_ENABLED + $MN_UNHEALTHY ))
 
+    MN_QUEUE_IN_SELECTION=0
+    MN_QUEUE_LENGTH=0
+    MN_QUEUE_POSITION=0
     if [ $MN_VISIBLE -gt 0 ]; then
         MN_QUEUE_LENGTH=$(echo "$MN_LIST" | grep ENABLED | wc -l)
         MN_QUEUE_POSITION=$(echo "$MN_LIST" | grep ENABLED | sort -r -n -k10 | grep -A9999999 $MASTERNODE_BIND_IP | wc -l)
@@ -751,6 +754,7 @@ get_dashd_status(){
             sleep 3
             WEB_NINJA_API=$($curl_cmd "https://dashninja.pl/api/masternodes?ips=\[\"${MASTERNODE_BIND_IP}:9999\"\]&portcheck=1&balance=1")
         fi
+
         WEB_NINJA_JSON_TEXT=$(echo $WEB_NINJA_API | python -m json.tool)
         WEB_NINJA_SEES_OPEN=$(echo "$WEB_NINJA_JSON_TEXT" | grep '"Result"' | grep open | wc -l)
         WEB_NINJA_MN_ADDY=$(echo "$WEB_NINJA_JSON_TEXT" | grep MasternodePubkey | awk '{print $2}' | sed -e 's/[",]//g')
@@ -761,7 +765,7 @@ get_dashd_status(){
         WEB_NINJA_MN_LAST_PAID_AMOUNT=$(echo "$WEB_NINJA_JSON_TEXT" | grep MNLastPaidAmount | awk '{print $2}' | sed -e 's/[",]//g')
         WEB_NINJA_MN_LAST_PAID_BLOCK=$(echo "$WEB_NINJA_JSON_TEXT" | grep MNLastPaidBlock | awk '{print $2}' | sed -e 's/[",]//g')
 
-        WEB_NINJA_LAST_PAYMENT_TIME=$(date -d @${WEB_NINJA_MN_LAST_PAID_TIME_EPOCH} '+%m/%d/%Y %H:%M:%S')
+        WEB_NINJA_LAST_PAYMENT_TIME=$(date -d @${WEB_NINJA_MN_LAST_PAID_TIME_EPOCH} '+%m/%d/%Y %H:%M:%S' 2>/dev/null)
 
         if [ ! -z "$WEB_NINJA_LAST_PAYMENT_TIME" ]; then
             local daysago=$(dateDiff -d now "$WEB_NINJA_LAST_PAYMENT_TIME")
@@ -769,6 +773,12 @@ get_dashd_status(){
             hoursago=$(( hoursago - (24 * daysago) ))
             WEB_NINJA_LAST_PAYMENT_TIME="$WEB_NINJA_LAST_PAYMENT_TIME ($daysago days, $hoursago hours ago)"
         fi
+
+        WEB_NINJA_API_OFFLINE=0
+        if [[ $(echo "$WEB_NINJA_API" | grep '"status":"ERROR"' | wc -l) ]];then
+            WEB_NINJA_API_OFFLINE=1
+        fi
+
     fi
 
 }
@@ -826,6 +836,8 @@ print_status() {
     if [ $DASHD_RUNNING -gt 0 ] && [ $MN_CONF_ENABLED -gt 0 ] ; then
     pending "  masternode started         : " ; [ $MN_STARTED -gt 0  ] && ok 'YES' || err 'NO'
     pending "  masternode visible (local) : " ; [ $MN_VISIBLE -gt 0  ] && ok 'YES' || err 'NO'
+
+    if [ $WEB_NINJA_API_OFFLINE -eq 0 ]; then
     pending "  masternode visible (ninja) : " ; [ $WEB_NINJA_SEES_OPEN -gt 0  ] && ok 'YES' || err 'NO'
     pending "  masternode address         : " ; ok $WEB_NINJA_MN_ADDY
     pending "  masternode funding txn     : " ; ok "$WEB_NINJA_MN_VIN-$WEB_NINJA_MN_VIDX"
@@ -833,6 +845,9 @@ print_status() {
     pending "  masternode last payment    : " ; [ ! -z "$WEB_NINJA_MN_LAST_PAID_AMOUNT" ] && \
         ok "$WEB_NINJA_MN_LAST_PAID_AMOUNT in $WEB_NINJA_MN_LAST_PAID_BLOCK on $WEB_NINJA_LAST_PAYMENT_TIME " || warn 'never'
     pending "  masternode balance         : " ; [ ! -z "$WEB_NINJA_MN_BALANCE" ] && ok "$WEB_NINJA_MN_BALANCE" || warn '0'
+    else
+    err     "  dashninja api offline        " ;
+    fi
 
     fi
 
