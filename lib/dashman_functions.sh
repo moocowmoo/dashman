@@ -795,7 +795,7 @@ get_dashd_status(){
         fi
 
         WEB_NINJA_API_OFFLINE=0
-        if [[ $(echo "$WEB_NINJA_API" | grep '"status":"ERROR"' | wc -l) ]];then
+        if [[ $(echo "$WEB_NINJA_API" | grep '"status":"ERROR"' | wc -l) > 0 ]];then
             WEB_NINJA_API_OFFLINE=1
         fi
 
