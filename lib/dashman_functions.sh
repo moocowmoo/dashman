@@ -111,19 +111,23 @@ _check_dependencies() {
 
     fi
 
-    (which curl 2>&1) >/dev/null || die "${messages["err_missing_dependency"]} curl - sudo $PKG_MANAGER install curl"
-    (which perl 2>&1) >/dev/null || die "${messages["err_missing_dependency"]} perl - sudo $PKG_MANAGER install perl"
+    (which curl 2>&1) >/dev/null || MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES curl"
+    (which perl 2>&1) >/dev/null || MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES perl"
 
     # make sure we have the right netcat version (-4,-6 flags)
     if [ ! -z "$(which nc)" ]; then
         (nc -z -4 8.8.8.8 53 2>&1) >/dev/null
         if [ $? -gt 0 ]; then
-
-            die "${messages["err_missing_dependency"]} netcat6 - sudo $PKG_MANAGER install netcat6"
+            MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES netcat6"
         fi
     else
-        die "${messages["err_missing_dependency"]} netcat - sudo $PKG_MANAGER install netcat"
+        MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES netcat"
     fi
+
+    if [ ! -z "$MISSING_DEPENDENCIES" ]; then
+        die "${messages["err_missing_dependency"]} $MISSING_DEPENDENCIES\n --> sudo $PKG_MANAGER install $MISSING_DEPENDENCIES"
+    fi
+
 
 }
 
