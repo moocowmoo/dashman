@@ -82,6 +82,10 @@ usage(){
 
             ${messages["usage_sync_description"]}
 
+        branch
+
+            ${messages["usage_branch_description"]}
+
         version
 
             ${messages["usage_version_description"]}

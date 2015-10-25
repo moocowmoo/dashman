@@ -73,6 +73,7 @@ messages=(
     ["usage_restart_description_now"]="zapyta użytkownika jeśli nie użyto argumentu \"now\""
     ["usage_status_description"]="przegląda zasoby lokalne i sieciowe oraz wyświetla aktualny status"
     ["usage_sync_description"]="updates dashman to latest github version"
+    ["usage_branch_description"]="switch dashman to an alternate/experimental github branch"
     ["usage_vote_description"]="oddaje glos masternoda w ramach propozycji budżetowych"
     ["usage_reinstall_description"]="nadpisuje dash do najnowszej wersji i uruchamia ponownie (patrz ponizej)"
     ["usage_version_description"]="wyświetla numer wersji dashmana"
