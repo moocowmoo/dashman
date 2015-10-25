@@ -94,6 +94,7 @@ messages=(
     ["currnt_version"]="  current version: "
     ["latest_version"]="   latest version: "
 
+    ["status_hostnam"]="  hostname                   : "
     ["status_uptimeh"]="  host uptime/load average   : "
     ["status_dashdip"]="  dashd bind ip address      : "
     ["status_dashdve"]="  dashd version              : "

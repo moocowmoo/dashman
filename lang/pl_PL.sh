@@ -94,6 +94,7 @@ messages=(
     ["currnt_version"]="    obecna wersja: "
     ["latest_version"]=" najnowsza wersja: "
 
+    ["status_hostnam"]="  hostname                           : "
     ["status_uptimeh"]="  czas pracy hosta/średnie zużycie   : "
     ["status_dashdip"]="  przypisany adres IP                : "
     ["status_dashdve"]="  wersja dashd                       : "

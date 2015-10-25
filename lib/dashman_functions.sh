@@ -839,10 +839,12 @@ get_host_status(){
     uptime=$(</proc/uptime)
     uptime=${uptime%%.*}
     HOST_UPTIME_DAYS=$(( uptime/60/60/24 ))
+    HOSTNAME=$(hostname -f)
 }
 
 
 print_status() {
+    pending "${messages["status_hostnam"]}" ; ok "$HOSTNAME"
     pending "${messages["status_uptimeh"]}" ; ok "$HOST_UPTIME_DAYS ${messages["days"]}, $HOST_LOAD_AVERAGE"
     pending "${messages["status_dashdip"]}" ; [ $MASTERNODE_BIND_IP != 'none' ] && ok $MASTERNODE_BIND_IP || err $MASTERNODE_BIND_IP
     pending "${messages["status_dashdve"]}" ; ok "$CURRENT_VERSION"
