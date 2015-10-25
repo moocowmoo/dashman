@@ -690,7 +690,7 @@ get_dashd_status(){
     fi
     DASHD_PID=$(pidof dashd)
     DASHD_UPTIME=$(ps -p $DASHD_PID -o etime= 2>/dev/null | sed -e 's/ //g')
-    DASHD_UPTIME_TIMES=$(echo "$DASHD_UPTIME" | perl -ne 'chomp ; s/-/:/ ; print join ":", reverse split /:/')
+    DASHD_UPTIME_TIMES=$(echo "$DASHD_UPTIME" | perl -ne 'chomp ; s/-/:/ ; print join ":", reverse split /:/' 2>/dev/null )
     DASHD_UPTIME_SECS=$( echo "$DASHD_UPTIME_TIMES" | cut -d: -f1 )
     DASHD_UPTIME_MINS=$( echo "$DASHD_UPTIME_TIMES" | cut -d: -f2 )
     DASHD_UPTIME_HOURS=$( echo "$DASHD_UPTIME_TIMES" | cut -d: -f3 )
