@@ -72,6 +72,7 @@ messages=(
     ["usage_restart_description"]="restartuje dashd i usuwa:"
     ["usage_restart_description_now"]="zapyta użytkownika jeśli nie użyto argumentu \"now\""
     ["usage_status_description"]="przegląda zasoby lokalne i sieciowe oraz wyświetla aktualny status"
+    ["usage_sync_description"]="updates dashman to latest github version"
     ["usage_vote_description"]="oddaje glos masternoda w ramach propozycji budżetowych"
     ["usage_reinstall_description"]="nadpisuje dash do najnowszej wersji i uruchamia ponownie (patrz ponizej)"
     ["usage_version_description"]="wyświetla numer wersji dashmana"
@@ -119,7 +120,7 @@ messages=(
     ["status_mnqueue"]="  pozycja w kolejce                  : "
     ["status_mnlastp"]="  ostatnia otrzymana płatność        : "
     ["status_mnbalan"]="  saldo masternoda                   : "
-    # still few lines to translate but we will get there
+
     # do not translate, leave empty, overrides english sentence usage
     ["ago"]=""
     ["found"]=""

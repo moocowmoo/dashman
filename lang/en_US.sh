@@ -72,6 +72,7 @@ messages=(
     ["usage_restart_description"]="restarts dashd and deletes:"
     ["usage_restart_description_now"]="will prompt user if not given the 'now' argument"
     ["usage_status_description"]="polls local and web sources and displays current status"
+    ["usage_sync_description"]="updates dashman to latest github version"
     ["usage_vote_description"]="cast masternode votes for distributed budget ballot items"
     ["usage_reinstall_description"]="overwrites dash with latest version and restarts (see below)"
     ["usage_version_description"]="prints dashmans version number and exits"

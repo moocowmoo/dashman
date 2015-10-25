@@ -78,6 +78,10 @@ usage(){
 
             ${messages["usage_vote_description"]}
 
+        sync
+
+            ${messages["usage_sync_description"]}
+
         version
 
             ${messages["usage_version_description"]}
