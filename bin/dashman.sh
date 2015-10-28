@@ -36,7 +36,8 @@ shift $(($OPTIND - 1))
 
 # load common functions ------------------------------------------------------
 
-DASHMAN_GITDIR=$(readlink -f ${0%%/${0##*/}})
+DASHMAN_BIN=$(readlink -f $0)
+DASHMAN_GITDIR=$(readlink -f ${DASHMAN_BIN%%/bin/${DASHMAN_BIN##*/}})
 source $DASHMAN_GITDIR/lib/dashman_functions.sh
 
 # load language packs --------------------------------------------------------
