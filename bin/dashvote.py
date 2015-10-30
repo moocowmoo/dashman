@@ -352,15 +352,16 @@ def main(screen):
     sel_vote = 0
     while True:
         key = votewin.getch()
-        f = keys.get(key, lambda s: 'not mapped')
-        sel_vote = f(sel_vote)
-        try:
-            entry_vote = ballot[ballot_entries[sel_vote]][u'vote']
-        except IndexError:
-            # CONFIRM button
-            entry_vote = ''
-        if key != 10:
-            update_vote_display(votewin, sel_vote, entry_vote)
+        f = keys.get(key)
+        if hasattr(f, '__call__'):
+            sel_vote = f(sel_vote)
+            try:
+                entry_vote = ballot[ballot_entries[sel_vote]][u'vote']
+            except IndexError:
+                # CONFIRM button
+                entry_vote = ''
+            if key != 10:
+                update_vote_display(votewin, sel_vote, entry_vote)
 
 
 if __name__ == '__main__':
