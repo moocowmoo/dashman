@@ -12,7 +12,7 @@ import time
 import tty
 
 
-VERSION = '0.0.2'
+VERSION = '0.0.3'
 git_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 dash_conf_dir = os.path.join(os.getenv('HOME'), '.dash')
 
@@ -76,19 +76,20 @@ def update_vote_display(win, sel_ent, vote):
         "ABSTAIN": C_YELLOW,
         '': 3
     }
+    _y=6
     if vote == '':
         sel_ent += 1
-        win.move(sel_ent + 5, max_proposal_len + 6)
+        win.move(sel_ent + _y, max_proposal_len + 6)
         win.addstr('       ')
-        win.move(sel_ent + 5, max_proposal_len + 6)
+        win.move(sel_ent + _y, max_proposal_len + 6)
         win.addstr('CONFIRM', C_GREEN)
-        win.move(sel_ent + 5, max_proposal_len + 6)
+        win.move(sel_ent + _y, max_proposal_len + 6)
     else:
-        win.move(sel_ent + 5, max_proposal_len + 6)
+        win.move(sel_ent + _y, max_proposal_len + 6)
         win.addstr('       ')
-        win.move(sel_ent + 5, max_proposal_len + 6)
+        win.move(sel_ent + _y, max_proposal_len + 6)
         win.addstr(vote, vote_colors[vote])
-        win.move(sel_ent + 5, max_proposal_len + 6)
+        win.move(sel_ent + _y, max_proposal_len + 6)
 
 
 def submit_votes(win, ballot, s):
@@ -174,11 +175,18 @@ def main(screen):
             "    do: export PATH=/path/to/dash-cli-folder:$PATH\n" +
             "    and try again\n")
 
+    loadwin = curses.newwin(40, 40, 1, 2)
+
+    loadwin.addstr(1, 2, 'dashvote version: ' + VERSION, C_CYAN)
+    loadwin.addstr(2, 2, 'loading votes... please wait', C_GREEN)
+    loadwin.refresh()
+
     mncount = int(run_command('dash-cli masternode count'))
     # get ballot
     ballot = json.loads(run_command('dash-cli mnbudget show'))
     for entry in ballot:
         ballot[entry][u'vote'] = 'ABSTAIN'
+        ballot[entry][u'votes'] = json.loads(run_command('dash-cli mnbudget getvotes %s' % entry))
     ballot_entries = sorted(ballot, key=lambda s: s.lower())
     votecount = len(ballot_entries)
     max_proposal_len = 0
@@ -200,8 +208,7 @@ def main(screen):
             if line and not line.startswith('#'))
         for line in lines:
             conf = line.split()
-            masternodes[
-                conf[0]] = {
+            masternodes[ conf[3] + '-' + conf[4] ] = {
                 "mnprivkey": conf[2],
                 "fundtx": conf[3] +
                 '-' +
@@ -235,7 +242,7 @@ def main(screen):
                 d = mndata[u'data'][0]
                 vin = str(d[u'MasternodeOutputHash'])
                 vidx = str(d[u'MasternodeOutputIndex'])
-                masternodes[conf['masternodeaddr']] = {
+                masternodes[vin + '-' + vidx] = {
                     "mnprivkey": conf['masternodeprivkey'],
                     "fundtx": vin +
                     '-' +
@@ -246,9 +253,19 @@ def main(screen):
                 quit('cannot find masternode information in dash.conf')
 
     # TODO open previous votes/local storage something
+    for entry in ballot:
+        ballot[entry][u'previously_voted'] = 0
+        for hash in ballot[entry][u'votes']:
+            if hash in masternodes:
+                if ballot[entry][u'votes'][hash][u'Vote'] == 'YES':
+                    ballot[entry][u'previously_voted'] = 1
+                else:
+                    ballot[entry][u'previously_voted'] = 2
 
+
+    loadwin.erase()
     votewin = curses.newwin(votecount +
-                            8, max(max_proposal_len +
+                            9, max(max_proposal_len +
                                    len(str(len(masternodes))) +
                                    14, 49), 1, 2)
     votewin.keypad(1)
@@ -262,7 +279,11 @@ def main(screen):
         len(masternodes),
         C_YELLOW)
     votewin.addstr(3, 2, 'hit enter on CONFIRM to vote - q to quit', C_YELLOW)
-    _y = 4
+    votewin.addstr(4, 3, '*', C_GREEN)
+    votewin.addstr(4, 4, '/', C_CYAN)
+    votewin.addstr(4, 5, '*', C_RED)
+    votewin.addstr(4, 7, '== previously voted proposal (yes/no)', C_YELLOW)
+    _y = 5
     for entry in ballot_entries:
         _y += 1
         x = 4
@@ -270,6 +291,9 @@ def main(screen):
         nays = ballot[entry][u'Nays']
         percentage = ballot[entry][u'vote_turnout']
         passing = ballot[entry][u'vote_passing']
+        if ballot[entry][u'previously_voted'] > 0:
+            direction = ballot[entry][u'previously_voted']
+            votewin.addstr(_y, x-1, '*', direction == 1 and C_GREEN or C_RED)
         votewin.addstr(_y, x, entry, passing and C_GREEN or C_RED)
         x += len(entry) + 1
         votewin.addstr(_y, x, '(', C_CYAN)
@@ -299,7 +323,7 @@ def main(screen):
         max_proposal_len + 6,
         'confirm',
         C_YELLOW)
-    votewin.move(0 + 5, max_proposal_len + 6)
+    votewin.move(0 + 6, max_proposal_len + 6)
 
     votewin.refresh()
 
@@ -309,6 +333,10 @@ def main(screen):
         curses.KEY_DOWN: lambda s: next_vote(s),
         curses.KEY_RIGHT: lambda s: set_vote(ballot, s, 1),
         curses.KEY_LEFT: lambda s: set_vote(ballot, s, -1),
+        107: lambda s: prev_vote(s),
+        106: lambda s: next_vote(s),
+        108: lambda s: set_vote(ballot, s, 1),
+        104: lambda s: set_vote(ballot, s, -1),
         10: lambda s: submit_votes(stdscr, ballot, s)
     }
 
