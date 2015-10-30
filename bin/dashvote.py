@@ -151,6 +151,15 @@ def main(screen):
     stdscr = screen
     stdscr.scrollok(1)
 
+    git_describe = run_command(
+        'GIT_DIR=%s GIT_WORK_TREE=%s git describe' %
+        (git_dir + '/.git', git_dir)).rstrip("\n").split('-')
+    try:
+        GIT_VERSION = ('-').join((git_describe[i] for i in [1, 2]))
+        version = 'v' + VERSION + ' (' + GIT_VERSION + ')'
+    except IndexError:
+        version = 'v' + VERSION
+
     try:
         curses.curs_set(2)
     except:
@@ -177,7 +186,7 @@ def main(screen):
 
     loadwin = curses.newwin(40, 40, 1, 2)
 
-    loadwin.addstr(1, 2, 'dashvote version: ' + VERSION, C_CYAN)
+    loadwin.addstr(1, 2, 'dashvote version: ' + version, C_CYAN)
     loadwin.addstr(2, 2, 'loading votes... please wait', C_GREEN)
     loadwin.refresh()
 
@@ -271,7 +280,7 @@ def main(screen):
     votewin.keypad(1)
     votewin.border()
 
-    votewin.addstr(1, 2, 'dashvote version: ' + VERSION, C_CYAN)
+    votewin.addstr(1, 2, 'dashvote version: ' + version, C_CYAN)
     votewin.addstr(
         2,
         2,
