@@ -12,7 +12,7 @@ import time
 import tty
 
 
-VERSION = '0.0.3'
+VERSION = '0.0.4'
 git_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 dash_conf_dir = os.path.join(os.getenv('HOME'), '.dash')
 
