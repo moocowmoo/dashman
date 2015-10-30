@@ -115,9 +115,10 @@ def submit_votes(win, ballot, s):
             stdscr.addstr("\n")
             for mn in sorted(masternodes):
                 node = masternodes[mn]
+                alias = masternodes[mn]['alias']
                 random_ts = random_timestamp()
                 ts = datetime.datetime.fromtimestamp(random_ts)
-                stdscr.addstr('    ' + mn, C_CYAN)
+                stdscr.addstr('    ' + alias, C_CYAN)
                 stdscr.addstr(' ' + str(ts) + ' ', C_YELLOW)
                 netvote = str(node['fundtx']) + str(votes_to_send
                                                     [vote][u'Hash']) + str(votes_to_send[vote][u'vote'] ==
@@ -196,7 +197,7 @@ def main(screen):
     for entry in ballot:
         ballot[entry][u'vote'] = 'ABSTAIN'
         ballot[entry][u'votes'] = json.loads(run_command('dash-cli mnbudget getvotes %s' % entry))
-    ballot_entries = sorted(ballot, key=lambda s: s.lower())
+    ballot_entries = sorted(ballot, key=lambda s: ballot[s]['BlockStart'])
     votecount = len(ballot_entries)
     max_proposal_len = 0
     for entry in ballot_entries:
@@ -204,6 +205,7 @@ def main(screen):
         nays = ballot[entry][u'Nays']
         percentage = "{0:.1f}".format((float((yeas + nays)) / float(mncount)) * 100)
         ballot[entry][u'vote_turnout'] = percentage
+        ballot[entry][u'vote_threshold'] = (yeas + nays) > mncount/10 and True or False
         ballot[entry][u'vote_passing'] = (yeas - nays) > mncount/10 and True or False
         max_proposal_len = max(max_proposal_len, (len(entry) + 3 + len(str(yeas)) + len(str(nays)) + len(str(percentage)) + 4 ))
 
@@ -218,6 +220,7 @@ def main(screen):
         for line in lines:
             conf = line.split()
             masternodes[ conf[3] + '-' + conf[4] ] = {
+                "alias": conf[0],
                 "mnprivkey": conf[2],
                 "fundtx": conf[3] +
                 '-' +
@@ -252,6 +255,7 @@ def main(screen):
                 vin = str(d[u'MasternodeOutputHash'])
                 vidx = str(d[u'MasternodeOutputIndex'])
                 masternodes[vin + '-' + vidx] = {
+                    "alias": conf['masternodeaddr'],
                     "mnprivkey": conf['masternodeprivkey'],
                     "fundtx": vin +
                     '-' +
@@ -300,10 +304,11 @@ def main(screen):
         nays = ballot[entry][u'Nays']
         percentage = ballot[entry][u'vote_turnout']
         passing = ballot[entry][u'vote_passing']
+        threshold = ballot[entry][u'vote_threshold']
         if ballot[entry][u'previously_voted'] > 0:
             direction = ballot[entry][u'previously_voted']
             votewin.addstr(_y, x-1, '*', direction == 1 and C_GREEN or C_RED)
-        votewin.addstr(_y, x, entry, passing and C_GREEN or C_RED)
+        votewin.addstr(_y, x, entry, passing and C_GREEN or threshold and C_RED or C_YELLOW)
         x += len(entry) + 1
         votewin.addstr(_y, x, '(', C_CYAN)
         x += 1
