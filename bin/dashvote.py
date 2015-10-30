@@ -112,6 +112,8 @@ def submit_votes(win, ballot, s):
             stdscr.addstr('  ' + vote, C_YELLOW)
             stdscr.addstr(" --> ")
             stdscr.addstr(castvote, castvote == 'YES' and C_GREEN or C_RED )
+            stdscr.addstr(" -- ")
+            stdscr.addstr(str(votes_to_send[vote][u'Hash']))
             stdscr.addstr("\n")
             for mn in sorted(masternodes):
                 node = masternodes[mn]
