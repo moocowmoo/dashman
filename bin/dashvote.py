@@ -12,7 +12,7 @@ import time
 import tty
 
 
-VERSION = '0.0.1'
+VERSION = '0.0.2'
 git_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 dash_conf_dir = os.path.join(os.getenv('HOME'), '.dash')
 
@@ -174,6 +174,7 @@ def main(screen):
             "    do: export PATH=/path/to/dash-cli-folder:$PATH\n" +
             "    and try again\n")
 
+    mncount = int(run_command('dash-cli masternode count'))
     # get ballot
     ballot = json.loads(run_command('dash-cli mnbudget show'))
     for entry in ballot:
@@ -182,7 +183,12 @@ def main(screen):
     votecount = len(ballot_entries)
     max_proposal_len = 0
     for entry in ballot_entries:
-        max_proposal_len = max(max_proposal_len, len(entry))
+        yeas = ballot[entry][u'Yeas']
+        nays = ballot[entry][u'Nays']
+        percentage = "{0:.1f}".format((float((yeas + nays)) / float(mncount)) * 100)
+        ballot[entry][u'vote_turnout'] = percentage
+        ballot[entry][u'vote_passing'] = (yeas - nays) > mncount/10 and True or False
+        max_proposal_len = max(max_proposal_len, (len(entry) + 3 + len(str(yeas)) + len(str(nays)) + len(str(percentage)) + 4 ))
 
     # extract mnprivkey,txid-txidx from masternode.conf
     masternodes = {}
@@ -244,7 +250,7 @@ def main(screen):
     votewin = curses.newwin(votecount +
                             8, max(max_proposal_len +
                                    len(str(len(masternodes))) +
-                                   28, 49), 1, 2)
+                                   14, 49), 1, 2)
     votewin.keypad(1)
     votewin.border()
 
@@ -255,11 +261,33 @@ def main(screen):
         'use arrow keys to set votes for %s masternodes' %
         len(masternodes),
         C_YELLOW)
-    votewin.addstr(3, 2, 'hit enter on CONFIRM to vote', C_YELLOW)
+    votewin.addstr(3, 2, 'hit enter on CONFIRM to vote - q to quit', C_YELLOW)
     _y = 4
     for entry in ballot_entries:
         _y += 1
-        votewin.addstr(_y, 4, entry, C_CYAN)
+        x = 4
+        yeas = ballot[entry][u'Yeas']
+        nays = ballot[entry][u'Nays']
+        percentage = ballot[entry][u'vote_turnout']
+        passing = ballot[entry][u'vote_passing']
+        votewin.addstr(_y, x, entry, passing and C_GREEN or C_RED)
+        x += len(entry) + 1
+        votewin.addstr(_y, x, '(', C_CYAN)
+        x += 1
+        votewin.addstr(_y, x, str(yeas), C_GREEN)
+        x += len(str(yeas))
+        votewin.addstr(_y, x, '/', C_CYAN)
+        x += 1
+        votewin.addstr(_y, x, str(nays), C_RED)
+        x += len(str(nays))
+        votewin.addstr(_y, x, ') ', C_CYAN)
+        x += 2
+        votewin.addstr(_y, x, '(', C_CYAN)
+        x += 1
+        votewin.addstr(_y, x, str(percentage) + "%", C_CYAN)
+        x += len(str(percentage)) + 1
+        votewin.addstr(_y, x, ')', C_CYAN)
+        x += 1
         votewin.addstr(
             _y,
             max_proposal_len +
@@ -276,6 +304,7 @@ def main(screen):
     votewin.refresh()
 
     keys = {
+        113: lambda s: quit(),
         curses.KEY_UP: lambda s: prev_vote(s),
         curses.KEY_DOWN: lambda s: next_vote(s),
         curses.KEY_RIGHT: lambda s: set_vote(ballot, s, 1),
