@@ -16,6 +16,12 @@ DOWNLOAD_PAGE='https://www.dashpay.io/downloads/'
 
 DASHD_RUNNING=0
 DASHMAN_VERSION=$(cat $DASHMAN_GITDIR/VERSION)
+DASHMAN_CHECKOUT=$(GIT_DIR=$DASHMAN_GITDIR/.git GIT_WORK_TREE=$DASHMAN_GITDIR git describe --dirty | sed -e "s/^.*-\([0-9]\+-g\)/\1/" )
+if [ "$DASHMAN_CHECKOUT" == "v"$DASHMAN_VERSION ]; then
+    DASHMAN_CHECKOUT=""
+else
+    DASHMAN_CHECKOUT=" ("$DASHMAN_CHECKOUT")"
+fi
 
 curl_cmd='timeout 7 curl -s'
 

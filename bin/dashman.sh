@@ -64,7 +64,7 @@ _check_dependencies
 
 # have command, will travel... -----------------------------------------------
 
-echo -e "${C_CYAN}${messages["dashman_version"]} $DASHMAN_VERSION${C_NORM} - ${C_GREEN}$(date)${C_NORM}"
+echo -e "${C_CYAN}${messages["dashman_version"]} $DASHMAN_VERSION$DASHMAN_CHECKOUT${C_NORM} - ${C_GREEN}$(date)${C_NORM}"
 
 # do awesome stuff -----------------------------------------------------------
 COMMAND=''
