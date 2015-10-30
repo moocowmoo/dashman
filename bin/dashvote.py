@@ -13,7 +13,11 @@ import tty
 
 
 VERSION = '0.0.4'
-git_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+git_dir = os.path.abspath(
+    os.path.join(
+        os.path.dirname(
+            os.path.abspath(__file__)),
+        '..'))
 dash_conf_dir = os.path.join(os.getenv('HOME'), '.dash')
 
 sys.path.append(git_dir + '/lib')
@@ -76,7 +80,7 @@ def update_vote_display(win, sel_ent, vote):
         "ABSTAIN": C_YELLOW,
         '': 3
     }
-    _y=6
+    _y = 6
     if vote == '':
         sel_ent += 1
         win.move(sel_ent + _y, max_proposal_len + 6)
@@ -111,7 +115,7 @@ def submit_votes(win, ballot, s):
             castvote = str(votes_to_send[vote][u'vote'])
             stdscr.addstr('  ' + vote, C_YELLOW)
             stdscr.addstr(" --> ")
-            stdscr.addstr(castvote, castvote == 'YES' and C_GREEN or C_RED )
+            stdscr.addstr(castvote, castvote == 'YES' and C_GREEN or C_RED)
             stdscr.addstr(" -- ")
             stdscr.addstr(str(votes_to_send[vote][u'Hash']))
             stdscr.addstr("\n")
@@ -132,7 +136,10 @@ def submit_votes(win, ballot, s):
     #            print netvote + ' ' + signature
     #            print command
                 stdout = run_command(command)
-                stdscr.addstr(stdout.rstrip("\n") + "\n", 'successfully' in stdout and C_GREEN or C_RED)
+                stdscr.addstr(
+                    stdout.rstrip("\n") +
+                    "\n",
+                    'successfully' in stdout and C_GREEN or C_RED)
                 stdscr.refresh()
 
     stdscr.addstr("\nHit any key to exit." + "\n", C_GREEN)
@@ -198,18 +205,27 @@ def main(screen):
     ballot = json.loads(run_command('dash-cli mnbudget show'))
     for entry in ballot:
         ballot[entry][u'vote'] = 'ABSTAIN'
-        ballot[entry][u'votes'] = json.loads(run_command('dash-cli mnbudget getvotes %s' % entry))
+        ballot[entry][u'votes'] = json.loads(
+            run_command(
+                'dash-cli mnbudget getvotes %s' %
+                entry))
     ballot_entries = sorted(ballot, key=lambda s: ballot[s]['BlockStart'])
     votecount = len(ballot_entries)
     max_proposal_len = 0
     for entry in ballot_entries:
         yeas = ballot[entry][u'Yeas']
         nays = ballot[entry][u'Nays']
-        percentage = "{0:.1f}".format((float((yeas + nays)) / float(mncount)) * 100)
+        percentage = "{0:.1f}".format(
+            (float((yeas + nays)) / float(mncount)) * 100)
         ballot[entry][u'vote_turnout'] = percentage
-        ballot[entry][u'vote_threshold'] = (yeas + nays) > mncount/10 and True or False
-        ballot[entry][u'vote_passing'] = (yeas - nays) > mncount/10 and True or False
-        max_proposal_len = max(max_proposal_len, (len(entry) + 3 + len(str(yeas)) + len(str(nays)) + len(str(percentage)) + 4 ))
+        ballot[entry][u'vote_threshold'] = (
+            yeas + nays) > mncount/10 and True or False
+        ballot[entry][u'vote_passing'] = (
+            yeas - nays) > mncount/10 and True or False
+        max_proposal_len = max(
+            max_proposal_len,
+            (len(entry) + 3 + len(str(yeas)) + len(str(nays)) +
+             len(str(percentage)) + 4))
 
     # extract mnprivkey,txid-txidx from masternode.conf
     masternodes = {}
@@ -221,7 +237,7 @@ def main(screen):
             if line and not line.startswith('#'))
         for line in lines:
             conf = line.split()
-            masternodes[ conf[3] + '-' + conf[4] ] = {
+            masternodes[conf[3] + '-' + conf[4]] = {
                 "alias": conf[0],
                 "mnprivkey": conf[2],
                 "fundtx": conf[3] +
@@ -241,7 +257,10 @@ def main(screen):
             for line in lines:
                 n, v = line.split('=')
                 conf[n.strip(' ')] = v.strip(' ')
-            conf['masternodeaddr'] = re.sub('[\[\]]', '', conf['masternodeaddr'])
+            conf['masternodeaddr'] = re.sub(
+                '[\[\]]',
+                '',
+                conf['masternodeaddr'])
             if all(k in conf for k in ('masternode', 'masternodeaddr', 'masternodeprivkey')):
                 # get funding tx from dashninja
                 import urllib2
@@ -277,7 +296,6 @@ def main(screen):
                 else:
                     ballot[entry][u'previously_voted'] = 2
 
-
     loadwin.erase()
     votewin = curses.newwin(votecount +
                             9, max(max_proposal_len +
@@ -310,7 +328,11 @@ def main(screen):
         if ballot[entry][u'previously_voted'] > 0:
             direction = ballot[entry][u'previously_voted']
             votewin.addstr(_y, x-1, '*', direction == 1 and C_GREEN or C_RED)
-        votewin.addstr(_y, x, entry, passing and C_GREEN or threshold and C_RED or C_YELLOW)
+        votewin.addstr(
+            _y,
+            x,
+            entry,
+            passing and C_GREEN or threshold and C_RED or C_YELLOW)
         x += len(entry) + 1
         votewin.addstr(_y, x, '(', C_CYAN)
         x += 1
