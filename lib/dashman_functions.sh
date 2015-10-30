@@ -903,9 +903,18 @@ get_public_ips() {
     PUBLIC_IPV4=$($curl_cmd -4 https://icanhazip.com/)
     PUBLIC_IPV6=$($curl_cmd -6 https://icanhazip.com/)
     if [ -z "$PUBLIC_IPV4" ] && [ -z "$PUBLIC_IPV6" ]; then
-        err "  --> ${messages["err_failed_ip_resolve"]}"
-        sleep 3
-        get_public_ips
+
+        # try http
+        PUBLIC_IPV4=$($curl_cmd -4 http://icanhazip.com/)
+        PUBLIC_IPV6=$($curl_cmd -6 http://icanhazip.com/)
+
+        if [ -z "$PUBLIC_IPV4" ] && [ -z "$PUBLIC_IPV6" ]; then
+            sleep 3
+            err "  --> ${messages["err_failed_ip_resolve"]}"
+            # try again
+            get_public_ips
+        fi
+
     fi
 }
 
