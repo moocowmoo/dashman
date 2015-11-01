@@ -44,6 +44,22 @@ def random_timestamp():
     return now_epoch - (offset % 86400)
 
 
+# python <2.7 monkey patch
+if "check_output" not in dir( subprocess ):
+    def f(*popenargs, **kwargs):
+        if 'stdout' in kwargs:
+            raise ValueError('stdout argument not allowed, it will be overridden.')
+        process = subprocess.Popen(stdout=subprocess.PIPE, *popenargs, **kwargs)
+        output, unused_err = process.communicate()
+        retcode = process.poll()
+        if retcode:
+            cmd = kwargs.get("args")
+            if cmd is None:
+                cmd = popenargs[0]
+            raise subprocess.CalledProcessError(retcode, cmd)
+        return output
+    subprocess.check_output = f
+
 def run_command(cmd):
     return subprocess.check_output(cmd, shell=True)
 
@@ -278,9 +294,9 @@ def main(screen):
                     "\"]&portcheck=1").read()
                 try:
                     mndata = json.loads(mninfo)
+                    d = mndata[u'data'][0]
                 except:
                     quit('cannot retrieve masternode info from dashninja')
-                d = mndata[u'data'][0]
                 vin = str(d[u'MasternodeOutputHash'])
                 vidx = str(d[u'MasternodeOutputIndex'])
                 masternodes[vin + '-' + vidx] = {
