@@ -83,17 +83,17 @@ def update_vote_display(win, sel_ent, vote):
     _y = 6
     if vote == '':
         sel_ent += 1
-        win.move(sel_ent + _y, max_proposal_len + 6)
+        win.move(sel_ent + _y, window_width + 7)
         win.addstr('       ')
-        win.move(sel_ent + _y, max_proposal_len + 6)
+        win.move(sel_ent + _y, window_width + 7)
         win.addstr('CONFIRM', C_GREEN)
-        win.move(sel_ent + _y, max_proposal_len + 6)
+        win.move(sel_ent + _y, window_width + 7)
     else:
-        win.move(sel_ent + _y, max_proposal_len + 6)
+        win.move(sel_ent + _y, window_width + 7)
         win.addstr('       ')
-        win.move(sel_ent + _y, max_proposal_len + 6)
+        win.move(sel_ent + _y, window_width + 7)
         win.addstr(vote, vote_colors[vote])
-        win.move(sel_ent + _y, max_proposal_len + 6)
+        win.move(sel_ent + _y, window_width + 7)
 
 
 def submit_votes(win, ballot, s):
@@ -152,7 +152,10 @@ def main(screen):
 
     global stdscr
     global votecount
-    global max_proposal_len
+    global window_width
+    global max_yeacount_len
+    global max_naycount_len
+    global max_percentage_len
     global ballot_entries
     global votewin
     global masternodes
@@ -212,6 +215,9 @@ def main(screen):
     ballot_entries = sorted(ballot, key=lambda s: ballot[s]['BlockStart'])
     votecount = len(ballot_entries)
     max_proposal_len = 0
+    max_yeacount_len = 0
+    max_naycount_len = 0
+    max_percentage_len = 0
     for entry in ballot_entries:
         yeas = ballot[entry][u'Yeas']
         nays = ballot[entry][u'Nays']
@@ -224,8 +230,10 @@ def main(screen):
             yeas - nays) > mncount/10 and True or False
         max_proposal_len = max(
             max_proposal_len,
-            (len(entry) + 3 + len(str(yeas)) + len(str(nays)) +
-             len(str(percentage)) + 4))
+            len(entry))
+        max_yeacount_len = max(max_yeacount_len, len(str(yeas)))
+        max_naycount_len = max(max_naycount_len, len(str(nays)))
+        max_percentage_len = max(max_percentage_len, len(str(percentage)))
 
     # extract mnprivkey,txid-txidx from masternode.conf
     masternodes = {}
@@ -297,10 +305,13 @@ def main(screen):
                     ballot[entry][u'previously_voted'] = 2
 
     loadwin.erase()
-    votewin = curses.newwin(votecount +
-                            9, max(max_proposal_len +
-                                   len(str(len(masternodes))) +
-                                   14, 49), 1, 2)
+    window_width = 35
+    window_width = max(window_width, max_proposal_len +
+                       max_percentage_len +
+                       max_yeacount_len +
+                       max_naycount_len +
+                       len(str(len(masternodes))))
+    votewin = curses.newwin(votecount + 9, window_width + 17, 1, 2)
     votewin.keypad(1)
     votewin.border()
 
@@ -328,40 +339,38 @@ def main(screen):
         if ballot[entry][u'previously_voted'] > 0:
             direction = ballot[entry][u'previously_voted']
             votewin.addstr(_y, x-1, '*', direction == 1 and C_GREEN or C_RED)
+
+        fmt_entry = "%-"+str(max_proposal_len + 2)+"s"
         votewin.addstr(
             _y,
             x,
-            entry,
+            fmt_entry % entry,
             passing and C_GREEN or threshold and C_RED or C_YELLOW)
-        x += len(entry) + 1
-        votewin.addstr(_y, x, '(', C_CYAN)
-        x += 1
-        votewin.addstr(_y, x, str(yeas), C_GREEN)
-        x += len(str(yeas))
-        votewin.addstr(_y, x, '/', C_CYAN)
-        x += 1
-        votewin.addstr(_y, x, str(nays), C_RED)
-        x += len(str(nays))
-        votewin.addstr(_y, x, ') ', C_CYAN)
-        x += 2
-        votewin.addstr(_y, x, '(', C_CYAN)
-        x += 1
-        votewin.addstr(_y, x, str(percentage) + "%", C_CYAN)
-        x += len(str(percentage)) + 1
-        votewin.addstr(_y, x, ')', C_CYAN)
-        x += 1
-        votewin.addstr(
-            _y,
-            max_proposal_len +
-            6,
-            'ABSTAIN',
-            C_YELLOW)
+
+        for x in range(max_yeacount_len - len(str(yeas))):
+            votewin.addstr(' ')
+
+        votewin.addstr(str(yeas), C_GREEN)
+        votewin.addstr('/', C_CYAN)
+        votewin.addstr(str(nays), C_RED)
+        votewin.addstr(' ')
+
+        for x in range(max_naycount_len - len(str(nays))):
+            votewin.addstr(' ')
+
+        for x in range(max_percentage_len - len(str(percentage))):
+            votewin.addstr(' ')
+
+        votewin.addstr(str(percentage) + "%", C_CYAN)
+
+        votewin.addstr('  ')
+        votewin.addstr('ABSTAIN', C_YELLOW)
     votewin.addstr(
         _y + 2,
-        max_proposal_len + 6,
+        window_width + 7,
         'confirm',
         C_YELLOW)
-    votewin.move(0 + 6, max_proposal_len + 6)
+    votewin.move(0 + 6, window_width + 7)
 
     votewin.refresh()
 
