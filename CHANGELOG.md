@@ -1,4 +1,20 @@
 
+0.1.14 -  Sun Nov 1 03:57:56 2015 +0000
+
+    added git checkout info to version header
+    added few more lines in polish
+
+    bugfix - ip-lookup failover to http if https fails (older distro cert issue)
+    bugfix - support symlink invocation
+
+    dashvote - added git checkout info to version header
+    dashvote - added loading screen, previous vote detection, vim navigation binding
+    dashvote - added vote-counts, turnout percentage
+    dashvote - bugfix - use alias for vote display - added threshold coloring, sort vote display by block start
+    dashvote - align count/percentage columns
+    dashvote - display vote hash during voting
+    dashvote - ignore unmapped keystrokes
+
 0.1.13 -  Sun Oct 25 05:49:37 2015 +0000
 
     initial i18n support - adding polish (thanks tombtc!)
