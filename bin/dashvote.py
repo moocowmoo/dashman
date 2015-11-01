@@ -12,7 +12,7 @@ import time
 import tty
 
 
-VERSION = '0.0.4'
+VERSION = '0.0.5'
 git_dir = os.path.abspath(
     os.path.join(
         os.path.dirname(
