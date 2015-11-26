@@ -12,7 +12,7 @@ C_GREEN="\e[32m"
 C_CYAN="\e[36m"
 C_NORM="\e[0m"
 
-DOWNLOAD_PAGE='https://www.dashpay.io/downloads/'
+DOWNLOAD_PAGE='https://www.dash.org/downloads/'
 
 DASHD_RUNNING=0
 DASHMAN_VERSION=$(cat $DASHMAN_GITDIR/VERSION)
