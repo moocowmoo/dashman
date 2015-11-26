@@ -1,4 +1,10 @@
 
+0.1.15 -  Thu Nov 26 02:57:45 2015 +0000
+
+    update download url to dash.org
+    bugfix - support stale nss lib - downgrade second dashninja attempt
+    dashvote - monkey-patch subprocess.check_output for python <2.7
+
 0.1.14 -  Sun Nov 1 03:57:56 2015 +0000
 
     added git checkout info to version header
