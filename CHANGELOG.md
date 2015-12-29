@@ -1,4 +1,8 @@
 
+0.1.16 -  Tue Dec 29 05:41:43 2015 +0000
+
+    bugfix - support dash.org downloads page shift to relative pathing
+
 0.1.15 -  Thu Nov 26 02:57:45 2015 +0000
 
     update download url to dash.org
