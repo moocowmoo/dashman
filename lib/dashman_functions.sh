@@ -12,6 +12,7 @@ C_GREEN="\e[32m"
 C_CYAN="\e[36m"
 C_NORM="\e[0m"
 
+DASH_ORG='https://www.dash.org'
 DOWNLOAD_PAGE='https://www.dash.org/downloads/'
 
 DASHD_RUNNING=0
@@ -253,7 +254,7 @@ _get_versions() {
     DOWNLOAD_HTML=$( $curl_cmd $DOWNLOAD_PAGE )
     local IFS=' '
     read -a DOWNLOAD_URLS <<< $( echo $DOWNLOAD_HTML | sed -e 's/ /\n/g' | grep binaries | grep Download | grep linux | perl -ne '/.*"([^"]+)".*/; print "$1 ";' 2>/dev/null )
-    #$( <-- vim syntax highlighting fix
+    #$(( <-- vim syntax highlighting fix
     LATEST_VERSION=$( echo ${DOWNLOAD_URLS[0]} | perl -ne '/dash-([0-9.]+)-/; print $1;' 2>/dev/null )
     if [ -z "$LATEST_VERSION" ]; then
         die "\n${messages["err_could_not_get_version"]} $DOWNLOAD_PAGE -- ${messages["exiting"]}"
@@ -264,8 +265,12 @@ _get_versions() {
     for url in "${DOWNLOAD_URLS[@]}"
     do
         if [[ $url =~ .*linux${BITS}.* ]] ; then
+            if [[ ! $url =~ "http" ]] ; then
+                url=$DASH_ORG$url
+            fi
             DOWNLOAD_URL=$url
             DOWNLOAD_FILE=${DOWNLOAD_URL##*/}
+
         fi
     done
 }
