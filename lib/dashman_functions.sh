@@ -109,6 +109,8 @@ _check_dependencies() {
         PKG_MANAGER=apt-get
     elif [[ $PLATFORM == *"centos"* ]]; then
         PKG_MANAGER=yum
+    elif [[ $PLATFORM == *"arch"* ]]; then
+        PKG_MANAGER=pacman
     fi
 
     if [ -z "$PKG_MANAGER" ]; then
@@ -123,7 +125,7 @@ _check_dependencies() {
 
     # make sure we have the right netcat version (-4,-6 flags)
     if [ ! -z "$(which nc)" ]; then
-        (nc -z -4 8.8.8.8 53 2>&1) >/dev/null
+        (nc -z 8.8.8.8 53 2>&1) >/dev/null
         if [ $? -gt 0 ]; then
             MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES netcat6"
         fi
@@ -760,9 +762,9 @@ get_dashd_status(){
     get_public_ips
 
     MASTERNODE_BIND_IP='none'
-    PUBLIC_PORT_CLOSED=$( timeout 2 nc -4 -z $PUBLIC_IPV4 9999 2>&1 >/dev/null; echo $? )
+    PUBLIC_PORT_CLOSED=$( timeout 2 nc -z $PUBLIC_IPV4 9999 2>&1 >/dev/null; echo $? )
     if [ $PUBLIC_PORT_CLOSED -ne 0 ] && [ ! -z "$PUBLIC_IPV6" ]; then
-        PUBLIC_PORT_CLOSED=$( timeout 2 nc -6 -z $PUBLIC_IPV6 9999 2>&1 >/dev/null; echo $? )
+        PUBLIC_PORT_CLOSED=$( timeout 2 nc -z $PUBLIC_IPV6 9999 2>&1 >/dev/null; echo $? )
         if [ $PUBLIC_PORT_CLOSED -eq 0 ]; then
             MASTERNODE_BIND_IP=$PUBLIC_IPV6
         fi
