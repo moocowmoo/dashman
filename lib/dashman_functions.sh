@@ -102,7 +102,7 @@ EOF
 
 _check_dependencies() {
 
-    (which python 2>&1) >/dev/null || die "${messages["err_missing_dependency"]} python - sudo apt-get install python"
+    (which python2 2>&1) >/dev/null || die "${messages["err_missing_dependency"]} python2 - sudo apt-get install python2"
 
     PLATFORM=$(/usr/bin/env python -mplatform | sed -e 's/.*with-//g')
     if [[ $PLATFORM == *"Ubuntu"* ]] || [[ $PLATFORM == *"debian"* ]]; then
@@ -736,7 +736,7 @@ get_dashd_status(){
         WEB_DASHWHALE=`$curl_cmd https://www.dashwhale.org/api/v1/public`;
     fi
 
-    WEB_DASHWHALE_JSON_TEXT=$(echo $WEB_DASHWHALE | python -m json.tool)
+    WEB_DASHWHALE_JSON_TEXT=$(echo $WEB_DASHWHALE | python2 -m json.tool)
     WEB_BLOCK_COUNT_DWHALE=$(echo "$WEB_DASHWHALE_JSON_TEXT" | grep consensus_blockheight | awk '{print $2}' | sed -e 's/[",]//g')
 
     WEB_ME=`$curl_cmd https://www.masternode.me/data/block_state.txt 2>/dev/null`;
@@ -800,7 +800,7 @@ get_dashd_status(){
             WEB_NINJA_API=$($curl_cmd --ciphers rsa_3des_sha "https://dashninja.pl/api/masternodes?ips=\[\"${MASTERNODE_BIND_IP}:9999\"\]&portcheck=1&balance=1")
         fi
 
-        WEB_NINJA_JSON_TEXT=$(echo $WEB_NINJA_API | python -m json.tool)
+        WEB_NINJA_JSON_TEXT=$(echo $WEB_NINJA_API | python2 -m json.tool)
         WEB_NINJA_SEES_OPEN=$(echo "$WEB_NINJA_JSON_TEXT" | grep '"Result"' | grep open | wc -l)
         WEB_NINJA_MN_ADDY=$(echo "$WEB_NINJA_JSON_TEXT" | grep MasternodePubkey | awk '{print $2}' | sed -e 's/[",]//g')
         WEB_NINJA_MN_VIN=$(echo "$WEB_NINJA_JSON_TEXT" | grep MasternodeOutputHash | awk '{print $2}' | sed -e 's/[",]//g')
