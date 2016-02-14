@@ -662,6 +662,20 @@ install_dashd(){
 
     rm -rf dash-0.12.0
 
+    # preload it -------------------------------------------------------------
+
+    pending " --> ${messages["bootstrapping"]} blockchain. ${messages["please_wait"]}\n"
+    pending "  --> ${messages["downloading"]} bootstrap..."
+    BOOSTRAP_LINKS='https://raw.githubusercontent.com/UdjinM6/dash-bootstrap/master/links.md'
+    wget --no-check-certificate -q -r $BOOSTRAP_LINKS -O links.md
+    MAINNET_BOOTSTRAP_FILE=$(head -1 links.md | awk '{print $11}' | sed 's/.*\(http.*\.zip\).*/\1/')
+    wget --no-check-certificate -q -r $MAINNET_BOOTSTRAP_FILE -O ${MAINNET_BOOTSTRAP_FILE##*/}
+    ok ${messages["done"]}
+    pending "  --> ${messages["unzipping"]} bootstrap..."
+    unzip -q ${MAINNET_BOOTSTRAP_FILE##*/}
+    ok ${messages["done"]}
+    rm links.md bootstrap.dat*.zip
+
     # punch it ---------------------------------------------------------------
 
     pending " --> ${messages["launching"]} dashd..."
