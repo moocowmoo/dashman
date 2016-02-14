@@ -94,7 +94,7 @@ case "$1" in
             _get_versions
             _check_dashd_running
             ok " ${messages["done"]}"
-            if [ ! -z "$RPI" ]; then
+            if [ ! -z "$RPI" ] && [ $RPI2 -eq 0 ]; then
                 die "$COMMAND not supported yet on this platform."
             fi
             update_dashd
@@ -105,7 +105,7 @@ case "$1" in
             _check_dashman_updates
             _get_versions
             ok " ${messages["done"]}"
-            if [ ! -z "$RPI" ]; then
+            if [ ! -z "$RPI" ] && [ $RPI2 -eq 0 ]; then
                 die "$COMMAND not supported yet on this platform."
             fi
             if [ ! -z "$2" ]; then
@@ -129,7 +129,7 @@ case "$1" in
             _check_dashd_running
             REINSTALL=1
             ok " ${messages["done"]}"
-            if [ ! -z "$RPI" ]; then
+            if [ ! -z "$RPI" ] && [ $RPI2 -eq 0 ]; then
                 die "$COMMAND not supported yet on this platform."
             fi
             update_dashd

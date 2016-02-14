@@ -104,10 +104,10 @@ _check_dependencies() {
 
     (which python 2>&1) >/dev/null || die "${messages["err_missing_dependency"]} python - sudo apt-get install python"
 
-    PLATFORM=$(/usr/bin/env python -mplatform | sed -e 's/.*with-//g')
-    if [[ $PLATFORM == *"Ubuntu"* ]] || [[ $PLATFORM == *"debian"* ]]; then
+    DISTRO=$(/usr/bin/env python -mplatform | sed -e 's/.*with-//g')
+    if [[ $DISTRO == *"Ubuntu"* ]] || [[ $DISTRO == *"debian"* ]]; then
         PKG_MANAGER=apt-get
-    elif [[ $PLATFORM == *"centos"* ]]; then
+    elif [[ $DISTRO == *"centos"* ]]; then
         PKG_MANAGER=yum
     fi
 
@@ -240,6 +240,7 @@ _get_platform_info() {
         armv7l)
             BITS=32
             RPI=1
+            RPI2=$(grep BCM2709 /proc/cpuinfo | wc -l)
             ;;
         *)
             err "${messages["err_unknown_platform"]} $PLATFORM"
@@ -253,7 +254,12 @@ _get_versions() {
     _get_platform_info
     DOWNLOAD_HTML=$( $curl_cmd $DOWNLOAD_PAGE )
     local IFS=' '
-    read -a DOWNLOAD_URLS <<< $( echo $DOWNLOAD_HTML | sed -e 's/ /\n/g' | grep binaries | grep Download | grep linux | perl -ne '/.*"([^"]+)".*/; print "$1 ";' 2>/dev/null )
+    DOWNLOAD_FOR='linux'
+    if [ ! -z "$RPI2" ]; then
+        DOWNLOAD_FOR='RPi2'
+    fi
+    read -a DOWNLOAD_URLS <<< $( echo $DOWNLOAD_HTML | sed -e 's/ /\n/g' | grep binaries | grep Download | grep $DOWNLOAD_FOR | perl -ne '/.*"([^"]+)".*/; print "$1 ";' 2>/dev/null )
+
     #$(( <-- vim syntax highlighting fix
     LATEST_VERSION=$( echo ${DOWNLOAD_URLS[0]} | perl -ne '/dash-([0-9.]+)-/; print $1;' 2>/dev/null )
     if [ -z "$LATEST_VERSION" ]; then
@@ -264,13 +270,20 @@ _get_versions() {
     CURRENT_VERSION=$( $DASH_CLI --version | perl -ne '/v([0-9.]+)-/; print $1;' 2>/dev/null ) 2>/dev/null
     for url in "${DOWNLOAD_URLS[@]}"
     do
-        if [[ $url =~ .*linux${BITS}.* ]] ; then
+        if [ $DOWNLOAD_FOR == 'linux' ] ; then
+            if [[ $url =~ .*linux${BITS}.* ]] ; then
+                if [[ ! $url =~ "http" ]] ; then
+                    url=$DASH_ORG$url
+                fi
+                DOWNLOAD_URL=$url
+                DOWNLOAD_FILE=${DOWNLOAD_URL##*/}
+            fi
+        elif [ $DOWNLOAD_FOR == 'RPi2' ] ; then
             if [[ ! $url =~ "http" ]] ; then
                 url=$DASH_ORG$url
             fi
             DOWNLOAD_URL=$url
             DOWNLOAD_FILE=${DOWNLOAD_URL##*/}
-
         fi
     done
 }
@@ -438,10 +451,14 @@ update_dashd(){
 
         mv dash-0.12.0/bin/dashd dashd-$LATEST_VERSION
         mv dash-0.12.0/bin/dash-cli dash-cli-$LATEST_VERSION
-        mv dash-0.12.0/bin/dash-qt dash-qt-$LATEST_VERSION
+        if [ $PLATFORM != 'armv7l' ];then
+            mv dash-0.12.0/bin/dash-qt dash-qt-$LATEST_VERSION
+        fi
         ln -s dashd-$LATEST_VERSION dashd
         ln -s dash-cli-$LATEST_VERSION dash-cli
-        ln -s dash-qt-$LATEST_VERSION dash-qt
+        if [ $PLATFORM != 'armv7l' ];then
+            ln -s dash-qt-$LATEST_VERSION dash-qt
+        fi
 
         # permission it ----------------------------------------------------------
 
@@ -626,10 +643,14 @@ install_dashd(){
 
     mv dash-0.12.0/bin/dashd dashd-$LATEST_VERSION
     mv dash-0.12.0/bin/dash-cli dash-cli-$LATEST_VERSION
-    mv dash-0.12.0/bin/dash-qt dash-qt-$LATEST_VERSION
+    if [ $PLATFORM != 'armv7l' ];then
+        mv dash-0.12.0/bin/dash-qt dash-qt-$LATEST_VERSION
+    fi
     ln -s dashd-$LATEST_VERSION dashd
     ln -s dash-cli-$LATEST_VERSION dash-cli
-    ln -s dash-qt-$LATEST_VERSION dash-qt
+    if [ $PLATFORM != 'armv7l' ];then
+        ln -s dash-qt-$LATEST_VERSION dash-qt
+    fi
 
     # permission it ----------------------------------------------------------
 
