@@ -239,8 +239,8 @@ _get_platform_info() {
             ;;
         armv7l)
             BITS=32
-            RPI=1
-            RPI2=$(grep BCM2709 /proc/cpuinfo | wc -l)
+            ARM=1
+            BIGARM=$(grep -E "(BCM2709|Freescale i\\.MX6)" /proc/cpuinfo | wc -l)
             ;;
         *)
             err "${messages["err_unknown_platform"]} $PLATFORM"
@@ -255,7 +255,7 @@ _get_versions() {
     DOWNLOAD_HTML=$( $curl_cmd $DOWNLOAD_PAGE )
     local IFS=' '
     DOWNLOAD_FOR='linux'
-    if [ ! -z "$RPI2" ]; then
+    if [ ! -z "$BIGARM" ]; then
         DOWNLOAD_FOR='RPi2'
     fi
     read -a DOWNLOAD_URLS <<< $( echo $DOWNLOAD_HTML | sed -e 's/ /\n/g' | grep binaries | grep Download | grep $DOWNLOAD_FOR | perl -ne '/.*"([^"]+)".*/; print "$1 ";' 2>/dev/null )
