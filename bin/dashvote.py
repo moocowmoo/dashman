@@ -379,7 +379,7 @@ def main(screen):
 
         votewin.addstr(str(percentage) + "%", C_CYAN)
 
-        votewin.addstr('  ')
+        votewin.addstr(' ')
         votewin.addstr('ABSTAIN', C_YELLOW)
     votewin.addstr(
         _y + 2,
