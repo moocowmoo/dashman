@@ -1,3 +1,6 @@
+0.1.17 -  Sat Jun 4 06:10:03 2016 +0000
+
+    config - pull checksums from github
 
 0.1.16 -  Tue Dec 29 05:41:43 2015 +0000
 
