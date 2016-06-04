@@ -268,7 +268,7 @@ _get_versions() {
     fi
 
     if [ -z "$DASH_CLI" ]; then DASH_CLI='echo'; fi
-    CURRENT_VERSION=$( $DASH_CLI --version | perl -ne '/v([0-9.]+)-/; print $1;' 2>/dev/null ) 2>/dev/null
+    CURRENT_VERSION=$( $DASH_CLI --version | perl -ne '/v([0-9.]+)/; print $1;' 2>/dev/null ) 2>/dev/null
     for url in "${DOWNLOAD_URLS[@]}"
     do
         if [ $DOWNLOAD_FOR == 'linux' ] ; then
