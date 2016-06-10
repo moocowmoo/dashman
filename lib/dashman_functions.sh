@@ -579,7 +579,7 @@ install_dashd(){
 
     pending " --> ${messages["downloading"]} ${DOWNLOAD_URL}..."
     wget --no-check-certificate -q -r $DOWNLOAD_URL -O $DOWNLOAD_FILE
-    wget --no-check-certificate -q -r ${DOWNLOAD_URL}.DIGESTS.txt -O ${DOWNLOAD_FILE}.DIGESTS.txt
+    wget --no-check-certificate -q -r https://github.com/dashpay/dash/releases/download/v$LATEST_VERSION/SHA256SUMS.asc -O ${DOWNLOAD_FILE}.DIGESTS.txt
     if [ ! -e $DOWNLOAD_FILE ] ; then
         echo -e "${C_RED}error ${messages["downloading"]} file"
         echo -e "tried to get $DOWNLOAD_URL$C_NORM"
@@ -592,18 +592,18 @@ install_dashd(){
 
     pending " --> ${messages["checksumming"]} ${DOWNLOAD_FILE}..."
     SHA256SUM=$( sha256sum $DOWNLOAD_FILE )
-    MD5SUM=$( md5sum $DOWNLOAD_FILE )
+    #MD5SUM=$( md5sum $DOWNLOAD_FILE )
     SHA256PASS=$( grep $SHA256SUM ${DOWNLOAD_FILE}.DIGESTS.txt | wc -l )
-    MD5SUMPASS=$( grep $MD5SUM ${DOWNLOAD_FILE}.DIGESTS.txt | wc -l )
+    #MD5SUMPASS=$( grep $MD5SUM ${DOWNLOAD_FILE}.DIGESTS.txt | wc -l )
     if [ $SHA256PASS -lt 1 ] ; then
         echo -e " ${C_RED} SHA256 ${messages["checksum"]} ${messages["FAILED"]} ${messages["try_again_later"]} ${messages["exiting"]}$C_NORM"
 
         exit 1
     fi
-    if [ $MD5SUMPASS -lt 1 ] ; then
-        echo -e " ${C_RED} MD5 ${messages["checksum"]} ${messages["FAILED"]} ${messages["try_again_later"]} ${messages["exiting"]}$C_NORM"
-        exit 1
-    fi
+    #if [ $MD5SUMPASS -lt 1 ] ; then
+    #    echo -e " ${C_RED} MD5 ${messages["checksum"]} ${messages["FAILED"]} ${messages["try_again_later"]} ${messages["exiting"]}$C_NORM"
+    #    exit 1
+    #fi
     ok ${messages["done"]}
 
     # produce it -------------------------------------------------------------
