@@ -1,3 +1,7 @@
+0.1.18 -  Fri Jun 10 16:06:07 2016 +0000
+
+    config - pull checksums from github - remove MD5 checksum check from install
+
 0.1.17 -  Sat Jun 4 06:10:03 2016 +0000
 
     config - pull checksums from github
