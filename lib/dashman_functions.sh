@@ -669,13 +669,25 @@ install_dashd(){
     pending "  --> ${messages["downloading"]} bootstrap..."
     BOOSTRAP_LINKS='https://raw.githubusercontent.com/UdjinM6/dash-bootstrap/master/links.md'
     wget --no-check-certificate -q -r $BOOSTRAP_LINKS -O links.md
-    MAINNET_BOOTSTRAP_FILE=$(head -1 links.md | awk '{print $11}' | sed 's/.*\(http.*\.zip\).*/\1/')
-    wget --no-check-certificate -q -r $MAINNET_BOOTSTRAP_FILE -O ${MAINNET_BOOTSTRAP_FILE##*/}
-    ok ${messages["done"]}
-    pending "  --> ${messages["unzipping"]} bootstrap..."
-    unzip -q ${MAINNET_BOOTSTRAP_FILE##*/}
-    ok ${messages["done"]}
-    rm links.md bootstrap.dat*.zip
+    MAINNET_BOOTSTRAP_FILE_1=$(head -1 links.md | awk '{print $11}' | sed 's/.*\(http.*\.zip\).*/\1/')
+    MAINNET_BOOTSTRAP_FILE_2=$(head -3 links.md | tail -1 | awk '{print $11}' | sed 's/.*\(http.*\.zip\).*/\1/')
+    wget --no-check-certificate -q -r $MAINNET_BOOTSTRAP_FILE_1 -O ${MAINNET_BOOTSTRAP_FILE_1##*/}
+    MAINNET_BOOTSTRAP_FILE=${MAINNET_BOOTSTRAP_FILE_1##*/}
+    if [ ! -s $MAINNET_BOOTSTRAP_FILE ]; then
+        rm $MAINNET_BOOTSTRAP_FILE
+        wget --no-check-certificate -q -r $MAINNET_BOOTSTRAP_FILE_2 -O ${MAINNET_BOOTSTRAP_FILE_2##*/}
+        MAINNET_BOOTSTRAP_FILE=${MAINNET_BOOTSTRAP_FILE_2##*/}
+    fi
+    if [ ! -s $MAINNET_BOOTSTRAP_FILE ]; then
+        # TODO i18n
+        err " bootstrap download failed. skipping."
+    else
+        ok ${messages["done"]}
+        pending "  --> ${messages["unzipping"]} bootstrap..."
+        unzip -q ${MAINNET_BOOTSTRAP_FILE##*/}
+        ok ${messages["done"]}
+        rm links.md bootstrap.dat*.zip
+    fi
 
     # punch it ---------------------------------------------------------------
 
