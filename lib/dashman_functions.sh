@@ -259,7 +259,7 @@ _get_versions() {
     if [ ! -z "$BIGARM" ]; then
         DOWNLOAD_FOR='RPi2'
     fi
-    read -a DOWNLOAD_URLS <<< $( echo $DOWNLOAD_HTML | sed -e 's/ /\n/g' | grep binaries | grep Download | grep $DOWNLOAD_FOR | perl -ne '/.*"([^"]+)".*/; print "$1 ";' 2>/dev/null )
+    read -a DOWNLOAD_URLS <<< $( echo $DOWNLOAD_HTML | sed -e 's/ /\n/g' | grep binaries | grep -v '.asc' | grep $DOWNLOAD_FOR | perl -ne '/.*"([^"]+)".*/; print "$1 ";' 2>/dev/null )
 
     #$(( <-- vim syntax highlighting fix
     LATEST_VERSION=$( echo ${DOWNLOAD_URLS[0]} | perl -ne '/dash-([0-9.]+)-/; print $1;' 2>/dev/null )
