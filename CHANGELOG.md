@@ -1,3 +1,7 @@
+0.1.19 -  Tue Jun 21 08:01:55 2016 +0000
+
+    bugfix - extract binary versions from updated downloads page
+
 0.1.18 -  Fri Jun 10 16:06:07 2016 +0000
 
     config - pull checksums from github - remove MD5 checksum check from install
