@@ -24,7 +24,7 @@ else
     DASHMAN_CHECKOUT=" ("$DASHMAN_CHECKOUT")"
 fi
 
-curl_cmd='timeout 7 curl -s'
+curl_cmd='timeout 7 curl -s -L'
 
 # (mostly) functioning functions -- lots of refactoring to do ----------------
 
@@ -840,11 +840,11 @@ get_dashd_status(){
     fi
 
     if [ $MN_CONF_ENABLED -gt 0 ] ; then
-        WEB_NINJA_API=$($curl_cmd "https://dashninja.pl/api/masternodes?ips=\[\"${MASTERNODE_BIND_IP}:9999\"\]&portcheck=1&balance=1")
+        WEB_NINJA_API=$($curl_cmd "https://www.dashninja.pl/api/masternodes?ips=\[\"${MASTERNODE_BIND_IP}:9999\"\]&portcheck=1&balance=1")
         if [ -z "$WEB_NINJA_API" ]; then
             sleep 2
             # downgrade connection to support distros with stale nss libraries
-            WEB_NINJA_API=$($curl_cmd --ciphers rsa_3des_sha "https://dashninja.pl/api/masternodes?ips=\[\"${MASTERNODE_BIND_IP}:9999\"\]&portcheck=1&balance=1")
+            WEB_NINJA_API=$($curl_cmd --ciphers rsa_3des_sha "https://www.dashninja.pl/api/masternodes?ips=\[\"${MASTERNODE_BIND_IP}:9999\"\]&portcheck=1&balance=1")
         fi
 
         WEB_NINJA_JSON_TEXT=$(echo $WEB_NINJA_API | python -m json.tool)
