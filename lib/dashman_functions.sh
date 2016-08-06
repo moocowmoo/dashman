@@ -24,7 +24,7 @@ else
     DASHMAN_CHECKOUT=" ("$DASHMAN_CHECKOUT")"
 fi
 
-curl_cmd='timeout 7 curl -s'
+curl_cmd='timeout 7 curl -s -L'
 
 # (mostly) functioning functions -- lots of refactoring to do ----------------
 
