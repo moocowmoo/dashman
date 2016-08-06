@@ -832,9 +832,10 @@ get_dashd_status(){
     MN_QUEUE_IN_SELECTION=0
     MN_QUEUE_LENGTH=0
     MN_QUEUE_POSITION=0
+    SORTED_MN_LIST=$(echo "$MN_LIST" | egrep ' 0",?$' | sort -k9 -n -r ; echo "$MN_LIST" | sort -k10 -n -r | egrep -v ' 0",?$')
     if [ $MN_VISIBLE -gt 0 ]; then
         MN_QUEUE_LENGTH=$(echo "$MN_LIST" | grep ENABLED | wc -l)
-        MN_QUEUE_POSITION=$(echo "$MN_LIST" | grep ENABLED | sort -r -n -k10 | grep -A9999999 $MASTERNODE_BIND_IP | wc -l)
+        MN_QUEUE_POSITION=$(echo "$SORTED_MN_LIST" | grep ENABLED | grep -A9999999 $MASTERNODE_BIND_IP | wc -l)
         MN_QUEUE_IN_SELECTION=$(( $MN_QUEUE_POSITION <= $(( $MN_QUEUE_LENGTH / 10 )) ))
     fi
 
