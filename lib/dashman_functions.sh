@@ -125,7 +125,8 @@ _check_dependencies() {
     # make sure we have the right netcat version (-4,-6 flags)
     if [ ! -z "$(which nc)" ]; then
         (nc -z -4 8.8.8.8 53 2>&1) >/dev/null
-        if [ $? -gt 0 ]; then
+        #if [ $? -gt 0 ]; then
+		if false; then
             MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES netcat6"
         fi
     else
@@ -807,16 +808,15 @@ get_dashd_status(){
 
     get_public_ips
 
-    MASTERNODE_BIND_IP='none'
-    PUBLIC_PORT_CLOSED=$( timeout 2 nc -4 -z $PUBLIC_IPV4 9999 2>&1 >/dev/null; echo $? )
-    if [ $PUBLIC_PORT_CLOSED -ne 0 ] && [ ! -z "$PUBLIC_IPV6" ]; then
-        PUBLIC_PORT_CLOSED=$( timeout 2 nc -6 -z $PUBLIC_IPV6 9999 2>&1 >/dev/null; echo $? )
-        if [ $PUBLIC_PORT_CLOSED -eq 0 ]; then
-            MASTERNODE_BIND_IP=$PUBLIC_IPV6
-        fi
-    else
-        MASTERNODE_BIND_IP=$PUBLIC_IPV4
-    fi
+    #PUBLIC_PORT_CLOSED=$( timeout 2 nc -4 $PUBLIC_IPV4 9999 2>&1 >/dev/null; echo $? )
+    #if [ $PUBLIC_PORT_CLOSED -ne 0 ] && [ ! -z "$PUBLIC_IPV6" ]; then
+    #    PUBLIC_PORT_CLOSED=$( timeout 2 nc -6 $PUBLIC_IPV6 9999 2>&1 >/dev/null; echo $? )
+    #    if [ $PUBLIC_PORT_CLOSED -eq 0 ]; then
+    #        MASTERNODE_BIND_IP=$PUBLIC_IPV6
+    #    fi
+    #else
+    #    MASTERNODE_BIND_IP=$PUBLIC_IPV4
+    #fi
 
     # masternode specific
 
@@ -919,7 +919,7 @@ print_status() {
     pending "${messages["status_drespon"]}" ; [ $DASHD_RUNNING    -gt 0 ] && ok ${messages["YES"]} || err ${messages["NO"]}
     pending "${messages["status_dlisten"]}" ; [ $DASHD_LISTENING  -gt 0 ] && ok ${messages["YES"]} || err ${messages["NO"]}
     pending "${messages["status_dconnec"]}" ; [ $DASHD_CONNECTED  -gt 0 ] && ok ${messages["YES"]} || err ${messages["NO"]}
-    pending "${messages["status_dportop"]}" ; [ $PUBLIC_PORT_CLOSED  -lt 1 ] && ok ${messages["YES"]} || err ${messages["NO"]}
+    #pending "${messages["status_dportop"]}" ; [ $PUBLIC_PORT_CLOSED  -lt 1 ] && ok ${messages["YES"]} || err ${messages["NO"]}
     pending "${messages["status_dconcnt"]}" ; [ $DASHD_CONNECTIONS   -gt 0 ] && ok $DASHD_CONNECTIONS || err $DASHD_CONNECTIONS
     pending "${messages["status_dblsync"]}" ; [ $DASHD_SYNCED     -gt 0 ] && ok ${messages["YES"]} || err ${messages["NO"]}
     pending "${messages["status_dbllast"]}" ; [ $DASHD_SYNCED     -gt 0 ] && ok $DASHD_CURRENT_BLOCK || err $DASHD_CURRENT_BLOCK
