@@ -674,7 +674,9 @@ install_dashd(){
     BOOSTRAP_LINKS='https://raw.githubusercontent.com/UdjinM6/dash-bootstrap/master/links.md'
     wget --no-check-certificate -q -r $BOOSTRAP_LINKS -O links.md
     MAINNET_BOOTSTRAP_FILE_1=$(head -1 links.md | awk '{print $11}' | sed 's/.*\(http.*\.zip\).*/\1/')
+    MAINNET_BOOTSTRAP_FILE_1_SIZE=$(head -1 links.md | awk '{print $12}' | sed 's/[()]//g')
     MAINNET_BOOTSTRAP_FILE_2=$(head -3 links.md | tail -1 | awk '{print $11}' | sed 's/.*\(http.*\.zip\).*/\1/')
+    pending " $MAINNET_BOOTSTRAP_FILE_1_SIZE..."
     wget --no-check-certificate -q -r $MAINNET_BOOTSTRAP_FILE_1 -O ${MAINNET_BOOTSTRAP_FILE_1##*/}
     MAINNET_BOOTSTRAP_FILE=${MAINNET_BOOTSTRAP_FILE_1##*/}
     if [ ! -s $MAINNET_BOOTSTRAP_FILE ]; then
