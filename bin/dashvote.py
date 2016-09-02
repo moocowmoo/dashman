@@ -220,14 +220,23 @@ def main(screen):
     loadwin.refresh()
 
     mncount = int(run_command('dash-cli masternode count'))
+    block_height = int(run_command('dash-cli getblockcount'))
     # get ballot
-    ballot = json.loads(run_command('dash-cli mnbudget show'))
-    for entry in ballot:
-        ballot[entry][u'vote'] = 'ABSTAIN'
-        ballot[entry][u'votes'] = json.loads(
+    ballots = json.loads(run_command('dash-cli mnbudget show'))
+    ballot = {}
+    for entry in ballots:
+        # prune expired proposals
+        if ballots[entry][u'BlockEnd'] < block_height:
+            continue
+        # prune completely funded proposals
+        if ballots[entry][u'RemainingPaymentCount'] < 1:
+            continue
+        ballots[entry][u'vote'] = 'ABSTAIN'
+        ballots[entry][u'votes'] = json.loads(
             run_command(
                 'dash-cli mnbudget getvotes %s' %
                 entry))
+        ballot[entry] = ballots[entry]
     ballot_entries = sorted(ballot, key=lambda s: ballot[s]['BlockStart'])
     votecount = len(ballot_entries)
     max_proposal_len = 0
