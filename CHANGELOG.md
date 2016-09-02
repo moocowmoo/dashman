@@ -1,3 +1,12 @@
+0.1.20 -  Fri Sep 2 06:49:52 2016 +0000
+
+    config - display bootstrap download size
+    config - only require unzip for install (for bootstrap extraction)
+    bugfix - fix ok/err display arity
+    bugfix - dashvote - prune completed proposals
+    bugfix - follow redirects - dashninja 301->www
+    bugfix - proper queue position calculation for new nodes
+
 0.1.19 -  Tue Jun 21 08:01:55 2016 +0000
 
     bugfix - extract binary versions from updated downloads page
