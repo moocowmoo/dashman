@@ -914,13 +914,16 @@ get_host_status(){
 
 
 print_status() {
+
+    DASHD_UPTIME_STRING="$DASHD_UPTIME_DAYS ${messages["days"]}, $DASHD_UPTIME_HOURS ${messages["hours"]}, $DASHD_UPTIME_MINS ${messages["mins"]}, $DASHD_UPTIME_SECS ${messages["secs"]}"
+
     pending "${messages["status_hostnam"]}" ; ok "$HOSTNAME"
     pending "${messages["status_uptimeh"]}" ; ok "$HOST_UPTIME_DAYS ${messages["days"]}, $HOST_LOAD_AVERAGE"
     pending "${messages["status_dashdip"]}" ; [ $MASTERNODE_BIND_IP != 'none' ] && ok "$MASTERNODE_BIND_IP" || err "$MASTERNODE_BIND_IP"
     pending "${messages["status_dashdve"]}" ; ok "$CURRENT_VERSION"
     pending "${messages["status_uptodat"]}" ; [ $DASHD_UP_TO_DATE -gt 0 ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
     pending "${messages["status_running"]}" ; [ $DASHD_HASPID     -gt 0 ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
-    pending "${messages["status_uptimed"]}" ; ok "$DASHD_UPTIME_DAYS ${messages["days"]}, $DASHD_UPTIME_HOURS ${messages["hours"]}, $DASHD_UPTIME_MINS ${messages["mins"]}, $DASHD_UPTIME_SECS ${messages["secs"]}"
+    pending "${messages["status_uptimed"]}" ; [ $DASHD_RUNNING    -gt 0 ] && ok "$DASHD_UPTIME_STRING" || err "$DASHD_UPTIME_STRING"
     pending "${messages["status_drespon"]}" ; [ $DASHD_RUNNING    -gt 0 ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
     pending "${messages["status_dlisten"]}" ; [ $DASHD_LISTENING  -gt 0 ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
     pending "${messages["status_dconnec"]}" ; [ $DASHD_CONNECTED  -gt 0 ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
