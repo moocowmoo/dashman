@@ -249,7 +249,7 @@ _get_platform_info() {
             ;;
         *)
             err "${messages["err_unknown_platform"]} $PLATFORM"
-            err ${messages["err_dashman_supports"]}
+            err "${messages["err_dashman_supports"]}"
             die "${messages["exiting"]}"
             ;;
     esac
@@ -307,7 +307,7 @@ restart_dashd(){
         $DASH_CLI stop 2>&1 >/dev/null
         sleep 10
         killall -9 dashd dash-shutoff 2>/dev/null
-        ok ${messages["done"]}
+        ok "${messages["done"]}"
         DASHD_RUNNING=0
     fi
 
@@ -315,11 +315,11 @@ restart_dashd(){
 
     cd $INSTALL_DIR
     rm -f budget.dat debug.log fee_estimates.dat mncache.dat mnpayments.dat peers.dat
-    ok ${messages["done"]}
+    ok "${messages["done"]}"
 
     pending " --> ${messages["starting_dashd"]}"
     $INSTALL_DIR/dashd 2>&1 >/dev/null
-    ok ${messages["done"]}
+    ok "${messages["done"]}"
     pending " --> ${messages["waiting_for_dashd_to_respond"]}"
     echo -en "${C_YELLOW}"
     while [ $DASHD_RUNNING == 0 ]; do
@@ -327,7 +327,7 @@ restart_dashd(){
         _check_dashd_running
         sleep 5
     done
-    ok ${messages["done"]}
+    ok "${messages["done"]}"
     pending " --> dash-cli getinfo"
     echo
     $DASH_CLI getinfo
@@ -397,7 +397,7 @@ update_dashd(){
 
             exit 1
         else
-            ok ${messages["done"]}
+            ok "${messages["done"]}"
         fi
 
         # prove it ---------------------------------------------------------------
@@ -416,13 +416,13 @@ update_dashd(){
         #    echo -e " ${C_RED} MD5 ${messages["checksum"]} ${messages["FAILED"]} ${messages["try_again_later"]} ${messages["exiting"]}$C_NORM"
         #    exit 1
         #fi
-        ok ${messages["done"]}
+        ok "${messages["done"]}"
 
         # produce it -------------------------------------------------------------
 
         pending " --> ${messages["unpacking"]} ${DOWNLOAD_FILE}..." && \
         tar zxf $DOWNLOAD_FILE && \
-        ok ${messages["done"]}
+        ok "${messages["done"]}"
 
         # pummel it --------------------------------------------------------------
 
@@ -431,7 +431,7 @@ update_dashd(){
             $DASH_CLI stop >/dev/null 2>&1
             sleep 15
             killall -9 dashd dash-shutoff >/dev/null 2>&1
-            ok ${messages["done"]}
+            ok "${messages["done"]}"
         fi
 
         # prune it ---------------------------------------------------------------
@@ -450,7 +450,7 @@ update_dashd(){
             dash-qt-$CURRENT_VERSION \
             dash-cli \
             dash-cli-$CURRENT_VERSION
-        ok ${messages["done"]}
+        ok "${messages["done"]}"
 
         # place it ---------------------------------------------------------------
 
@@ -479,7 +479,7 @@ update_dashd(){
 
         pending " --> ${messages["launching"]} dashd..."
         $INSTALL_DIR/dashd > /dev/null
-        ok ${messages["done"]}
+        ok "${messages["done"]}"
 
         # probe it ---------------------------------------------------------------
 
@@ -490,7 +490,7 @@ update_dashd(){
             _check_dashd_running
             sleep 5
         done
-        ok ${messages["done"]}
+        ok "${messages["done"]}"
 
         # poll it ----------------------------------------------------------------
 
@@ -572,7 +572,7 @@ install_dashd(){
         while read; do
             eval echo "$REPLY"
         done < $DASHMAN_GITDIR/.dash.conf.template > $INSTALL_DIR/dash.conf
-        ok ${messages["done"]}
+        ok "${messages["done"]}"
     fi
 
     # push it ----------------------------------------------------------------
@@ -608,14 +608,13 @@ install_dashd(){
     #    echo -e " ${C_RED} MD5 ${messages["checksum"]} ${messages["FAILED"]} ${messages["try_again_later"]} ${messages["exiting"]}$C_NORM"
     #    exit 1
     #fi
-    ok ${messages["done"]}
+    ok "${messages["done"]}"
 
     # produce it -------------------------------------------------------------
 
     pending " --> ${messages["unpacking"]} ${DOWNLOAD_FILE}..." && \
     tar zxf $DOWNLOAD_FILE && \
-    ok ${messages["done"]}
-
+    ok "${messages["done"]}"
     # pummel it --------------------------------------------------------------
 
     if [ $DASHD_RUNNING == 1 ]; then
@@ -623,7 +622,7 @@ install_dashd(){
         $DASH_CLI stop >/dev/null 2>&1
         sleep 15
         killall -9 dashd dash-shutoff >/dev/null 2>&1
-        ok ${messages["done"]}
+        ok "${messages["done"]}"
     fi
 
     # prune it ---------------------------------------------------------------
@@ -642,7 +641,7 @@ install_dashd(){
         dash-qt-$CURRENT_VERSION \
         dash-cli \
         dash-cli-$CURRENT_VERSION
-    ok ${messages["done"]}
+    ok "${messages["done"]}"
 
     # place it ---------------------------------------------------------------
 
@@ -688,10 +687,10 @@ install_dashd(){
         # TODO i18n
         err " bootstrap download failed. skipping."
     else
-        ok ${messages["done"]}
+        ok "${messages["done"]}"
         pending "  --> ${messages["unzipping"]} bootstrap..."
         unzip -q ${MAINNET_BOOTSTRAP_FILE##*/}
-        ok ${messages["done"]}
+        ok "${messages["done"]}"
         rm links.md bootstrap.dat*.zip
     fi
 
@@ -699,7 +698,7 @@ install_dashd(){
 
     pending " --> ${messages["launching"]} dashd..."
     $INSTALL_DIR/dashd > /dev/null
-    ok ${messages["done"]}
+    ok "${messages["done"]}"
 
     # probe it ---------------------------------------------------------------
 
@@ -710,7 +709,7 @@ install_dashd(){
         _check_dashd_running
         sleep 5
     done
-    ok ${messages["done"]}
+    ok "${messages["done"]}"
 
     # poll it ----------------------------------------------------------------
 
@@ -917,29 +916,29 @@ get_host_status(){
 print_status() {
     pending "${messages["status_hostnam"]}" ; ok "$HOSTNAME"
     pending "${messages["status_uptimeh"]}" ; ok "$HOST_UPTIME_DAYS ${messages["days"]}, $HOST_LOAD_AVERAGE"
-    pending "${messages["status_dashdip"]}" ; [ $MASTERNODE_BIND_IP != 'none' ] && ok $MASTERNODE_BIND_IP || err $MASTERNODE_BIND_IP
+    pending "${messages["status_dashdip"]}" ; [ $MASTERNODE_BIND_IP != 'none' ] && ok "$MASTERNODE_BIND_IP" || err "$MASTERNODE_BIND_IP"
     pending "${messages["status_dashdve"]}" ; ok "$CURRENT_VERSION"
-    pending "${messages["status_uptodat"]}" ; [ $DASHD_UP_TO_DATE -gt 0 ] && ok ${messages["YES"]} || err ${messages["NO"]}
-    pending "${messages["status_running"]}" ; [ $DASHD_HASPID     -gt 0 ] && ok ${messages["YES"]} || err ${messages["NO"]}
+    pending "${messages["status_uptodat"]}" ; [ $DASHD_UP_TO_DATE -gt 0 ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
+    pending "${messages["status_running"]}" ; [ $DASHD_HASPID     -gt 0 ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
     pending "${messages["status_uptimed"]}" ; ok "$DASHD_UPTIME_DAYS ${messages["days"]}, $DASHD_UPTIME_HOURS ${messages["hours"]}, $DASHD_UPTIME_MINS ${messages["mins"]}, $DASHD_UPTIME_SECS ${messages["secs"]}"
-    pending "${messages["status_drespon"]}" ; [ $DASHD_RUNNING    -gt 0 ] && ok ${messages["YES"]} || err ${messages["NO"]}
-    pending "${messages["status_dlisten"]}" ; [ $DASHD_LISTENING  -gt 0 ] && ok ${messages["YES"]} || err ${messages["NO"]}
-    pending "${messages["status_dconnec"]}" ; [ $DASHD_CONNECTED  -gt 0 ] && ok ${messages["YES"]} || err ${messages["NO"]}
-    pending "${messages["status_dportop"]}" ; [ $PUBLIC_PORT_CLOSED  -lt 1 ] && ok ${messages["YES"]} || err ${messages["NO"]}
-    pending "${messages["status_dconcnt"]}" ; [ $DASHD_CONNECTIONS   -gt 0 ] && ok $DASHD_CONNECTIONS || err $DASHD_CONNECTIONS
-    pending "${messages["status_dblsync"]}" ; [ $DASHD_SYNCED     -gt 0 ] && ok ${messages["YES"]} || err ${messages["NO"]}
-    pending "${messages["status_dbllast"]}" ; [ $DASHD_SYNCED     -gt 0 ] && ok $DASHD_CURRENT_BLOCK || err $DASHD_CURRENT_BLOCK
-    pending "${messages["status_webchai"]}" ; [ $WEB_BLOCK_COUNT_CHAINZ -gt 0 ] && ok $WEB_BLOCK_COUNT_CHAINZ || err $WEB_BLOCK_COUNT_CHAINZ
-    pending "${messages["status_webdark"]}" ; [ $WEB_BLOCK_COUNT_DQA    -gt 0 ] && ok $WEB_BLOCK_COUNT_DQA || err $WEB_BLOCK_COUNT_DQA
-    pending "${messages["status_webdash"]}" ; [ $WEB_BLOCK_COUNT_DWHALE -gt 0 ] && ok $WEB_BLOCK_COUNT_DWHALE || err $WEB_BLOCK_COUNT_DWHALE
+    pending "${messages["status_drespon"]}" ; [ $DASHD_RUNNING    -gt 0 ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
+    pending "${messages["status_dlisten"]}" ; [ $DASHD_LISTENING  -gt 0 ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
+    pending "${messages["status_dconnec"]}" ; [ $DASHD_CONNECTED  -gt 0 ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
+    pending "${messages["status_dportop"]}" ; [ $PUBLIC_PORT_CLOSED  -lt 1 ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
+    pending "${messages["status_dconcnt"]}" ; [ $DASHD_CONNECTIONS   -gt 0 ] && ok "$DASHD_CONNECTIONS" || err "$DASHD_CONNECTIONS"
+    pending "${messages["status_dblsync"]}" ; [ $DASHD_SYNCED     -gt 0 ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
+    pending "${messages["status_dbllast"]}" ; [ $DASHD_SYNCED     -gt 0 ] && ok "$DASHD_CURRENT_BLOCK" || err "$DASHD_CURRENT_BLOCK"
+    pending "${messages["status_webchai"]}" ; [ $WEB_BLOCK_COUNT_CHAINZ -gt 0 ] && ok "$WEB_BLOCK_COUNT_CHAINZ" || err "$WEB_BLOCK_COUNT_CHAINZ"
+    pending "${messages["status_webdark"]}" ; [ $WEB_BLOCK_COUNT_DQA    -gt 0 ] && ok "$WEB_BLOCK_COUNT_DQA" || err "$WEB_BLOCK_COUNT_DQA"
+    pending "${messages["status_webdash"]}" ; [ $WEB_BLOCK_COUNT_DWHALE -gt 0 ] && ok "$WEB_BLOCK_COUNT_DWHALE" || err "$WEB_BLOCK_COUNT_DWHALE"
     pending "${messages["status_webmast"]}" ; [ $WEB_ME_FORK_DETECT -gt 0 ] && err "$WEB_ME" || ok "$WEB_ME"
     pending "${messages["status_dcurdif"]}" ; ok "$DASHD_DIFFICULTY"
     if [ $DASHD_RUNNING -gt 0 ] && [ $MN_CONF_ENABLED -gt 0 ] ; then
-    pending "${messages["status_mnstart"]}" ; [ $MN_STARTED -gt 0  ] && ok ${messages["YES"]} || err ${messages["NO"]}
-    pending "${messages["status_mnvislo"]}" ; [ $MN_VISIBLE -gt 0  ] && ok ${messages["YES"]} || err ${messages["NO"]}
+    pending "${messages["status_mnstart"]}" ; [ $MN_STARTED -gt 0  ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
+    pending "${messages["status_mnvislo"]}" ; [ $MN_VISIBLE -gt 0  ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
         if [ $WEB_NINJA_API_OFFLINE -eq 0 ]; then
-    pending "${messages["status_mnvisni"]}" ; [ $WEB_NINJA_SEES_OPEN -gt 0  ] && ok ${messages["YES"]} || err ${messages["NO"]}
-    pending "${messages["status_mnaddre"]}" ; ok $WEB_NINJA_MN_ADDY
+    pending "${messages["status_mnvisni"]}" ; [ $WEB_NINJA_SEES_OPEN -gt 0  ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
+    pending "${messages["status_mnaddre"]}" ; ok "$WEB_NINJA_MN_ADDY"
     pending "${messages["status_mnfundt"]}" ; ok "$WEB_NINJA_MN_VIN-$WEB_NINJA_MN_VIDX"
     pending "${messages["status_mnqueue"]}" ; [ $MN_QUEUE_IN_SELECTION -gt 0  ] && ok "$MN_QUEUE_POSITION/$MN_QUEUE_LENGTH (selection pending)" || (pending "$MN_QUEUE_POSITION" && ok "/$MN_QUEUE_LENGTH")
     pending "${messages["status_mnlastp"]}" ; [ ! -z "$WEB_NINJA_MN_LAST_PAID_AMOUNT" ] && \
@@ -949,14 +948,14 @@ print_status() {
     err     "  dashninja api offline        " ;
         fi
     else
-    pending "${messages["status_mncount"]}" ; [ $MN_TOTAL            -gt 0 ] && ok $MN_TOTAL || err $MN_TOTAL
+    pending "${messages["status_mncount"]}" ; [ $MN_TOTAL            -gt 0 ] && ok "$MN_TOTAL" || err "$MN_TOTAL"
     fi
 }
 
 show_message_configure() {
     echo
-    ok ${messages["to_enable_masternode"]}
-    ok ${messages["uncomment_conf_lines"]}
+    ok "${messages["to_enable_masternode"]}"
+    ok "${messages["uncomment_conf_lines"]}"
     echo
          pending "    $HOME/.dash/dash.conf" ; echo
     echo
