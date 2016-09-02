@@ -6,11 +6,13 @@
 
 # variables are for putting things in ----------------------------------------
 
-C_RED="\e[31m"
-C_YELLOW="\e[33m"
-C_GREEN="\e[32m"
-C_CYAN="\e[36m"
-C_NORM="\e[0m"
+if [[ ! $NOCOLOR ]]; then
+    C_RED="\e[31m"
+    C_YELLOW="\e[33m"
+    C_GREEN="\e[32m"
+    C_CYAN="\e[36m"
+    C_NORM="\e[0m"
+fi
 
 DASH_ORG='https://www.dash.org'
 DOWNLOAD_PAGE='https://www.dash.org/downloads/'
@@ -39,7 +41,7 @@ die() { [[ $QUIET ]] || echo -e "$C_RED$1$C_NORM" ; exit 1 ; }
 
 quit(){ [[ $QUIET ]] || echo -e "$C_GREEN${1:-${messages["exiting"]}}$C_NORM" ; echo ; exit 0 ; }
 
-confirm() { read -r -p "$(echo -e "${1:-${messages["prompt_are_you_sure"]} [y/N]}")" ; [[ ${REPLY:0:1} = [Yy] ]]; }
+confirm() { [[ $UNATTENDED ]] || read -r -p "$(echo -e "${1:-${messages["prompt_are_you_sure"]} [y/N]}")" ; [[ $UNATTENDED ]] || [[ ${REPLY:0:1} = [Yy] ]]; }
 
 
 usage(){

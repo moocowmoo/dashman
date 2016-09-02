@@ -21,15 +21,19 @@ do case "$1" in
     --quiet)   set -- "$@" "-q" ;;
     --verbose) set -- "$@" "-v" ;;
     --version) set -- "$@" "-V" ;;
+    --no-color) set -- "$@" "-C" ;;
+    --unattended) set -- "$@" "-u" ;;
     *)         set -- "$@" "$1" ;;
 esac; shift; done
 OPTIND=1
-while getopts "hqvV" o ; do # set $o to the next passed option
+while getopts "hqvVuC" o ; do # set $o to the next passed option
   case "$o" in
     q) QUIET=1 ;;
     v) VERBOSE=1 ;;
     V) VERSION=1 ;;
     h) HELP=1 ;;
+    u) UNATTENDED=1 ;;
+    C) NOCOLOR=1 ;;
   esac
 done
 shift $(($OPTIND - 1))

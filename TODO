@@ -5,3 +5,4 @@
 
  - testnet support (which will probably require arbitrary directory location support first)
 
+ - add monit install
