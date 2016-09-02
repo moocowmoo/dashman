@@ -60,7 +60,7 @@ lang_type=${LANG%%\.*}
 [[ $VERSION ]] && echo $DASHMAN_VERSION && exit 0
 
 # see if users are missing anything critical
-_check_dependencies
+_check_dependencies $@
 
 # have command, will travel... -----------------------------------------------
 

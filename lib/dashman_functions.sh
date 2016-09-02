@@ -120,7 +120,11 @@ _check_dependencies() {
 
     (which curl 2>&1) >/dev/null || MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES curl"
     (which perl 2>&1) >/dev/null || MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES perl"
-    (which unzip 2>&1) >/dev/null || MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES unzip"
+
+    # only require unzip for install
+    if [ "$1" == "install" ]; then
+        (which unzip 2>&1) >/dev/null || MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES unzip"
+    fi
 
     # make sure we have the right netcat version (-4,-6 flags)
     if [ ! -z "$(which nc)" ]; then
