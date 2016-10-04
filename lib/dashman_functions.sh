@@ -898,7 +898,7 @@ dateDiff (){
         *)    sec=86400;;
     esac
     dte1=$(date2stamp $1)
-    dte2=$(date2stamp $2)
+    dte2=$(date2stamp "$2")
     diffSec=$((dte2-dte1))
     if ((diffSec < 0)); then abs=-1; else abs=1; fi
     echo $((diffSec/sec*abs))
