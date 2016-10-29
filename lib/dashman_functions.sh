@@ -781,10 +781,10 @@ get_dashd_status(){
         WEB_BLOCK_COUNT_DQA=0
     fi
 
-    WEB_DASHWHALE=`$curl_cmd https://www.dashwhale.org/api/v1/public`;
+    WEB_DASHWHALE=`$curl_cmd https://www.dashcentral.org/api/v1/public`;
     if [ -z "$WEB_DASHWHALE" ]; then
         sleep 3
-        WEB_DASHWHALE=`$curl_cmd https://www.dashwhale.org/api/v1/public`;
+        WEB_DASHWHALE=`$curl_cmd https://www.dashcentral.org/api/v1/public`;
     fi
 
     WEB_DASHWHALE_JSON_TEXT=$(echo $WEB_DASHWHALE | python -m json.tool)
