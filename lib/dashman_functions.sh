@@ -24,7 +24,7 @@ else
     DASHMAN_CHECKOUT=" ("$DASHMAN_CHECKOUT")"
 fi
 
-curl_cmd='timeout 7 curl -s -L'
+curl_cmd='timeout 20 curl -s -L'
 
 # (mostly) functioning functions -- lots of refactoring to do ----------------
 
@@ -258,18 +258,36 @@ _get_platform_info() {
 _get_versions() {
     _get_platform_info
     DOWNLOAD_HTML=$( $curl_cmd $DOWNLOAD_PAGE )
-    local IFS=' '
-    DOWNLOAD_FOR='linux'
-    if [ ! -z "$BIGARM" ]; then
-        DOWNLOAD_FOR='RPi2'
-    fi
-    read -a DOWNLOAD_URLS <<< $( echo $DOWNLOAD_HTML | sed -e 's/ /\n/g' | grep binaries | grep -v '.asc' | grep $DOWNLOAD_FOR | perl -ne '/.*"([^"]+)".*/; print "$1 ";' 2>/dev/null )
 
-    #$(( <-- vim syntax highlighting fix
-    LATEST_VERSION=$( echo ${DOWNLOAD_URLS[0]} | perl -ne '/dash-([0-9.]+)-/; print $1;' 2>/dev/null )
-    if [ -z "$LATEST_VERSION" ]; then
-        die "\n${messages["err_could_not_get_version"]} $DOWNLOAD_PAGE -- ${messages["exiting"]}"
+    # attempt tor pull of dash.org/downloads if cloudflare challenged
+    if [ $( echo "$DOWNLOAD_HTML" | grep CloudFlare | wc -l ) -gt 0 ]; then
+
+        # attempt tor pull
+        DASH_ORG='https://dashorg64cjvj4s3.onion'
+        DOWNLOAD_PAGE='http://dashorg64cjvj4s3.onion/downloads'
+        DOWNLOAD_HTML=$( $curl_cmd $DOWNLOAD_PAGE )
+
+        if [ -z "$DOWNLOAD_PAGE" ]; then
+            LATEST_VERSION='unknown'
+        fi
     fi
+
+    if [ -z "$LATEST_VERSION" ] ; then
+
+        local IFS=' '
+        DOWNLOAD_FOR='linux'
+        if [ ! -z "$BIGARM" ]; then
+            DOWNLOAD_FOR='RPi2'
+        fi
+        read -a DOWNLOAD_URLS <<< $( echo $DOWNLOAD_HTML | sed -e 's/ /\n/g' | grep binaries | egrep -v '(DIGESTS|.asc' | grep $DOWNLOAD_FOR | perl -ne '/.*"([^"]+)".*/; print "$1 ";' 2>/dev/null )
+
+        #$(( <-- vim syntax highlighting fix
+        LATEST_VERSION=$( echo ${DOWNLOAD_URLS[0]} | perl -ne '/dash-([0-9.]+)-/; print $1;' 2>/dev/null )
+        if [ -z "$LATEST_VERSION" ]; then
+            die "\n${messages["err_could_not_get_version"]} $DOWNLOAD_PAGE -- ${messages["exiting"]}"
+        fi
+    fi
+
 
     if [ -z "$DASH_CLI" ]; then DASH_CLI='echo'; fi
     CURRENT_VERSION=$( $DASH_CLI --version | perl -ne '/v([0-9.]+)/; print $1;' 2>/dev/null ) 2>/dev/null
