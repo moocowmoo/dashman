@@ -1,3 +1,7 @@
+0.1.21 -  Wed Feb 8 09:21:00 2017 +0000
+
+    enh - 12.1 update + sentinel install
+
 0.1.20 -  Fri Sep 2 06:49:52 2016 +0000
 
     config - display bootstrap download size
