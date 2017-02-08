@@ -301,7 +301,7 @@ _get_versions() {
             fi
         elif [ $DOWNLOAD_FOR == 'RPi2' ] ; then
             if [[ ! $url =~ "http" ]] ; then
-                url=$DASH_ORG"/binaries"$url
+                url=$DASH_ORG"/binaries/"$url
             fi
             DOWNLOAD_URL=$url
             DOWNLOAD_FILE=${DOWNLOAD_URL##*/}
@@ -1190,7 +1190,7 @@ install_sentinel() {
     fi
     ok "${messages["done"]}"
 
-    pending " --> testing installation... "
+    pending "  --> testing installation... "
     venv/bin/py.test ./test/ 2>&1>/dev/null; 
     if [[ $? -gt 0 ]];then
         err "  --> sentinel tests failed"
