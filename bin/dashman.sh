@@ -3,7 +3,7 @@
 # dashman - main executable
 # installs, updates, and manages dash daemons and wallets
 
-# Copyright (c) 2015 moocowmoo - moocowmoo@masternode.me
+# Copyright (c) 2015-2017 moocowmoo - moocowmoo@masternode.me
 
 # check we're running bash 4 -------------------------------------------------
 
@@ -94,6 +94,12 @@ case "$1" in
             _get_versions
             _check_dashd_running
             ok " ${messages["done"]}"
+            if [ ! -z "$2" ]; then
+                if [ "$2" == '-y' ] || [ "$2" == '-Y' ]; then
+                    UNATTENDED=1
+                fi
+
+            fi
             if [ ! -z "$ARM" ] && [ $BIGARM -eq 0 ]; then
                 die "$COMMAND not supported yet on this platform."
             fi
@@ -109,11 +115,17 @@ case "$1" in
                 die "$COMMAND not supported yet on this platform."
             fi
             if [ ! -z "$2" ]; then
+                APP=$2;
+                if [ "$APP" == 'sentinel' ]; then
+                    _find_dash_directory
+                    install_sentinel
+                else
+                    echo "don't know how to install: $2"
+                fi
                 # check command matches:
                 # monit
                 # dashman
                 # ???
-                echo "installing $2"
             else
                 install_dashd
                 show_message_configure

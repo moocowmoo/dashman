@@ -1,8 +1,8 @@
-# vim: set filetype=sh
+# vim: set filetype=sh ts=4 sw=4 et
 
-# .dashman.functions - common functions and variables
+# dashman_functions.sh - common functions and variables
 
-# Copyright (c) 2015 moocowmoo - moocowmoo@masternode.me
+# Copyright (c) 2015-2017 moocowmoo - moocowmoo@masternode.me
 
 # variables are for putting things in ----------------------------------------
 
@@ -14,7 +14,7 @@ C_NORM="\e[0m"
 
 DASH_ORG='https://www.dash.org'
 DOWNLOAD_PAGE='https://www.dash.org/downloads/'
-
+CHECKSUM_URL='https://www.dash.org/binaries/SHA256SUMS.asc'
 DASHD_RUNNING=0
 DASHMAN_VERSION=$(cat $DASHMAN_GITDIR/VERSION)
 DASHMAN_CHECKOUT=$(GIT_DIR=$DASHMAN_GITDIR/.git GIT_WORK_TREE=$DASHMAN_GITDIR git describe --dirty | sed -e "s/^.*-\([0-9]\+-g\)/\1/" )
@@ -120,10 +120,22 @@ _check_dependencies() {
 
     (which curl 2>&1) >/dev/null || MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES curl"
     (which perl 2>&1) >/dev/null || MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES perl"
+    (which git  2>&1) >/dev/null || MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES git"
 
-    # only require unzip for install
-    if [ "$1" == "install" ]; then
+    MN_CONF_ENABLED=$( egrep -s '^[^#]*\s*masternode\s*=\s*1' $HOME/.dash{,core}/dash.conf | wc -l 2>/dev/null)
+    if [ $MN_CONF_ENABLED -gt 0 ] ; then
         (which unzip 2>&1) >/dev/null || MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES unzip"
+        (which virtualenv 2>&1) >/dev/null || MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES python-virtualenv"
+    fi
+
+    if [ "$1" == "install" ]; then
+        # only require unzip for install
+        (which unzip 2>&1) >/dev/null || MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES unzip"
+
+        # only require python-virtualenv for sentinel
+        if [ "$2" == "sentinel" ]; then
+            (which virtualenv 2>&1) >/dev/null || MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES python-virtualenv"
+        fi
     fi
 
     # make sure we have the right netcat version (-4,-6 flags)
@@ -166,11 +178,7 @@ _find_dash_directory() {
             # if not run as root
             if [ $EUID -ne 0 ] ; then
                 die "\n${messages["exec_found_in_system_dir"]} $INSTALL_DIR${messages["run_dashman_as_root"]} ${messages["exiting"]}"
-
-
             fi
-
-
         fi
 
     # dash-cli not in PATH
@@ -183,6 +191,9 @@ _find_dash_directory() {
     elif [ -e $HOME/.dash/dash-cli ] ; then
         INSTALL_DIR="$HOME/.dash" ;
 
+    elif [ -e $HOME/.dashcore/dash-cli ] ; then
+        INSTALL_DIR="$HOME/.dashcore" ;
+
         # TODO try to find dash-cli with find
 #    else
 #        CANDIDATES=`find $HOME -name dash-cli`
@@ -191,12 +202,12 @@ _find_dash_directory() {
     if [ ! -z "$INSTALL_DIR" ]; then
         INSTALL_DIR=$(readlink -f $INSTALL_DIR) 2>/dev/null
         if [ ! -e $INSTALL_DIR ]; then
-            echo -e "${C_RED}${messages["dashcli_not_found_in_cwd"]}, ~/.dash, or \$PATH. -- ${messages["exiting"]}$C_NORM"
+            echo -e "${C_RED}${messages["dashcli_not_found_in_cwd"]}, ~/.dashcore, or \$PATH. -- ${messages["exiting"]}$C_NORM"
 
             exit 1
         fi
     else
-        echo -e "${C_RED}${messages["dashcli_not_found_in_cwd"]}, ~/.dash, or \$PATH. -- ${messages["exiting"]}$C_NORM"
+        echo -e "${C_RED}${messages["dashcli_not_found_in_cwd"]}, ~/.dashcore, or \$PATH. -- ${messages["exiting"]}$C_NORM"
         exit 1
     fi
 
@@ -257,16 +268,21 @@ _get_platform_info() {
 
 _get_versions() {
     _get_platform_info
-    DOWNLOAD_HTML=$( $curl_cmd $DOWNLOAD_PAGE )
+
+
     local IFS=' '
     DOWNLOAD_FOR='linux'
     if [ ! -z "$BIGARM" ]; then
         DOWNLOAD_FOR='RPi2'
     fi
-    read -a DOWNLOAD_URLS <<< $( echo $DOWNLOAD_HTML | sed -e 's/ /\n/g' | grep binaries | grep -v '.asc' | grep $DOWNLOAD_FOR | perl -ne '/.*"([^"]+)".*/; print "$1 ";' 2>/dev/null )
+
+    CHECKSUM_FILE=$( $curl_cmd $CHECKSUM_URL )
+    DOWNLOAD_HTML=$( echo "$CHECKSUM_FILE" )
+
+    read -a DOWNLOAD_URLS <<< $( echo $DOWNLOAD_HTML | sed -e 's/ /\n/g' | grep -v '.asc' | grep $DOWNLOAD_FOR | tr "\n" " ")
 
     #$(( <-- vim syntax highlighting fix
-    LATEST_VERSION=$( echo ${DOWNLOAD_URLS[0]} | perl -ne '/dash-([0-9.]+)-/; print $1;' 2>/dev/null )
+    LATEST_VERSION=$( echo ${DOWNLOAD_URLS[0]} | perl -ne '/dashcore-([0-9.]+)-/; print $1;' 2>/dev/null )
     if [ -z "$LATEST_VERSION" ]; then
         die "\n${messages["err_could_not_get_version"]} $DOWNLOAD_PAGE -- ${messages["exiting"]}"
     fi
@@ -278,14 +294,14 @@ _get_versions() {
         if [ $DOWNLOAD_FOR == 'linux' ] ; then
             if [[ $url =~ .*linux${BITS}.* ]] ; then
                 if [[ ! $url =~ "http" ]] ; then
-                    url=$DASH_ORG$url
+                    url=$DASH_ORG"/binaries/"$url
                 fi
                 DOWNLOAD_URL=$url
                 DOWNLOAD_FILE=${DOWNLOAD_URL##*/}
             fi
         elif [ $DOWNLOAD_FOR == 'RPi2' ] ; then
             if [[ ! $url =~ "http" ]] ; then
-                url=$DASH_ORG$url
+                url=$DASH_ORG"/binaries"$url
             fi
             DOWNLOAD_URL=$url
             DOWNLOAD_FILE=${DOWNLOAD_URL##*/}
@@ -338,7 +354,12 @@ restart_dashd(){
 
 update_dashd(){
 
-    if [ $LATEST_VERSION != $CURRENT_VERSION ] || [ ! -z "$REINSTALL" ] ; then
+
+    OLDDASH_DIR=$INSTALL_DIR;
+    INSTALL_DIR=${INSTALL_DIR/.dash/.dashcore};
+
+    if [ $LATEST_VERSION != $CURRENT_VERSION ] || [ ! -z "$REINSTALL" ] || [ ! -z "$UNATTENDED" ] ; then
+                    
 
         if [ ! -z "$REINSTALL" ];then
             echo -e ""
@@ -354,29 +375,59 @@ update_dashd(){
             echo -e "${messages["currnt_version"]} $C_RED$CURRENT_VERSION$C_NORM"
             echo -e "${messages["latest_version"]} $C_GREEN$LATEST_VERSION$C_NORM"
             echo -e ""
-            pending "${messages["download"]} $DOWNLOAD_URL\n${messages["and_install_to"]} $INSTALL_DIR?"
+            if [ -z "$UNATTENDED" ] ; then
+                pending "${messages["download"]} $DOWNLOAD_URL\n${messages["and_install_to"]} $INSTALL_DIR?"
+            else
+                echo -e "$C_GREEN*** UNATTENDED MODE ***$C_NORM"
+            fi
         fi
 
 
-        if ! confirm " [${C_GREEN}y${C_NORM}/${C_RED}N${C_NORM}] $C_CYAN"; then
-            echo -e "${C_RED}${messages["exiting"]}$C_NORM"
-            echo ""
-            exit 0
+        if [ -z "$UNATTENDED" ] ; then
+            if ! confirm " [${C_GREEN}y${C_NORM}/${C_RED}N${C_NORM}] $C_CYAN"; then
+                echo -e "${C_RED}${messages["exiting"]}$C_NORM"
+                echo ""
+                exit 0
+            fi
         fi
+
+        # populate it ------------------------------------------------------------
+
+        rm -f $OLDDASH_DIR/{budget.dat,debug.log,fee_estimates.dat,mncache.dat,mnpayments.dat,peers.dat} 2> /dev/null
+        
+        FREE_DISK=$(df -k --output='avail' $OLDDASH_DIR | grep -iv "avail" )
+        DASHDIR_SIZE=$(du -sk $OLDDASH_DIR | awk '{print $1}' )
+
+        if [[ $DASHDIR_SIZE -gt $FREE_DISK ]]; then
+            echo -e ""
+            echo -e ""
+            echo -e "$C_RED*** Not enough free disk.  Make room, then try again. ***$C_NORM"
+            echo -e ""
+            echo -e ""
+        fi
+
+        if [ ! -e $INSTALL_DIR ]; then
+            echo -e ""
+            echo -en "$C_CYAN --> copying .dash folder to .dashcore... "
+            cp -pr $OLDDASH_DIR $INSTALL_DIR
+            ok "${messages["done"]}"
+        echo ""
+        fi
+
 
         # prep it ----------------------------------------------------------------
 
         if [ ! -z $LINK_TO_SYSTEM_DIR ]; then
 
-            # mv executables into ~/.dash
-            mv $INSTALL_DIR/{dashd,dash-cli} $HOME/.dash
-            chown $SUDO_USER $HOME/.dash/{dashd,dash-cli}
+            # mv executables into ~/.dashcore
+            mv $INSTALL_DIR/{dashd,dash-cli} $HOME/.dashcore
+            chown $SUDO_USER $HOME/.dashcore/{dashd,dash-cli}
 
             # symlink to system dir
-            ln -s $HOME/.dash/dashd $LINK_TO_SYSTEM_DIR
-            ln -s $HOME/.dash/dash-cli $LINK_TO_SYSTEM_DIR
+            ln -s $HOME/.dashcore/dashd $LINK_TO_SYSTEM_DIR
+            ln -s $HOME/.dashcore/dash-cli $LINK_TO_SYSTEM_DIR
 
-            INSTALL_DIR=$HOME/.dash
+            INSTALL_DIR=$HOME/.dashcore
 
         fi
 
@@ -385,10 +436,15 @@ update_dashd(){
 
         cd $INSTALL_DIR
 
+        # permute it -------------------------------------------------------------
+
+        get_public_ips
+        sed -i '/masternodeaddr/d' dash.conf
+        echo "externalip=$PUBLIC_IPV4" >> dash.conf
+
         # pull it ----------------------------------------------------------------
 
-        echo ""
-        pending " --> ${messages["downloading"]} ${DOWNLOAD_URL}..."
+        pending " --> ${messages["downloading"]} ${DOWNLOAD_URL}... "
         wget --no-check-certificate -q -r $DOWNLOAD_URL -O $DOWNLOAD_FILE
         wget --no-check-certificate -q -r https://github.com/dashpay/dash/releases/download/v$LATEST_VERSION/SHA256SUMS.asc -O ${DOWNLOAD_FILE}.DIGESTS.txt
         if [ ! -e $DOWNLOAD_FILE ] ; then
@@ -402,25 +458,19 @@ update_dashd(){
 
         # prove it ---------------------------------------------------------------
 
-        pending " --> ${messages["checksumming"]} ${DOWNLOAD_FILE}..."
+        pending " --> ${messages["checksumming"]} ${DOWNLOAD_FILE}... "
         SHA256SUM=$( sha256sum $DOWNLOAD_FILE )
-        #MD5SUM=$( md5sum $DOWNLOAD_FILE )
         SHA256PASS=$( grep $SHA256SUM ${DOWNLOAD_FILE}.DIGESTS.txt | wc -l )
-        #MD5SUMPASS=$( grep $MD5SUM ${DOWNLOAD_FILE}.DIGESTS.txt | wc -l )
         if [ $SHA256PASS -lt 1 ] ; then
             echo -e " ${C_RED} SHA256 ${messages["checksum"]} ${messages["FAILED"]} ${messages["try_again_later"]} ${messages["exiting"]}$C_NORM"
 
             exit 1
         fi
-        #if [ $MD5SUMPASS -lt 1 ] ; then
-        #    echo -e " ${C_RED} MD5 ${messages["checksum"]} ${messages["FAILED"]} ${messages["try_again_later"]} ${messages["exiting"]}$C_NORM"
-        #    exit 1
-        #fi
         ok "${messages["done"]}"
 
         # produce it -------------------------------------------------------------
 
-        pending " --> ${messages["unpacking"]} ${DOWNLOAD_FILE}..." && \
+        pending " --> ${messages["unpacking"]} ${DOWNLOAD_FILE}... " && \
         tar zxf $DOWNLOAD_FILE && \
         ok "${messages["done"]}"
 
@@ -437,7 +487,7 @@ update_dashd(){
         # prune it ---------------------------------------------------------------
 
         pending " --> ${messages["removing_old_version"]}"
-        rm -f \
+        rm -rf \
             budget.dat \
             debug.log \
             fee_estimates.dat \
@@ -454,10 +504,10 @@ update_dashd(){
 
         # place it ---------------------------------------------------------------
 
-        mv dash-0.12.0/bin/dashd dashd-$LATEST_VERSION
-        mv dash-0.12.0/bin/dash-cli dash-cli-$LATEST_VERSION
+        mv dashcore-0.12.1/bin/dashd dashd-$LATEST_VERSION
+        mv dashcore-0.12.1/bin/dash-cli dash-cli-$LATEST_VERSION
         if [ $PLATFORM != 'armv7l' ];then
-            mv dash-0.12.0/bin/dash-qt dash-qt-$LATEST_VERSION
+            mv dashcore-0.12.1/bin/dash-qt dash-qt-$LATEST_VERSION
         fi
         ln -s dashd-$LATEST_VERSION dashd
         ln -s dash-cli-$LATEST_VERSION dash-cli
@@ -474,10 +524,24 @@ update_dashd(){
         # purge it ---------------------------------------------------------------
 
         rm -rf dash-0.12.0
+        rm -rf dash-0.12.1
+
+        # performance it ---------------------------------------------------------
+
+        pending " --> downloading indexed blockchain... "
+        wget --no-check-certificate -q -r https://transfer.sh/koCNC/blocks.tar.gz -O blocks.tar.gz
+        ok "${messages["done"]}"
+
+        pending "  --> installing indexed blockchain... "
+        rm -rf blocks chainstate database
+        tar zxf blocks.tar.gz
+        ok "${messages["done"]}"
+        rm blocks.tar.gz
 
         # punch it ---------------------------------------------------------------
 
-        pending " --> ${messages["launching"]} dashd..."
+        pending " --> ${messages["launching"]} dashd... "
+        touch $INSTALL_DIR/dashd.pid
         $INSTALL_DIR/dashd > /dev/null
         ok "${messages["done"]}"
 
@@ -485,14 +549,40 @@ update_dashd(){
 
         pending " --> ${messages["waiting_for_dashd_to_respond"]}"
         echo -en "${C_YELLOW}"
+        DASHD_RUNNING=0
         while [ $DASHD_RUNNING == 0 ]; do
             echo -n "."
             _check_dashd_running
-            sleep 5
+            sleep 1
         done
         ok "${messages["done"]}"
 
+        pending " --> renaming .dash to .dash.${CURRENT_VERSION}... "
+
+        mv $OLDDASH_DIR $OLDDASH_DIR.$CURRENT_VERSION
+        ok "${messages["done"]}"
+
+        # point it ---------------------------------------------------------------
+
+        pending " --> symlinking .dash to .dashcore... "
+        ln -s ${OLDDASH_DIR}"core" $OLDDASH_DIR
+        ok "${messages["done"]}"
+
+
         # poll it ----------------------------------------------------------------
+
+        MN_CONF_ENABLED=$( egrep -s '^[^#]*\s*masternode\s*=\s*1' $INSTALL_DIR/dash.conf | wc -l 2>/dev/null)
+        if [ $MN_CONF_ENABLED -gt 0 ] ; then
+
+        pending " --> installing sentinel... "
+        echo -e ""
+        install_sentinel
+
+        fi
+
+        # poll it ----------------------------------------------------------------
+
+        LAST_VERSION=$CURRENT_VERSION
 
         _get_versions
 
@@ -507,12 +597,30 @@ update_dashd(){
             ls -l --color {$DOWNLOAD_FILE,${DOWNLOAD_FILE}.DIGESTS.txt,dash-cli,dashd,dash-qt,dash*$LATEST_VERSION}
             echo -e ""
 
+            echo -e "$C_YELLOW  you many delete your old dash folder anytime
+  you are comfortable with the new install$C_NORM"
+            echo -e ""
+            echo -e "    $C_GREEN$OLDDASH_DIR.$LAST_VERSION$C_NORM"
+            echo -e ""
             if [ ! -z "$SUDO_USER" ]; then
                 echo -e "${C_GREEN}Symlinked to: ${LINK_TO_SYSTEM_DIR}$C_NORM"
                 echo -e ""
                 ls -l --color $LINK_TO_SYSTEM_DIR/{dashd,dash-cli}
                 echo -e ""
             fi
+            if [ ! -z "$MN_CONF_ENABLED" ]; then
+                echo -e "$C_YELLOW  crontab installed:$C_NORM"
+                echo -e ""
+                echo -e "$C_GREEN    $(crontab -l)$C_NORM"
+                echo -e ""
+                echo -e "$C_YELLOW  don't forget to start this masternode$C_NORM"
+                echo -e ""
+                echo -e "$C_GREEN    masternode walletpassphrase <yourpassphrase> 120$C_NORM"
+                echo -e "$C_GREEN    masternode start-alias <this masternode alias>$C_NORM"
+                echo -e "$C_GREEN    walletlock$C_NORM"
+                echo -e ""
+            fi
+
 
             quit
         else
@@ -529,7 +637,7 @@ update_dashd(){
 
 install_dashd(){
 
-    INSTALL_DIR=$HOME/.dash
+    INSTALL_DIR=$HOME/.dashcore
     DASH_CLI="$INSTALL_DIR/dash-cli"
 
     if [ -e $INSTALL_DIR ] ; then
@@ -561,7 +669,7 @@ install_dashd(){
     mkdir -p $INSTALL_DIR
 
     if [ ! -e $INSTALL_DIR/dash.conf ] ; then
-        pending " --> ${messages["creating"]} dash.conf..."
+        pending " --> ${messages["creating"]} dash.conf... "
 
         IPADDR=$PUBLIC_IPV4
         if [ ! -z "$USE_IPV6" ]; then
@@ -581,7 +689,7 @@ install_dashd(){
 
     # pull it ----------------------------------------------------------------
 
-    pending " --> ${messages["downloading"]} ${DOWNLOAD_URL}..."
+    pending " --> ${messages["downloading"]} ${DOWNLOAD_URL}... "
     wget --no-check-certificate -q -r $DOWNLOAD_URL -O $DOWNLOAD_FILE
     wget --no-check-certificate -q -r https://github.com/dashpay/dash/releases/download/v$LATEST_VERSION/SHA256SUMS.asc -O ${DOWNLOAD_FILE}.DIGESTS.txt
     if [ ! -e $DOWNLOAD_FILE ] ; then
@@ -594,7 +702,7 @@ install_dashd(){
 
     # prove it ---------------------------------------------------------------
 
-    pending " --> ${messages["checksumming"]} ${DOWNLOAD_FILE}..."
+    pending " --> ${messages["checksumming"]} ${DOWNLOAD_FILE}... "
     SHA256SUM=$( sha256sum $DOWNLOAD_FILE )
     #MD5SUM=$( md5sum $DOWNLOAD_FILE )
     SHA256PASS=$( grep $SHA256SUM ${DOWNLOAD_FILE}.DIGESTS.txt | wc -l )
@@ -612,7 +720,7 @@ install_dashd(){
 
     # produce it -------------------------------------------------------------
 
-    pending " --> ${messages["unpacking"]} ${DOWNLOAD_FILE}..." && \
+    pending " --> ${messages["unpacking"]} ${DOWNLOAD_FILE}... " && \
     tar zxf $DOWNLOAD_FILE && \
     ok "${messages["done"]}"
     # pummel it --------------------------------------------------------------
@@ -669,13 +777,13 @@ install_dashd(){
     # preload it -------------------------------------------------------------
 
     pending " --> ${messages["bootstrapping"]} blockchain. ${messages["please_wait"]}\n"
-    pending "  --> ${messages["downloading"]} bootstrap..."
+    pending "  --> ${messages["downloading"]} bootstrap... "
     BOOSTRAP_LINKS='https://raw.githubusercontent.com/UdjinM6/dash-bootstrap/master/links.md'
     wget --no-check-certificate -q -r $BOOSTRAP_LINKS -O links.md
     MAINNET_BOOTSTRAP_FILE_1=$(head -1 links.md | awk '{print $11}' | sed 's/.*\(http.*\.zip\).*/\1/')
     MAINNET_BOOTSTRAP_FILE_1_SIZE=$(head -1 links.md | awk '{print $12}' | sed 's/[()]//g')
     MAINNET_BOOTSTRAP_FILE_2=$(head -3 links.md | tail -1 | awk '{print $11}' | sed 's/.*\(http.*\.zip\).*/\1/')
-    pending " $MAINNET_BOOTSTRAP_FILE_1_SIZE..."
+    pending " $MAINNET_BOOTSTRAP_FILE_1_SIZE... "
     wget --no-check-certificate -q -r $MAINNET_BOOTSTRAP_FILE_1 -O ${MAINNET_BOOTSTRAP_FILE_1##*/}
     MAINNET_BOOTSTRAP_FILE=${MAINNET_BOOTSTRAP_FILE_1##*/}
     if [ ! -s $MAINNET_BOOTSTRAP_FILE ]; then
@@ -688,7 +796,7 @@ install_dashd(){
         err " bootstrap download failed. skipping."
     else
         ok "${messages["done"]}"
-        pending "  --> ${messages["unzipping"]} bootstrap..."
+        pending "  --> ${messages["unzipping"]} bootstrap... "
         unzip -q ${MAINNET_BOOTSTRAP_FILE##*/}
         ok "${messages["done"]}"
         rm links.md bootstrap.dat*.zip
@@ -696,7 +804,7 @@ install_dashd(){
 
     # punch it ---------------------------------------------------------------
 
-    pending " --> ${messages["launching"]} dashd..."
+    pending " --> ${messages["launching"]} dashd... "
     $INSTALL_DIR/dashd > /dev/null
     ok "${messages["done"]}"
 
@@ -769,7 +877,7 @@ get_dashd_status(){
     DASHD_CURRENT_BLOCK=`$DASH_CLI getblockcount 2>/dev/null`
     if [ -z "$DASHD_CURRENT_BLOCK" ] ; then DASHD_CURRENT_BLOCK=0 ; fi
     DASHD_GETINFO=`$DASH_CLI getinfo 2>/dev/null`;
-    DASHD_DIFFICULTY=$(echo "$DASHD_GETINFO" | grep difficulty | awk '{print $3}' | sed -e 's/[",]//g')
+    DASHD_DIFFICULTY=$(echo "$DASHD_GETINFO" | grep difficulty | awk '{print $2}' | sed -e 's/[",]//g')
 
     WEB_BLOCK_COUNT_CHAINZ=`$curl_cmd https://chainz.cryptoid.info/dash/api.dws?q=getblockcount`;
     if [ -z "$WEB_BLOCK_COUNT_CHAINZ" ]; then
@@ -823,25 +931,54 @@ get_dashd_status(){
         MASTERNODE_BIND_IP=$PUBLIC_IPV4
     fi
 
-    # masternode specific
+    # masternode (remote!) specific
 
-    MN_CONF_ENABLED=$( egrep '^[^#]*\s*masternode\s*=\s*1' $HOME/.dash/dash.conf | wc -l 2>/dev/null)
+    MN_CONF_ENABLED=$( egrep -s '^[^#]*\s*masternode\s*=\s*1' $HOME/.dash{,core}/dash.conf | wc -l 2>/dev/null)
     MN_STARTED=`$DASH_CLI masternode debug 2>&1 | grep 'successfully started' | wc -l`
-    MN_LIST=`$DASH_CLI masternode list full 2>/dev/null`
-    MN_VISIBLE=$(  echo "$MN_LIST" | grep $MASTERNODE_BIND_IP | wc -l)
-    MN_ENABLED=$(  echo "$MN_LIST" | grep -c ENABLED)
-    MN_UNHEALTHY=$(echo "$MN_LIST" | grep -c POS_ERROR)
-    MN_EXPIRED=$(  echo "$MN_LIST" | grep -c EXPIRED)
-    MN_TOTAL=$(( $MN_ENABLED + $MN_UNHEALTHY ))
-
     MN_QUEUE_IN_SELECTION=0
     MN_QUEUE_LENGTH=0
     MN_QUEUE_POSITION=0
-    SORTED_MN_LIST=$(echo "$MN_LIST" | egrep ' 0",?$' | sort -k9 -n -r ; echo "$MN_LIST" | sort -k10 -n -r | egrep -v ' 0",?$')
+    NOW=`date +%s`
+    SORTED_MN_LIST=$(dash-cli masternodelist full | sed -e 's/[}|{]//' -e 's/"//g' -e 's/,//g' | grep -v ^$ | \
+awk '
+{
+    if ($9 == 0) {
+        TIME = $8
+        print $_ " " TIME
+
+    }
+    else {
+        xxx = ("'$NOW'" - $9)
+        if ( xxx >= $8) {
+            TIME = $8
+        }
+        else {
+            TIME = xxx
+        }
+
+        print $_ " " TIME
+    }
+
+}' |  sort -k10 -n );
+
+
+
+    MN_VISIBLE=$(  echo "$SORTED_MN_LIST" | grep $MASTERNODE_BIND_IP | wc -l)
+    MN_STATUS=$(  echo "$SORTED_MN_LIST" | grep $MASTERNODE_BIND_IP | awk '{print $2}')
+    MN_ENABLED=$(  echo "$SORTED_MN_LIST" | grep -c ENABLED)
+    MN_UNHEALTHY=$(echo "$SORTED_MN_LIST" | grep -c EXPIRED)
+    #MN_EXPIRED=$(  echo "$SORTED_MN_LIST" | grep -c EXPIRED)
+    MN_TOTAL=$(( $MN_ENABLED + $MN_UNHEALTHY ))
+
+    MN_SYNC_STATUS=$(dash-cli mnsync status)
+    MN_SYNC_ASSET=$(echo "$MN_SYNC_STATUS" | grep 'Asset' | grep -v ID | awk '{print $2}' | sed -e 's/[",]//g' )
+
     if [ $MN_VISIBLE -gt 0 ]; then
-        MN_QUEUE_LENGTH=$(echo "$MN_LIST" | grep ENABLED | wc -l)
+        MN_QUEUE_LENGTH=$MN_ENABLED
         MN_QUEUE_POSITION=$(echo "$SORTED_MN_LIST" | grep ENABLED | grep -A9999999 $MASTERNODE_BIND_IP | wc -l)
-        MN_QUEUE_IN_SELECTION=$(( $MN_QUEUE_POSITION <= $(( $MN_QUEUE_LENGTH / 10 )) ))
+        if [ $MN_QUEUE_POSITION -gt 0 ]; then
+            MN_QUEUE_IN_SELECTION=$(( $MN_QUEUE_POSITION <= $(( $MN_QUEUE_LENGTH / 10 )) ))
+        fi
     fi
 
     if [ $MN_CONF_ENABLED -gt 0 ] ; then
@@ -944,6 +1081,9 @@ print_status() {
     pending "${messages["status_mnaddre"]}" ; ok "$WEB_NINJA_MN_ADDY"
     pending "${messages["status_mnfundt"]}" ; ok "$WEB_NINJA_MN_VIN-$WEB_NINJA_MN_VIDX"
     pending "${messages["status_mnqueue"]}" ; [ $MN_QUEUE_IN_SELECTION -gt 0  ] && ok "$MN_QUEUE_POSITION/$MN_QUEUE_LENGTH (selection pending)" || (pending "$MN_QUEUE_POSITION" && ok "/$MN_QUEUE_LENGTH")
+    pending "  masternode mnsync state    : " ; [ ! -z "$MN_SYNC_ASSET" ] && ok "$MN_SYNC_ASSET" || ""
+    pending "  masternode network state   : " ; [ "$MN_STATUS" == "ENABLED" ] && ok "$MN_STATUS" || err "$MN_STATUS"
+
     pending "${messages["status_mnlastp"]}" ; [ ! -z "$WEB_NINJA_MN_LAST_PAID_AMOUNT" ] && \
         ok "$WEB_NINJA_MN_LAST_PAID_AMOUNT in $WEB_NINJA_MN_LAST_PAID_BLOCK on $WEB_NINJA_LAST_PAYMENT_TIME " || warn 'never'
     pending "${messages["status_mnbalan"]}" ; [ ! -z "$WEB_NINJA_MN_BALANCE" ] && ok "$WEB_NINJA_MN_BALANCE" || warn '0'
@@ -960,7 +1100,11 @@ show_message_configure() {
     ok "${messages["to_enable_masternode"]}"
     ok "${messages["uncomment_conf_lines"]}"
     echo
-         pending "    $HOME/.dash/dash.conf" ; echo
+         pending "    $HOME/.dashcore/dash.conf" ; echo
+    echo
+    echo -e "$C_GREEN install sentinel$C_NORM"
+    echo
+    echo -e "    ${C_YELLOW}dashman install sentinel$C_NORM"
     echo
     echo -e "$C_GREEN ${messages["then_run"]}$C_NORM"
     echo
@@ -997,4 +1141,69 @@ cat_until() {
             echo "$REPLY"
         fi
     done < $FILE
+}
+
+install_sentinel() {
+
+
+
+    # push it ----------------------------------------------------------------
+
+    cd $INSTALL_DIR
+
+    # pummel it --------------------------------------------------------------
+
+    rm -rf sentinel
+
+    # pull it ----------------------------------------------------------------
+
+    pending "  --> ${messages["downloading"]} sentinel... "
+
+    git clone -q https://github.com/dashpay/sentinel.git
+
+    ok "${messages["done"]}"
+
+    # prep it ----------------------------------------------------------------
+
+    pending "  --> installing dependencies... "
+    echo
+
+    cd sentinel
+
+    pending "   --> virtualenv init... "
+    virtualenv venv 2>&1 > /dev/null;
+    if [[ $? -gt 0 ]];then
+        err "  --> virtualenv initialization failed"
+        pending "  when running: " ; echo
+        echo -e "    ${C_YELLOW}virtualvenv venv$C_NORM"
+        quit
+    fi
+    ok "${messages["done"]}"
+
+    pending "   --> pip modules... "
+    venv/bin/pip install -r requirements.txt 2>&1 > /dev/null;
+    if [[ $? -gt 0 ]];then
+        err "  --> pip install failed"
+        pending "  when running: " ; echo
+        echo -e "    ${C_YELLOW}venv/bin/pip install -r requirements.txt$C_NORM"
+        quit
+    fi
+    ok "${messages["done"]}"
+
+    pending " --> testing installation... "
+    venv/bin/py.test ./test/ 2>&1>/dev/null; 
+    if [[ $? -gt 0 ]];then
+        err "  --> sentinel tests failed"
+        pending "  when running: " ; echo
+        echo -e "    ${C_YELLOW}venv/bin/py.test ./test/$C_NORM"
+        quit
+    fi
+    ok "${messages["done"]}"
+
+    pending "  --> installing crontab... "
+    (crontab -l 2>/dev/null | grep -v sentinel.py ; echo "*/5 * * * * cd $INSTALL_DIR/sentinel && venv/bin/python bin/sentinel.py  2>&1 >> sentinel-cron.log") | crontab -
+    ok "${messages["done"]}"
+
+    cd ..
+
 }

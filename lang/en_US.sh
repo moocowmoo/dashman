@@ -4,7 +4,7 @@
 messages=(
 
     ["dashman_version"]="dashman version"
-    ["gathering_info"]="gathering info, please wait..."
+    ["gathering_info"]="gathering info, please wait... "
     ["done"]="DONE!"
     ["exiting"]="Exiting."
 
@@ -27,15 +27,15 @@ messages=(
     ["checksumming"]="Checksumming"
     ["unpacking"]="Unpacking"
     ["stopping"]="Stopping"
-    ["removing_old_version"]="Removing old version..."
+    ["removing_old_version"]="Removing old version... "
     ["please_wait"]="Please wait..."
     ["try_again_later"]="Try again later."
     ["launching"]="Launching"
     ["bootstrapping"]="Bootstrapping"
     ["unzipping"]="Unzipping"
     ["waiting_for_dashd_to_respond"]="Waiting for dashd to respond..."
-    ["deleting_cache_files"]="Deleting cache files, debug.log..."
-    ["starting_dashd"]="Starting dashd..."
+    ["deleting_cache_files"]="Deleting cache files, debug.log... "
+    ["starting_dashd"]="Starting dashd... "
 
     ["err_downloading_file"]="error downloading file"
     ["err_tried_to_get"]="tried to get"
@@ -44,7 +44,7 @@ messages=(
     ["err_unknown_platform"]="unknown platform:"
     ["err_dashman_supports"]="dashman currently only supports 32/64bit linux"
     ["err_could_not_get_version"]="Could not find latest version from"
-    ["err_failed_ip_resolve"]="failed to resolve public ip. retrying..."
+    ["err_failed_ip_resolve"]="failed to resolve public ip. retrying... "
 
     ["newer_dash_available"]="a newer version of dash is available."
     ["successfully_upgraded"]="dash successfully upgraded to version"
