@@ -4,7 +4,7 @@
 messages=(
 
     ["dashman_version"]="wersja dashmana"
-    ["gathering_info"]="zbieranie informacji, proszę czekać..."
+    ["gathering_info"]="zbieranie informacji, proszę czekać... "
     ["done"]="ZROBIONE!"
     ["exiting"]="Wyjście."
 
@@ -27,15 +27,15 @@ messages=(
     ["checksumming"]="sprawdzanie sum kontrolnych"
     ["unpacking"]="rozpakowywanie"
     ["stopping"]="zatrzymywanie"
-    ["removing_old_version"]="Usuwanie starej wersji..."
-    ["please_wait"]="Proszę czekać..."
+    ["removing_old_version"]="Usuwanie starej wersji... "
+    ["please_wait"]="Proszę czekać... "
     ["try_again_later"]="Spróbuj ponownie poźniej."
     ["launching"]="Uruchamianie"
     ["bootstrapping"]="Bootstrapping"
     ["unzipping"]="Unzipping"
     ["waiting_for_dashd_to_respond"]="Czekam na odpowiedź dashd..."
-    ["deleting_cache_files"]="Usuwanie plików cache, debug.log..."
-    ["starting_dashd"]="Uruchamianie dashd..."
+    ["deleting_cache_files"]="Usuwanie plików cache, debug.log... "
+    ["starting_dashd"]="Uruchamianie dashd... "
 
     ["err_downloading_file"]="błąd podczas pobierania pliku"
     ["err_tried_to_get"]="próbowano pobrać"
@@ -44,7 +44,7 @@ messages=(
     ["err_unknown_platform"]="nieznana platforma:"
     ["err_dashman_supports"]="dashman obecnie wspiera tylko 32/64bit linux"
     ["err_could_not_get_version"]="Nie można znaleźć najnowszej wersji z"
-    ["err_failed_ip_resolve"]="nie udało się uzyskac publicznego IP. Probuje ponownie..."
+    ["err_failed_ip_resolve"]="nie udało się uzyskac publicznego IP. Probuje ponownie... "
 
     ["newer_dash_available"]="dostępna jest nowsza wersja dash."
     ["successfully_upgraded"]="dash pomyślnie zaktualizowany do wersji"
