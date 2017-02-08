@@ -125,7 +125,7 @@ _check_dependencies() {
     MN_CONF_ENABLED=$( egrep -s '^[^#]*\s*masternode\s*=\s*1' $HOME/.dash{,core}/dash.conf | wc -l 2>/dev/null)
     if [ $MN_CONF_ENABLED -gt 0 ] ; then
         (which unzip 2>&1) >/dev/null || MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES unzip"
-        (which virtualenv 2>&1) >/dev/null || MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES python-virtualenv"
+        (which virtualenv 2>&1) >/dev/null || MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES python-virtualenv virtualenv"
     fi
 
     if [ "$1" == "install" ]; then
@@ -134,7 +134,7 @@ _check_dependencies() {
 
         # only require python-virtualenv for sentinel
         if [ "$2" == "sentinel" ]; then
-            (which virtualenv 2>&1) >/dev/null || MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES python-virtualenv"
+            (which virtualenv 2>&1) >/dev/null || MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES python-virtualenv virtualenv"
         fi
     fi
 
