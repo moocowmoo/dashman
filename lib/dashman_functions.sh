@@ -753,10 +753,10 @@ install_dashd(){
 
     # place it ---------------------------------------------------------------
 
-    mv dash-0.12.0/bin/dashd dashd-$LATEST_VERSION
-    mv dash-0.12.0/bin/dash-cli dash-cli-$LATEST_VERSION
+    mv dashcore-0.12.1/bin/dashd dashd-$LATEST_VERSION
+    mv dashcore-0.12.1/bin/dash-cli dash-cli-$LATEST_VERSION
     if [ $PLATFORM != 'armv7l' ];then
-        mv dash-0.12.0/bin/dash-qt dash-qt-$LATEST_VERSION
+        mv dashcore-0.12.1/bin/dash-qt dash-qt-$LATEST_VERSION
     fi
     ln -s dashd-$LATEST_VERSION dashd
     ln -s dash-cli-$LATEST_VERSION dash-cli
