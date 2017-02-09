@@ -939,7 +939,7 @@ get_dashd_status(){
     MN_QUEUE_LENGTH=0
     MN_QUEUE_POSITION=0
     NOW=`date +%s`
-    SORTED_MN_LIST=$(dash-cli masternodelist full | sed -e 's/[}|{]//' -e 's/"//g' -e 's/,//g' | grep -v ^$ | \
+    SORTED_MN_LIST=$( $DASH_CLI masternodelist full | sed -e 's/[}|{]//' -e 's/"//g' -e 's/,//g' | grep -v ^$ | \
 awk '
 {
     if ($9 == 0) {
@@ -970,7 +970,7 @@ awk '
     #MN_EXPIRED=$(  echo "$SORTED_MN_LIST" | grep -c EXPIRED)
     MN_TOTAL=$(( $MN_ENABLED + $MN_UNHEALTHY ))
 
-    MN_SYNC_STATUS=$(dash-cli mnsync status)
+    MN_SYNC_STATUS=$( $DASH_CLI mnsync status)
     MN_SYNC_ASSET=$(echo "$MN_SYNC_STATUS" | grep 'Asset' | grep -v ID | awk '{print $2}' | sed -e 's/[",]//g' )
 
     if [ $MN_VISIBLE -gt 0 ]; then
