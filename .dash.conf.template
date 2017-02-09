@@ -9,9 +9,7 @@ server=1
 daemon=1
 logtimestamps=1
 maxconnections=64
+"externalip=${IPADDR}"
 "#----"
 "#masternode=1"
-"#masternodeaddr=${IPADDR}:9999"
 "#masternodeprivkey=<replace_with_mnprivkey>"
-
-
