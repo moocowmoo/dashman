@@ -125,7 +125,7 @@ _check_dependencies() {
     MN_CONF_ENABLED=$( egrep -s '^[^#]*\s*masternode\s*=\s*1' $HOME/.dash{,core}/dash.conf | wc -l 2>/dev/null)
     if [ $MN_CONF_ENABLED -gt 0 ] ; then
         (which unzip 2>&1) >/dev/null || MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES unzip"
-        (which virtualenv 2>&1) >/dev/null || MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES python-virtualenv virtualenv"
+        (which virtualenv 2>&1) >/dev/null || MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES python-virtualenv"
     fi
 
     if [ "$1" == "install" ]; then
@@ -134,7 +134,7 @@ _check_dependencies() {
 
         # only require python-virtualenv for sentinel
         if [ "$2" == "sentinel" ]; then
-            (which virtualenv 2>&1) >/dev/null || MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES python-virtualenv virtualenv"
+            (which virtualenv 2>&1) >/dev/null || MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES python-virtualenv"
         fi
     fi
 
@@ -203,7 +203,6 @@ _find_dash_directory() {
         INSTALL_DIR=$(readlink -f $INSTALL_DIR) 2>/dev/null
         if [ ! -e $INSTALL_DIR ]; then
             echo -e "${C_RED}${messages["dashcli_not_found_in_cwd"]}, ~/.dashcore, or \$PATH. -- ${messages["exiting"]}$C_NORM"
-
             exit 1
         fi
     else
@@ -354,10 +353,6 @@ restart_dashd(){
 
 update_dashd(){
 
-
-    OLDDASH_DIR=$INSTALL_DIR;
-    INSTALL_DIR=${INSTALL_DIR/.dash/.dashcore};
-
     if [ $LATEST_VERSION != $CURRENT_VERSION ] || [ ! -z "$REINSTALL" ] || [ ! -z "$UNATTENDED" ] ; then
                     
 
@@ -393,43 +388,43 @@ update_dashd(){
 
         # populate it ------------------------------------------------------------
 
-        rm -f $OLDDASH_DIR/{budget.dat,debug.log,fee_estimates.dat,mncache.dat,mnpayments.dat,peers.dat} 2> /dev/null
-        
-        FREE_DISK=$(df -k --output='avail' $OLDDASH_DIR | grep -iv "avail" )
-        DASHDIR_SIZE=$(du -sk $OLDDASH_DIR | awk '{print $1}' )
+#        rm -f $OLDDASH_DIR/{budget.dat,debug.log,fee_estimates.dat,mncache.dat,mnpayments.dat,peers.dat} 2> /dev/null
+#        
+#        FREE_DISK=$(df -k --output='avail' $OLDDASH_DIR | grep -iv "avail" )
+#        DASHDIR_SIZE=$(du -sk $OLDDASH_DIR | awk '{print $1}' )
+#
+#        if [[ $DASHDIR_SIZE -gt $FREE_DISK ]]; then
+#            echo -e ""
+#            echo -e ""
+#            echo -e "$C_RED*** Not enough free disk.  Make room, then try again. ***$C_NORM"
+#            echo -e ""
+#            echo -e ""
+#        fi
 
-        if [[ $DASHDIR_SIZE -gt $FREE_DISK ]]; then
-            echo -e ""
-            echo -e ""
-            echo -e "$C_RED*** Not enough free disk.  Make room, then try again. ***$C_NORM"
-            echo -e ""
-            echo -e ""
-        fi
-
-        if [ ! -e $INSTALL_DIR ]; then
-            echo -e ""
-            echo -en "$C_CYAN --> copying .dash folder to .dashcore... "
-            cp -pr $OLDDASH_DIR $INSTALL_DIR
-            ok "${messages["done"]}"
-        echo ""
-        fi
+#        if [ ! -e $INSTALL_DIR ]; then
+#            echo -e ""
+#            echo -en "$C_CYAN --> copying .dash folder to .dashcore... "
+#            cp -pr $OLDDASH_DIR $INSTALL_DIR
+#            ok "${messages["done"]}"
+#        echo ""
+#        fi
 
 
         # prep it ----------------------------------------------------------------
 
-        if [ ! -z $LINK_TO_SYSTEM_DIR ]; then
-
-            # mv executables into ~/.dashcore
-            mv $INSTALL_DIR/{dashd,dash-cli} $HOME/.dashcore
-            chown $SUDO_USER $HOME/.dashcore/{dashd,dash-cli}
-
-            # symlink to system dir
-            ln -s $HOME/.dashcore/dashd $LINK_TO_SYSTEM_DIR
-            ln -s $HOME/.dashcore/dash-cli $LINK_TO_SYSTEM_DIR
-
-            INSTALL_DIR=$HOME/.dashcore
-
-        fi
+#        if [ ! -z $LINK_TO_SYSTEM_DIR ]; then
+#
+#            # mv executables into ~/.dashcore
+#            mv $INSTALL_DIR/{dashd,dash-cli} $HOME/.dashcore
+#            chown $SUDO_USER $HOME/.dashcore/{dashd,dash-cli}
+#
+#            # symlink to system dir
+#            ln -s $HOME/.dashcore/dashd $LINK_TO_SYSTEM_DIR
+#            ln -s $HOME/.dashcore/dash-cli $LINK_TO_SYSTEM_DIR
+#
+#            INSTALL_DIR=$HOME/.dashcore
+#
+#        fi
 
 
         # push it ----------------------------------------------------------------
@@ -438,9 +433,9 @@ update_dashd(){
 
         # permute it -------------------------------------------------------------
 
-        get_public_ips
-        sed -i '/masternodeaddr/d' dash.conf
-        echo "externalip=$PUBLIC_IPV4" >> dash.conf
+#        get_public_ips
+#        sed -i '/masternodeaddr/d' dash.conf
+#        echo "externalip=$PUBLIC_IPV4" >> dash.conf
 
         # pull it ----------------------------------------------------------------
 
@@ -528,15 +523,15 @@ update_dashd(){
 
         # performance it ---------------------------------------------------------
 
-        pending " --> downloading indexed blockchain... "
-        wget --no-check-certificate -q -r https://transfer.sh/koCNC/blocks.tar.gz -O blocks.tar.gz
-        ok "${messages["done"]}"
+#        pending " --> downloading indexed blockchain... "
+#        wget --no-check-certificate -q -r https://transfer.sh/koCNC/blocks.tar.gz -O blocks.tar.gz
+#        ok "${messages["done"]}"
 
-        pending "  --> installing indexed blockchain... "
-        rm -rf blocks chainstate database
-        tar zxf blocks.tar.gz
-        ok "${messages["done"]}"
-        rm blocks.tar.gz
+#        pending "  --> installing indexed blockchain... "
+#        rm -rf blocks chainstate database
+#        tar zxf blocks.tar.gz
+#        ok "${messages["done"]}"
+#        rm blocks.tar.gz
 
         # punch it ---------------------------------------------------------------
 
@@ -557,28 +552,28 @@ update_dashd(){
         done
         ok "${messages["done"]}"
 
-        pending " --> renaming .dash to .dash.${CURRENT_VERSION}... "
+#        pending " --> renaming .dash to .dash.${CURRENT_VERSION}... "
 
-        mv $OLDDASH_DIR $OLDDASH_DIR.$CURRENT_VERSION
-        ok "${messages["done"]}"
+#        mv $OLDDASH_DIR $OLDDASH_DIR.$CURRENT_VERSION
+#        ok "${messages["done"]}"
 
         # point it ---------------------------------------------------------------
 
-        pending " --> symlinking .dash to .dashcore... "
-        ln -s ${OLDDASH_DIR}"core" $OLDDASH_DIR
-        ok "${messages["done"]}"
+#        pending " --> symlinking .dash to .dashcore... "
+#        ln -s ${OLDDASH_DIR}"core" $OLDDASH_DIR
+#        ok "${messages["done"]}"
 
 
         # poll it ----------------------------------------------------------------
 
-        MN_CONF_ENABLED=$( egrep -s '^[^#]*\s*masternode\s*=\s*1' $INSTALL_DIR/dash.conf | wc -l 2>/dev/null)
-        if [ $MN_CONF_ENABLED -gt 0 ] ; then
+#        MN_CONF_ENABLED=$( egrep -s '^[^#]*\s*masternode\s*=\s*1' $INSTALL_DIR/dash.conf | wc -l 2>/dev/null)
+#        if [ $MN_CONF_ENABLED -gt 0 ] ; then
 
-        pending " --> installing sentinel... "
-        echo -e ""
-        install_sentinel
+#        pending " --> installing sentinel... "
+#        echo -e ""
+#        install_sentinel
 
-        fi
+#        fi
 
         # poll it ----------------------------------------------------------------
 
@@ -597,29 +592,29 @@ update_dashd(){
             ls -l --color {$DOWNLOAD_FILE,${DOWNLOAD_FILE}.DIGESTS.txt,dash-cli,dashd,dash-qt,dash*$LATEST_VERSION}
             echo -e ""
 
-            echo -e "$C_YELLOW  you many delete your old dash folder anytime
-  you are comfortable with the new install$C_NORM"
-            echo -e ""
-            echo -e "    $C_GREEN$OLDDASH_DIR.$LAST_VERSION$C_NORM"
-            echo -e ""
-            if [ ! -z "$SUDO_USER" ]; then
-                echo -e "${C_GREEN}Symlinked to: ${LINK_TO_SYSTEM_DIR}$C_NORM"
-                echo -e ""
-                ls -l --color $LINK_TO_SYSTEM_DIR/{dashd,dash-cli}
-                echo -e ""
-            fi
-            if [ ! -z "$MN_CONF_ENABLED" ]; then
-                echo -e "$C_YELLOW  crontab installed:$C_NORM"
-                echo -e ""
-                echo -e "$C_GREEN    $(crontab -l)$C_NORM"
-                echo -e ""
-                echo -e "$C_YELLOW  don't forget to start this masternode$C_NORM"
-                echo -e ""
-                echo -e "$C_GREEN    masternode walletpassphrase <yourpassphrase> 120$C_NORM"
-                echo -e "$C_GREEN    masternode start-alias <this masternode alias>$C_NORM"
-                echo -e "$C_GREEN    walletlock$C_NORM"
-                echo -e ""
-            fi
+#            echo -e "$C_YELLOW  you many delete your old dash folder anytime
+#  you are comfortable with the new install$C_NORM"
+#            echo -e ""
+#            echo -e "    $C_GREEN$OLDDASH_DIR.$LAST_VERSION$C_NORM"
+#            echo -e ""
+#            if [ ! -z "$SUDO_USER" ]; then
+#                echo -e "${C_GREEN}Symlinked to: ${LINK_TO_SYSTEM_DIR}$C_NORM"
+#                echo -e ""
+#                ls -l --color $LINK_TO_SYSTEM_DIR/{dashd,dash-cli}
+#                echo -e ""
+#            fi
+#            if [ ! -z "$MN_CONF_ENABLED" ]; then
+#                echo -e "$C_YELLOW  crontab installed:$C_NORM"
+#                echo -e ""
+#                echo -e "$C_GREEN    $(crontab -l)$C_NORM"
+#                echo -e ""
+#                echo -e "$C_YELLOW  don't forget to start this masternode$C_NORM"
+#                echo -e ""
+#                echo -e "$C_GREEN    masternode walletpassphrase <yourpassphrase> 120$C_NORM"
+#                echo -e "$C_GREEN    masternode start-alias <this masternode alias>$C_NORM"
+#                echo -e "$C_GREEN    walletlock$C_NORM"
+#                echo -e ""
+#            fi
 
 
             quit
