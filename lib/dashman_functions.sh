@@ -566,14 +566,24 @@ update_dashd(){
 
         # poll it ----------------------------------------------------------------
 
-#        MN_CONF_ENABLED=$( egrep -s '^[^#]*\s*masternode\s*=\s*1' $INSTALL_DIR/dash.conf | wc -l 2>/dev/null)
-#        if [ $MN_CONF_ENABLED -gt 0 ] ; then
+        MN_CONF_ENABLED=$( egrep -s '^[^#]*\s*masternode\s*=\s*1' $INSTALL_DIR/dash.conf | wc -l 2>/dev/null)
+        if [ $MN_CONF_ENABLED -gt 0 ] ; then
 
-#        pending " --> installing sentinel... "
-#        echo -e ""
-#        install_sentinel
+        pending " --> updating sentinel... "
 
-#        fi
+
+        # pull it ----------------------------------------------------------------
+
+        cd sentinel
+
+        git remote update
+        git reset --hard origin/master
+
+        cd ..
+
+        ok "${messages["done"]}"
+
+        fi
 
         # poll it ----------------------------------------------------------------
 
