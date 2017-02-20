@@ -1,3 +1,7 @@
+0.1.22 -  Mon Feb 20 10:23:49 2017 +0000
+
+    config - patch update for 12.1.x -> 12.1.x
+
 0.1.21 -  Wed Feb 8 09:21:00 2017 +0000
 
     enh - 12.1 update + sentinel install
