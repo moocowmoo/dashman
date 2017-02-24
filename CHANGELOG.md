@@ -1,3 +1,7 @@
+0.1.23 -  Fri Feb 24 15:44:20 2017 +0000
+
+    config - new sentinel crontab on update
+
 0.1.22 -  Mon Feb 20 10:23:49 2017 +0000
 
     config - patch update for 12.1.x -> 12.1.x
