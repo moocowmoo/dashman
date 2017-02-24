@@ -1207,7 +1207,7 @@ install_sentinel() {
     ok "${messages["done"]}"
 
     pending "  --> installing crontab... "
-    (crontab -l 2>/dev/null | grep -v sentinel.py ; echo "*/5 * * * * cd $INSTALL_DIR/sentinel && venv/bin/python bin/sentinel.py  2>&1 >> sentinel-cron.log") | crontab -
+    (crontab -l 2>/dev/null | grep -v sentinel.py ; echo "* * * * * cd $INSTALL_DIR/sentinel && venv/bin/python bin/sentinel.py  2>&1 >> sentinel-cron.log") | crontab -
     ok "${messages["done"]}"
 
     cd ..
