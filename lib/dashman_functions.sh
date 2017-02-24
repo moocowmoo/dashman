@@ -569,19 +569,20 @@ update_dashd(){
         MN_CONF_ENABLED=$( egrep -s '^[^#]*\s*masternode\s*=\s*1' $INSTALL_DIR/dash.conf | wc -l 2>/dev/null)
         if [ $MN_CONF_ENABLED -gt 0 ] ; then
 
-        pending " --> updating sentinel... "
+            # pull it ----------------------------------------------------------------
 
+            pending " --> updating sentinel... "
+            cd sentinel
+            git remote update >/dev/null 2>&1 
+            git reset -q --hard origin/master
+            cd ..
+            ok "${messages["done"]}"
 
-        # pull it ----------------------------------------------------------------
+            # pull it ----------------------------------------------------------------
 
-        cd sentinel
-
-        git remote update
-        git reset --hard origin/master
-
-        cd ..
-
-        ok "${messages["done"]}"
+            pending "  --> updating crontab... "
+            (crontab -l 2>/dev/null | grep -v sentinel.py ; echo "* * * * * cd $INSTALL_DIR/sentinel && venv/bin/python bin/sentinel.py  2>&1 >> sentinel-cron.log") | crontab -
+            ok "${messages["done"]}"
 
         fi
 
