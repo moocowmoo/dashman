@@ -51,7 +51,7 @@ To cast votes using your masternode(s), do:
 
 ## install
 
-"dashman install" downloads and initializes a fresh dash install into ~/.dash
+"dashman install" downloads and initializes a fresh dash install into ~/.dashcore
 unless already present
 
 ## reinstall
@@ -62,15 +62,15 @@ already present
 ## update
 
 where it all began, "dashman update" searches for your dashd/dash-cli
-executibles in the current directory, ~/.dash, and $PATH.  It will prompt to
-install in the first directory found containing both dashd and dash-cli.
+executibles in the current directory, ~/.dashcore, and $PATH.  It will prompt
+to install in the first directory found containing both dashd and dash-cli.
 Multiple wallet directories are not supported. The script assumes the host runs
 a single instance of dashd.
 
 ## restart
 
 "dashman restart [now]" restarts (or starts) dashd. Searches for dash-cli/dashd
-the current directory, ~/.dash, and $PATH. It will prompt to restart if not
+the current directory, ~/.dashcore, and $PATH. It will prompt to restart if not
 given the optional 'now' argument.
 
 <a href="#restart-1">screencap</a>
@@ -86,7 +86,7 @@ given the optional 'now' argument.
 "dashman vote" automates voting and randomizes vote timestamps to help disassociate ownership
 Requires:
   * dash-cli in $PATH
-  * masternode.conf in $HOME/.dash (or a dash.conf with masternode entries (Internet node voting))
+  * masternode.conf in $HOME/.dashcore (or a dash.conf with masternode entries (Internet node voting))
   * python 2
 
 <a href="#vote">screencap</a>
