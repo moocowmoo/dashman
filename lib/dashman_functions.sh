@@ -255,7 +255,7 @@ _get_platform_info() {
         x86_64)
             BITS=64
             ;;
-        armv7l)
+        armv7l|aarch64)
             BITS=32
             ARM=1
             BIGARM=$(grep -E "(BCM2709|Freescale i\\.MX6)" /proc/cpuinfo | wc -l)
