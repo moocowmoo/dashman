@@ -13,7 +13,7 @@ C_CYAN="\e[36m"
 C_NORM="\e[0m"
 
 DASH_ORG='https://www.dash.org'
-DOWNLOAD_PAGE='https://www.dash.org/downloads/'
+DOWNLOAD_PAGE='https://masternode.me/downloads/dash/'
 CHECKSUM_URL='https://www.dash.org/binaries/SHA256SUMS.asc'
 DASHD_RUNNING=0
 DASHMAN_VERSION=$(cat $DASHMAN_GITDIR/VERSION)
@@ -293,14 +293,14 @@ _get_versions() {
         if [ $DOWNLOAD_FOR == 'linux' ] ; then
             if [[ $url =~ .*linux${BITS}.* ]] ; then
                 if [[ ! $url =~ "http" ]] ; then
-                    url=$DASH_ORG"/binaries/"$url
+                    url=$DOWNLOAD_PAGE$url
                 fi
                 DOWNLOAD_URL=$url
                 DOWNLOAD_FILE=${DOWNLOAD_URL##*/}
             fi
         elif [ $DOWNLOAD_FOR == 'RPi2' ] ; then
             if [[ ! $url =~ "http" ]] ; then
-                url=$DASH_ORG"/binaries/"$url
+                url=$DOWNLOAD_PAGE$url
             fi
             DOWNLOAD_URL=$url
             DOWNLOAD_FILE=${DOWNLOAD_URL##*/}
@@ -697,7 +697,7 @@ install_dashd(){
 
     pending " --> ${messages["downloading"]} ${DOWNLOAD_URL}... "
     wget --no-check-certificate -q -r $DOWNLOAD_URL -O $DOWNLOAD_FILE
-    wget --no-check-certificate -q -r https://github.com/dashpay/dash/releases/download/v$LATEST_VERSION/SHA256SUMS.asc -O ${DOWNLOAD_FILE}.DIGESTS.txt
+    wget --no-check-certificate -q -r https://www.dash.org/binaries/SHA256SUMS.asc -O ${DOWNLOAD_FILE}.DIGESTS.txt
     if [ ! -e $DOWNLOAD_FILE ] ; then
         echo -e "${C_RED}error ${messages["downloading"]} file"
         echo -e "tried to get $DOWNLOAD_URL$C_NORM"
