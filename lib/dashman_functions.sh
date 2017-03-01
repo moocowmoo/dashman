@@ -68,11 +68,14 @@ usage(){
         restart [now]
 
             ${messages["usage_restart_description"]}
+                banlist.dat
                 budget.dat
                 debug.log
                 fee_estimates.dat
+                governance.dat
                 mncache.dat
                 mnpayments.dat
+                netfulfilled.dat
                 peers.dat
 
             ${messages["usage_restart_description_now"]}
@@ -329,7 +332,8 @@ restart_dashd(){
     pending " --> ${messages["deleting_cache_files"]}"
 
     cd $INSTALL_DIR
-    rm -f budget.dat debug.log fee_estimates.dat mncache.dat mnpayments.dat peers.dat
+
+    rm -f banlist.dat governance.dat netfulfilled.dat budget.dat debug.log fee_estimates.dat mncache.dat mnpayments.dat peers.dat
     ok "${messages["done"]}"
 
     pending " --> ${messages["starting_dashd"]}"
@@ -483,11 +487,14 @@ update_dashd(){
 
         pending " --> ${messages["removing_old_version"]}"
         rm -rf \
+            banlist.dat \
             budget.dat \
             debug.log \
             fee_estimates.dat \
+            governance.dat \
             mncache.dat \
             mnpayments.dat \
+            netfulfilled.dat \
             peers.dat \
             dashd \
             dashd-$CURRENT_VERSION \
@@ -743,11 +750,14 @@ install_dashd(){
 
     pending " --> ${messages["removing_old_version"]}"
     rm -f \
+        banlist.dat \
         budget.dat \
         debug.log \
         fee_estimates.dat \
+        governance.dat \
         mncache.dat \
         mnpayments.dat \
+        netfulfilled.dat \
         peers.dat \
         dashd \
         dashd-$CURRENT_VERSION \
