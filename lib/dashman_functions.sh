@@ -357,7 +357,7 @@ restart_dashd(){
 
 update_dashd(){
 
-    if [ $LATEST_VERSION != $CURRENT_VERSION ] || [ ! -z "$REINSTALL" ] || [ ! -z "$UNATTENDED" ] ; then
+    if [ $LATEST_VERSION != $CURRENT_VERSION ] || [ ! -z "$REINSTALL" ] ; then
                     
 
         if [ ! -z "$REINSTALL" ];then
