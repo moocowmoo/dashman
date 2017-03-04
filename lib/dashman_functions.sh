@@ -103,6 +103,26 @@ usage(){
 EOF
 }
 
+function cache_output(){
+    # cached output
+    FILE=$1
+    # command to cache
+    CMD=$2
+    OLD=0
+    CONTENTS=""
+    # is cache older than 1 minute?
+    if [ -e $FILE ]; then
+        OLD=$(find $FILE -mmin +1 -ls | wc -l)
+        CONTENTS=$(cat $FILE);
+    fi
+    # is cache empty or older than 1 minute? rebuild
+    if [ -z "$CONTENTS" ] || [ "$OLD" -gt 0 ]; then
+        CONTENTS=$(eval $CMD)
+        echo "$CONTENTS" > $FILE
+    fi
+    echo "$CONTENTS"
+}
+
 _check_dependencies() {
 
     (which python 2>&1) >/dev/null || die "${messages["err_missing_dependency"]} python - sudo apt-get install python"
@@ -954,19 +974,23 @@ get_dashd_status(){
     MN_QUEUE_IN_SELECTION=0
     MN_QUEUE_LENGTH=0
     MN_QUEUE_POSITION=0
+
+
     NOW=`date +%s`
-    SORTED_MN_LIST=$( $DASH_CLI masternodelist full | sed -e 's/[}|{]//' -e 's/"//g' -e 's/,//g' | grep -v ^$ | \
-awk '
+    MN_LIST="$(cache_output /tmp/mnlist_cache '$DASH_CLI masternodelist full 2>/dev/null')"
+
+    SORTED_MN_LIST=$(echo "$MN_LIST" | grep -w ENABLED | sed -e 's/[}|{]//' -e 's/"//g' -e 's/,//g' | grep -v ^$ | \
+awk ' \
 {
-    if ($9 == 0) {
-        TIME = $8
+    if ($7 == 0) {
+        TIME = $6
         print $_ " " TIME
 
     }
     else {
-        xxx = ("'$NOW'" - $9)
-        if ( xxx >= $8) {
-            TIME = $8
+        xxx = ("'$NOW'" - $7)
+        if ( xxx >= $6) {
+            TIME = $6
         }
         else {
             TIME = xxx
@@ -975,18 +999,16 @@ awk '
         print $_ " " TIME
     }
 
-}' |  sort -k10 -n );
+}' |  sort -k10 -n)
 
-
-
-    MN_VISIBLE=$(  echo "$SORTED_MN_LIST" | grep $MASTERNODE_BIND_IP | wc -l)
     MN_STATUS=$(  echo "$SORTED_MN_LIST" | grep $MASTERNODE_BIND_IP | awk '{print $2}')
+    MN_VISIBLE=$(  echo "$MN_STATUS" | wc -l)
     MN_ENABLED=$(  echo "$SORTED_MN_LIST" | grep -c ENABLED)
     MN_UNHEALTHY=$(echo "$SORTED_MN_LIST" | grep -c EXPIRED)
     #MN_EXPIRED=$(  echo "$SORTED_MN_LIST" | grep -c EXPIRED)
     MN_TOTAL=$(( $MN_ENABLED + $MN_UNHEALTHY ))
 
-    MN_SYNC_STATUS=$( $DASH_CLI mnsync status)
+    MN_SYNC_STATUS=$( $DASH_CLI mnsync status )
     MN_SYNC_ASSET=$(echo "$MN_SYNC_STATUS" | grep 'Asset' | grep -v ID | awk '{print $2}' | sed -e 's/[",]//g' )
 
     if [ $MN_VISIBLE -gt 0 ]; then
