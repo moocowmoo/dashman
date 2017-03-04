@@ -1019,6 +1019,26 @@ awk ' \
         fi
     fi
 
+    # sentinel checks
+    if [ -e $INSTALL_DIR/sentinel ]; then
+
+        SENTINEL_INSTALLED=0
+        SENTINEL_PYTEST=0
+        SENTINEL_CRONTAB=0
+        SENTINEL_LAUNCH_OUTPUT=""
+        SENTINEL_LAUNCH_OK=-1
+
+        cd $INSTALL_DIR/sentinel
+        SENTINEL_INSTALLED=$( ls -l bin/sentinel.py | wc -l )
+        SENTINEL_PYTEST=$( venv/bin/py.test test 2>&1 > /dev/null ; echo $? )
+        SENTINEL_CRONTAB=$( crontab -l | grep sentinel | grep -v '^#' | wc -l )
+        SENTINEL_LAUNCH_OUTPUT=$( venv/bin/python bin/sentinel.py 2>&1 )
+        if [ -z "$SENTINEL_LAUNCH_OUTPUT" ] ; then
+            SENTINEL_LAUNCH_OK=$?
+        fi
+        cd - > /dev/null
+    fi
+
     if [ $MN_CONF_ENABLED -gt 0 ] ; then
         WEB_NINJA_API=$($curl_cmd "https://www.dashninja.pl/api/masternodes?ips=\[\"${MASTERNODE_BIND_IP}:9999\"\]&portcheck=1&balance=1")
         if [ -z "$WEB_NINJA_API" ]; then
@@ -1125,6 +1145,12 @@ print_status() {
     pending "${messages["status_mnlastp"]}" ; [ ! -z "$WEB_NINJA_MN_LAST_PAID_AMOUNT" ] && \
         ok "$WEB_NINJA_MN_LAST_PAID_AMOUNT in $WEB_NINJA_MN_LAST_PAID_BLOCK on $WEB_NINJA_LAST_PAYMENT_TIME " || warn 'never'
     pending "${messages["status_mnbalan"]}" ; [ ! -z "$WEB_NINJA_MN_BALANCE" ] && ok "$WEB_NINJA_MN_BALANCE" || warn '0'
+
+    pending "    sentinel installed       : " ; [ $SENTINEL_INSTALLED -gt 0  ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
+    pending "    sentinel tests passed    : " ; [ $SENTINEL_PYTEST    -eq 0  ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
+    pending "    sentinel crontab enabled : " ; [ $SENTINEL_CRONTAB   -gt 0  ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
+    pending "    sentinel run test passed : " ; [ $SENTINEL_LAUNCH_OK -eq 0  ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
+
         else
     err     "  dashninja api offline        " ;
         fi
