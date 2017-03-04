@@ -1,3 +1,9 @@
+0.1.24 -  Sat Mar 4 12:09:29 2017 +0000
+
+    enh - adding simple sentinel checks
+    bugfix - queue calc repair + 1m caching
+    compat - odroid c2 platform
+
 0.1.23 -  Fri Feb 24 15:44:20 2017 +0000
 
     config - new sentinel crontab on update
