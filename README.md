@@ -38,9 +38,6 @@ To get the current status of dashd, do:
 
     dashman/dashman status
 
-To cast votes using your masternode(s), do:
-
-    ./dashman vote
 
 # Commands
 
@@ -80,16 +77,6 @@ given the optional 'now' argument.
 
 <a href="#status-1">screencap</a>
 
-## vote (beta)
-
-"dashman vote" automates voting and randomizes vote timestamps to help disassociate ownership
-Requires:
-  * dash-cli in $PATH
-  * masternode.conf in $HOME/.dashcore (or a dash.conf with masternode entries (Internet node voting))
-  * python 2
-
-<a href="#vote">screencap</a>
-
 # Dependencies
 
 * bash version 4
@@ -121,12 +108,6 @@ Requires:
 ### status
 
 <img src="https://raw.githubusercontent.com/moocowmoo/dashman/master/screencaps/dashman_0.1-status.png">
-
-### vote
-
-<img src="https://raw.githubusercontent.com/moocowmoo/dashman/master/screencaps/dashman_0.1-vote.png">
-
-<img src="https://raw.githubusercontent.com/moocowmoo/dashman/master/screencaps/dashman_0.1-vote-out.png">
 
 # Contact
 
