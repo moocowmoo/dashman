@@ -10,34 +10,33 @@ DASH wallet/daemon management utilities - version 0.1.23
 
 To download dashman do:
 
-    sudo apt-get install git
-    git clone https://github.com/moocowmoo/dashman.git
-    cd dashman
+    sudo apt-get install git unzip
+    git clone https://github.com/moocowmoo/dashman
 
 To update your existing version 12 32/64bit linux dash wallet to the latest
 dashd, do:
 
-    ./dashman update
+    dashman/dashman update
 
 To perform a new install of dash, do:
 
-    ./dashman install
+    dashman/dashman install
 
 To overwrite an existing dash install, do:
 
-    ./dashman reinstall
+    dashman/dashman reinstall
 
 To update dashman to the latest version, do:
 
-    ./dashman sync
+    dashman/dashman sync
 
 To restart (or start) dashd, do:
 
-    ./dashman restart
+    dashman/dashman restart
 
 To get the current status of dashd, do:
 
-    ./dashman status
+    dashman/dashman status
 
 To cast votes using your masternode(s), do:
 
@@ -98,6 +97,7 @@ Requires:
 * curl
 * perl
 * python
+* unzip
 * dashd, dash-cli - version 12 or greater to update
 
 # Screencaps
