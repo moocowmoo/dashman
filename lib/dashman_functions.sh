@@ -958,15 +958,16 @@ get_dashd_status(){
     SORTED_MN_LIST=$( $DASH_CLI masternodelist full | sed -e 's/[}|{]//' -e 's/"//g' -e 's/,//g' | grep -v ^$ | \
 awk '
 {
-    if ($9 == 0) {
-        TIME = $8
+    if ($8 == 0) {
+        TIME = $6
         print $_ " " TIME
 
     }
     else {
-        xxx = ("'$NOW'" - $9)
-        if ( xxx >= $8) {
-            TIME = $8
+        "date +%s"|getline time_now
+        xxx = (time_now - $8)
+        if ( xxx >= $6) {
+            TIME = $6
         }
         else {
             TIME = xxx
@@ -991,7 +992,7 @@ awk '
 
     if [ $MN_VISIBLE -gt 0 ]; then
         MN_QUEUE_LENGTH=$MN_ENABLED
-        MN_QUEUE_POSITION=$(echo "$SORTED_MN_LIST" | grep ENABLED | grep -A9999999 $MASTERNODE_BIND_IP | wc -l)
+        MN_QUEUE_POSITION=$(echo "$SORTED_MN_LIST" | grep " ENABLED" | grep -A9999999 $MASTERNODE_BIND_IP | wc -l)
         if [ $MN_QUEUE_POSITION -gt 0 ]; then
             MN_QUEUE_IN_SELECTION=$(( $MN_QUEUE_POSITION <= $(( $MN_QUEUE_LENGTH / 10 )) ))
         fi
