@@ -26,10 +26,12 @@ else
 fi
 
 curl_cmd='timeout 7 curl -s -L'
+wget_cmd='wget --no-check-certificate -q'
+
 
 # (mostly) functioning functions -- lots of refactoring to do ----------------
 
-pending(){ [[ $QUIET ]] || echo -en "$C_YELLOW$1$C_NORM" ; }
+pending(){ [[ $QUIET ]] || echo -en "$C_YELLOW$1$C_NORM" ; tput el ; }
 
 ok(){ [[ $QUIET ]] || echo -e "$C_GREEN$1$C_NORM" ; }
 
@@ -41,6 +43,10 @@ die() { [[ $QUIET ]] || echo -e "$C_RED$1$C_NORM" ; exit 1 ; }
 quit(){ [[ $QUIET ]] || echo -e "$C_GREEN${1:-${messages["exiting"]}}$C_NORM" ; echo ; exit 0 ; }
 
 confirm() { read -r -p "$(echo -e "${1:-${messages["prompt_are_you_sure"]} [y/N]}")" ; [[ ${REPLY:0:1} = [Yy] ]]; }
+
+
+up()     { echo -e "\e[${1:-1}A"; }
+clear_n_lines(){ for n in $(seq ${1:-1}) ; do tput cuu 1; tput el; done ; }
 
 
 usage(){
@@ -155,6 +161,7 @@ _check_dependencies() {
     if [ "$1" == "install" ]; then
         # only require unzip for install
         (which unzip 2>&1) >/dev/null || MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES unzip"
+        (which pv   2>&1) >/dev/null || MISSING_DEPENDENCIES="${MISSING_DEPENDENCIES}pv "
 
         # only require python-virtualenv for sentinel
         if [ "$2" == "sentinel" ]; then
@@ -640,8 +647,13 @@ install_dashd(){
     # pull it ----------------------------------------------------------------
 
     pending " --> ${messages["downloading"]} ${DOWNLOAD_URL}... "
-    wget --no-check-certificate -q -r $DOWNLOAD_URL -O $DOWNLOAD_FILE
-    wget --no-check-certificate -q -r https://github.com/dashpay/dash/releases/download/v$LATEST_VERSION/SHA256SUMS.asc -O ${DOWNLOAD_FILE}.DIGESTS.txt
+    tput sc
+    echo -e "$C_CYAN"
+    $wget_cmd -O - $DOWNLOAD_URL | pv -trep -s27M -w80 -N wallet > $DOWNLOAD_FILE
+    $wget_cmd -O - https://github.com/dashpay/dash/releases/download/v$LATEST_VERSION/SHA256SUMS.asc | pv -trep -w80 -N checksums > ${DOWNLOAD_FILE}.DIGESTS.txt
+    echo -ne "$C_NORM"
+    clear_n_lines 2
+    tput rc
     if [ ! -e $DOWNLOAD_FILE ] ; then
         echo -e "${C_RED}error ${messages["downloading"]} file"
         echo -e "tried to get $DOWNLOAD_URL$C_NORM"
@@ -738,22 +750,32 @@ install_dashd(){
     MAINNET_BOOTSTRAP_FILE_1_SIZE=$(head -1 links.md | awk '{print $12}' | sed 's/[()]//g')
     MAINNET_BOOTSTRAP_FILE_2=$(head -3 links.md | tail -1 | awk '{print $11}' | sed 's/.*\(http.*\.zip\).*/\1/')
     pending " $MAINNET_BOOTSTRAP_FILE_1_SIZE... "
-    wget --no-check-certificate -q -r $MAINNET_BOOTSTRAP_FILE_1 -O ${MAINNET_BOOTSTRAP_FILE_1##*/}
+    tput sc
+    echo -e "$C_CYAN"
+    $wget_cmd -O - $MAINNET_BOOTSTRAP_FILE_1 | pv -trepa -s1600M -w80 -N bootstrap > ${MAINNET_BOOTSTRAP_FILE_1##*/}
     MAINNET_BOOTSTRAP_FILE=${MAINNET_BOOTSTRAP_FILE_1##*/}
     if [ ! -s $MAINNET_BOOTSTRAP_FILE ]; then
         rm $MAINNET_BOOTSTRAP_FILE
-        wget --no-check-certificate -q -r $MAINNET_BOOTSTRAP_FILE_2 -O ${MAINNET_BOOTSTRAP_FILE_2##*/}
+        $wget_cmd -O - $MAINNET_BOOTSTRAP_FILE_2 | pv -trepa -s1600M -w80 -N bootstrap > ${MAINNET_BOOTSTRAP_FILE_2##*/}
         MAINNET_BOOTSTRAP_FILE=${MAINNET_BOOTSTRAP_FILE_2##*/}
     fi
+    echo -ne "$C_NORM"
+    clear_n_lines 1
+    tput rc
     if [ ! -s $MAINNET_BOOTSTRAP_FILE ]; then
         # TODO i18n
         err " bootstrap download failed. skipping."
     else
         ok "${messages["done"]}"
         pending "  --> ${messages["unzipping"]} bootstrap... "
-        unzip -q ${MAINNET_BOOTSTRAP_FILE##*/}
+        tput sc
+        echo -e "$C_CYAN"
+        unzip -qp ${MAINNET_BOOTSTRAP_FILE##*/} | pv -trep -s2000M -w80 -N 'unpacking bootstrap' > bootstrap.dat
+        echo -ne "$C_NORM"
+        clear_n_lines 1
+        tput rc
         ok "${messages["done"]}"
-        rm links.md bootstrap.dat*.zip
+        rm -f links.md bootstrap.dat*.zip
     fi
 
     # punch it ---------------------------------------------------------------
