@@ -148,24 +148,24 @@ _check_dependencies() {
 
     fi
 
-    (which curl 2>&1) >/dev/null || MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES curl"
-    (which perl 2>&1) >/dev/null || MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES perl"
-    (which git  2>&1) >/dev/null || MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES git"
+    (which curl 2>&1) >/dev/null || MISSING_DEPENDENCIES="${MISSING_DEPENDENCIES}curl "
+    (which perl 2>&1) >/dev/null || MISSING_DEPENDENCIES="${MISSING_DEPENDENCIES}perl "
+    (which git  2>&1) >/dev/null || MISSING_DEPENDENCIES="${MISSING_DEPENDENCIES}git "
 
     MN_CONF_ENABLED=$( egrep -s '^[^#]*\s*masternode\s*=\s*1' $HOME/.dash{,core}/dash.conf | wc -l 2>/dev/null)
     if [ $MN_CONF_ENABLED -gt 0 ] ; then
-        (which unzip 2>&1) >/dev/null || MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES unzip"
-        (which virtualenv 2>&1) >/dev/null || MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES python-virtualenv"
+        (which unzip 2>&1) >/dev/null || MISSING_DEPENDENCIES="${MISSING_DEPENDENCIES}unzip "
+        (which virtualenv 2>&1) >/dev/null || MISSING_DEPENDENCIES="${MISSING_DEPENDENCIES}python-virtualenv "
     fi
 
     if [ "$1" == "install" ]; then
         # only require unzip for install
-        (which unzip 2>&1) >/dev/null || MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES unzip"
+        (which unzip 2>&1) >/dev/null || MISSING_DEPENDENCIES="${MISSING_DEPENDENCIES}unzip "
         (which pv   2>&1) >/dev/null || MISSING_DEPENDENCIES="${MISSING_DEPENDENCIES}pv "
 
         # only require python-virtualenv for sentinel
         if [ "$2" == "sentinel" ]; then
-            (which virtualenv 2>&1) >/dev/null || MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES python-virtualenv"
+            (which virtualenv 2>&1) >/dev/null || MISSING_DEPENDENCIES="${MISSING_DEPENDENCIES}python-virtualenv "
         fi
     fi
 
@@ -173,14 +173,15 @@ _check_dependencies() {
     if [ ! -z "$(which nc)" ]; then
         (nc -z -4 8.8.8.8 53 2>&1) >/dev/null
         if [ $? -gt 0 ]; then
-            MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES netcat6"
+            MISSING_DEPENDENCIES="${MISSING_DEPENDENCIES}netcat6 "
         fi
     else
-        MISSING_DEPENDENCIES="$MISSING_DEPENDENCIES netcat"
+        MISSING_DEPENDENCIES="${MISSING_DEPENDENCIES}netcat "
     fi
 
     if [ ! -z "$MISSING_DEPENDENCIES" ]; then
-        die "${messages["err_missing_dependency"]} $MISSING_DEPENDENCIES\n --> sudo $PKG_MANAGER install $MISSING_DEPENDENCIES"
+        err "${messages["err_missing_dependency"]} $MISSING_DEPENDENCIES\n"
+        sudo $PKG_MANAGER install $MISSING_DEPENDENCIES
     fi
 
 
