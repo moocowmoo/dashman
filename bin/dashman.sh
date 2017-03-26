@@ -119,6 +119,9 @@ case "$1" in
                 if [ "$APP" == 'sentinel' ]; then
                     _find_dash_directory
                     install_sentinel
+                elif [ "$APP" == 'unattended' ]; then
+                    UNATTENDED=1
+                    install_dashd
                 else
                     echo "don't know how to install: $2"
                 fi

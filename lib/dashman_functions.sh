@@ -603,12 +603,18 @@ install_dashd(){
         die "\n - ${messages["preexisting_dir"]} $INSTALL_DIR ${messages["found"]} ${messages["run_reinstall"]} ${messages["exiting"]}"
     fi
 
-    pending " - ${messages["download"]} $DOWNLOAD_URL\n - ${messages["and_install_to"]} $INSTALL_DIR?"
+    if [ -z "$UNATTENDED" ] ; then
+        pending "${messages["download"]} $DOWNLOAD_URL\n${messages["and_install_to"]} $INSTALL_DIR?"
+    else
+        echo -e "$C_GREEN*** UNATTENDED MODE ***$C_NORM"
+    fi
 
-    if ! confirm " [${C_GREEN}y${C_NORM}/${C_RED}N${C_NORM}] $C_CYAN"; then
-        echo -e "${C_RED}${messages["exiting"]}$C_NORM"
-        echo ""
-        exit 0
+    if [ -z "$UNATTENDED" ] ; then
+        if ! confirm " [${C_GREEN}y${C_NORM}/${C_RED}N${C_NORM}] $C_CYAN"; then
+            echo -e "${C_RED}${messages["exiting"]}$C_NORM"
+            echo ""
+            exit 0
+        fi
     fi
 
     get_public_ips
