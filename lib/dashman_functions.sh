@@ -898,13 +898,17 @@ get_dashd_status(){
     if [ -z "$WEB_ME" ]; then
         WEB_ME=`$curl_cmd http://www.masternode.me/data/block_state.txt 2>/dev/null`;
     fi
-    WEB_ME_BLOCK_COUNT=$( echo $WEB_ME_BLOCK_COUNT | awk '{print $1}')
-    WEB_ME_FORK_DETECT=$( echo $WEB_ME_BLOCK_COUNT | awk '{print $3}' | grep 'fork detected' | wc -l )
+    WEB_BLOCK_COUNT_ME=$( echo $WEB_ME | awk '{print $1}')
+    WEB_ME_FORK_DETECT=$( echo $WEB_ME | grep 'fork detected' | wc -l )
 
     WEB_ME=$(echo $WEB_ME | sed -s "s/no forks detected/${messages["no_forks_detected"]}/")
 
+    CHECK_SYNC_AGAINST_HEIGHT=$(echo "$WEB_BLOCK_COUNT_CHAINZ $WEB_BLOCK_COUNT_ME $WEB_BLOCK_COUNT_DQA $WEB_BLOCK_COUNT_DWHALE" | tr " " "\n" | sort -rn | head -1)
+
     DASHD_SYNCED=0
-    if [ $(($WEB_BLOCK_COUNT_CHAINZ - 2)) -lt $DASHD_CURRENT_BLOCK ]; then DASHD_SYNCED=1 ; fi
+    if [ $CHECK_SYNC_AGAINST_HEIGHT -ge $DASHD_CURRENT_BLOCK ] && [ $(($CHECK_SYNC_AGAINST_HEIGHT - 5)) -lt $DASHD_CURRENT_BLOCK ];then
+        DASHD_SYNCED=1
+    fi
 
     DASHD_CONNECTED=0
     if [ $DASHD_CONNECTIONS -gt 0 ]; then DASHD_CONNECTED=1 ; fi
