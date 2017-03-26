@@ -687,13 +687,13 @@ install_dashd(){
 
     get_public_ips
     # prompt for ipv4 or ipv6 install
-    if [ ! -z "$PUBLIC_IPV6" ] && [ ! -z "$PUBLIC_IPV4" ]; then
-        pending " --- " ; echo
-        pending " - ${messages["prompt_ipv4_ipv6"]}"
-        if confirm " [${C_GREEN}y${C_NORM}/${C_RED}N${C_NORM}] $C_CYAN"; then
-            USE_IPV6=1
-        fi
-    fi
+#    if [ ! -z "$PUBLIC_IPV6" ] && [ ! -z "$PUBLIC_IPV4" ]; then
+#        pending " --- " ; echo
+#        pending " - ${messages["prompt_ipv4_ipv6"]}"
+#        if confirm " [${C_GREEN}y${C_NORM}/${C_RED}N${C_NORM}] $C_CYAN"; then
+#            USE_IPV6=1
+#        fi
+#    fi
 
     echo ""
 
@@ -705,9 +705,9 @@ install_dashd(){
         pending " --> ${messages["creating"]} dash.conf... "
 
         IPADDR=$PUBLIC_IPV4
-        if [ ! -z "$USE_IPV6" ]; then
-            IPADDR='['$PUBLIC_IPV6']'
-        fi
+#        if [ ! -z "$USE_IPV6" ]; then
+#            IPADDR='['$PUBLIC_IPV6']'
+#        fi
         RPCUSER=`echo $(dd if=/dev/urandom bs=128 count=1 2>/dev/null) | sha256sum | awk '{print $1}'`
         RPCPASS=`echo $(dd if=/dev/urandom bs=128 count=1 2>/dev/null) | sha256sum | awk '{print $1}'`
         while read; do
@@ -956,16 +956,16 @@ get_dashd_status(){
 
     get_public_ips
 
-    MASTERNODE_BIND_IP='none'
+    MASTERNODE_BIND_IP=$PUBLIC_IPV4
     PUBLIC_PORT_CLOSED=$( timeout 2 nc -4 -z $PUBLIC_IPV4 9999 2>&1 >/dev/null; echo $? )
-    if [ $PUBLIC_PORT_CLOSED -ne 0 ] && [ ! -z "$PUBLIC_IPV6" ]; then
-        PUBLIC_PORT_CLOSED=$( timeout 2 nc -6 -z $PUBLIC_IPV6 9999 2>&1 >/dev/null; echo $? )
-        if [ $PUBLIC_PORT_CLOSED -eq 0 ]; then
-            MASTERNODE_BIND_IP=$PUBLIC_IPV6
-        fi
-    else
-        MASTERNODE_BIND_IP=$PUBLIC_IPV4
-    fi
+#    if [ $PUBLIC_PORT_CLOSED -ne 0 ] && [ ! -z "$PUBLIC_IPV6" ]; then
+#        PUBLIC_PORT_CLOSED=$( timeout 2 nc -6 -z $PUBLIC_IPV6 9999 2>&1 >/dev/null; echo $? )
+#        if [ $PUBLIC_PORT_CLOSED -eq 0 ]; then
+#            MASTERNODE_BIND_IP=$PUBLIC_IPV6
+#        fi
+#    else
+#        MASTERNODE_BIND_IP=$PUBLIC_IPV4
+#    fi
 
     # masternode (remote!) specific
 
@@ -1178,14 +1178,16 @@ show_message_configure() {
 
 get_public_ips() {
     PUBLIC_IPV4=$($curl_cmd -4 https://icanhazip.com/)
-    PUBLIC_IPV6=$($curl_cmd -6 https://icanhazip.com/)
-    if [ -z "$PUBLIC_IPV4" ] && [ -z "$PUBLIC_IPV6" ]; then
+#    PUBLIC_IPV6=$($curl_cmd -6 https://icanhazip.com/)
+#    if [ -z "$PUBLIC_IPV4" ] && [ -z "$PUBLIC_IPV6" ]; then
+    if [ -z "$PUBLIC_IPV4" ]; then
 
         # try http
         PUBLIC_IPV4=$($curl_cmd -4 http://icanhazip.com/)
-        PUBLIC_IPV6=$($curl_cmd -6 http://icanhazip.com/)
+#        PUBLIC_IPV6=$($curl_cmd -6 http://icanhazip.com/)
 
-        if [ -z "$PUBLIC_IPV4" ] && [ -z "$PUBLIC_IPV6" ]; then
+#        if [ -z "$PUBLIC_IPV4" ] && [ -z "$PUBLIC_IPV6" ]; then
+        if [ -z "$PUBLIC_IPV4" ]; then
             sleep 3
             err "  --> ${messages["err_failed_ip_resolve"]}"
             # try again
