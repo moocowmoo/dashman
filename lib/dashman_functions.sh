@@ -727,15 +727,16 @@ install_dashd(){
 
     # place it ---------------------------------------------------------------
 
-    mv dashcore-0.12.1/bin/dashd dashd-$LATEST_VERSION
-    mv dashcore-0.12.1/bin/dash-cli dash-cli-$LATEST_VERSION
+    mkdir $INSTALL_DIR/bin
+    mv dashcore-0.12.1/bin/dashd bin/dashd-$LATEST_VERSION
+    mv dashcore-0.12.1/bin/dash-cli bin/dash-cli-$LATEST_VERSION
     if [ $PLATFORM != 'armv7l' ];then
-        mv dashcore-0.12.1/bin/dash-qt dash-qt-$LATEST_VERSION
+        mv dashcore-0.12.1/bin/dash-qt bin/dash-qt-$LATEST_VERSION
     fi
-    ln -s dashd-$LATEST_VERSION dashd
-    ln -s dash-cli-$LATEST_VERSION dash-cli
+    ln -s bin/dashd-$LATEST_VERSION dashd
+    ln -s bin/dash-cli-$LATEST_VERSION dash-cli
     if [ $PLATFORM != 'armv7l' ];then
-        ln -s dash-qt-$LATEST_VERSION dash-qt
+        ln -s bin/dash-qt-$LATEST_VERSION dash-qt
     fi
 
     # permission it ----------------------------------------------------------
@@ -746,7 +747,7 @@ install_dashd(){
 
     # purge it ---------------------------------------------------------------
 
-    rm -rf dash-0.12.0
+    rm -rf dashcore-0.12.1 dashcore-${LATEST_VERSION}*.gz*
 
     # preload it -------------------------------------------------------------
 
@@ -829,7 +830,7 @@ install_dashd(){
         echo -e ""
         echo -e "${C_GREEN}${messages["installed_in"]} ${INSTALL_DIR}$C_NORM"
         echo -e ""
-        ls -l --color {$DOWNLOAD_FILE,${DOWNLOAD_FILE}.DIGESTS.txt,dash-cli,dashd,dash-qt,dash*$LATEST_VERSION}
+        ls -l --color {dash-cli,dashd,dash-qt}
         echo -e ""
 
         if [ ! -z "$SUDO_USER" ]; then
