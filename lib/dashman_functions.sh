@@ -238,7 +238,6 @@ _find_dash_directory() {
     # check INSTALL_DIR has dashd and dash-cli
     if [ ! -e $INSTALL_DIR/dashd ]; then
         echo -e "${C_RED}${messages["dashd_not_found"]} $INSTALL_DIR -- ${messages["exiting"]}$C_NORM"
-
         exit 1
     fi
 
@@ -410,56 +409,9 @@ update_dashd(){
             fi
         fi
 
-        # populate it ------------------------------------------------------------
-
-#        rm -f $OLDDASH_DIR/{budget.dat,debug.log,fee_estimates.dat,mncache.dat,mnpayments.dat,peers.dat} 2> /dev/null
-#        
-#        FREE_DISK=$(df -k --output='avail' $OLDDASH_DIR | grep -iv "avail" )
-#        DASHDIR_SIZE=$(du -sk $OLDDASH_DIR | awk '{print $1}' )
-#
-#        if [[ $DASHDIR_SIZE -gt $FREE_DISK ]]; then
-#            echo -e ""
-#            echo -e ""
-#            echo -e "$C_RED*** Not enough free disk.  Make room, then try again. ***$C_NORM"
-#            echo -e ""
-#            echo -e ""
-#        fi
-
-#        if [ ! -e $INSTALL_DIR ]; then
-#            echo -e ""
-#            echo -en "$C_CYAN --> copying .dash folder to .dashcore... "
-#            cp -pr $OLDDASH_DIR $INSTALL_DIR
-#            ok "${messages["done"]}"
-#        echo ""
-#        fi
-
-
-        # prep it ----------------------------------------------------------------
-
-#        if [ ! -z $LINK_TO_SYSTEM_DIR ]; then
-#
-#            # mv executables into ~/.dashcore
-#            mv $INSTALL_DIR/{dashd,dash-cli} $HOME/.dashcore
-#            chown $SUDO_USER $HOME/.dashcore/{dashd,dash-cli}
-#
-#            # symlink to system dir
-#            ln -s $HOME/.dashcore/dashd $LINK_TO_SYSTEM_DIR
-#            ln -s $HOME/.dashcore/dash-cli $LINK_TO_SYSTEM_DIR
-#
-#            INSTALL_DIR=$HOME/.dashcore
-#
-#        fi
-
-
         # push it ----------------------------------------------------------------
 
         cd $INSTALL_DIR
-
-        # permute it -------------------------------------------------------------
-
-#        get_public_ips
-#        sed -i '/masternodeaddr/d' dash.conf
-#        echo "externalip=$PUBLIC_IPV4" >> dash.conf
 
         # pull it ----------------------------------------------------------------
 
@@ -482,7 +434,6 @@ update_dashd(){
         SHA256PASS=$( grep $SHA256SUM ${DOWNLOAD_FILE}.DIGESTS.txt | wc -l )
         if [ $SHA256PASS -lt 1 ] ; then
             echo -e " ${C_RED} SHA256 ${messages["checksum"]} ${messages["FAILED"]} ${messages["try_again_later"]} ${messages["exiting"]}$C_NORM"
-
             exit 1
         fi
         ok "${messages["done"]}"
@@ -548,18 +499,6 @@ update_dashd(){
         rm -rf dash-0.12.0
         rm -rf dashcore-0.12.1
 
-        # performance it ---------------------------------------------------------
-
-#        pending " --> downloading indexed blockchain... "
-#        wget --no-check-certificate -q -r https://transfer.sh/koCNC/blocks.tar.gz -O blocks.tar.gz
-#        ok "${messages["done"]}"
-
-#        pending "  --> installing indexed blockchain... "
-#        rm -rf blocks chainstate database
-#        tar zxf blocks.tar.gz
-#        ok "${messages["done"]}"
-#        rm blocks.tar.gz
-
         # punch it ---------------------------------------------------------------
 
         pending " --> ${messages["launching"]} dashd... "
@@ -579,24 +518,12 @@ update_dashd(){
         done
         ok "${messages["done"]}"
 
-#        pending " --> renaming .dash to .dash.${CURRENT_VERSION}... "
-
-#        mv $OLDDASH_DIR $OLDDASH_DIR.$CURRENT_VERSION
-#        ok "${messages["done"]}"
-
-        # point it ---------------------------------------------------------------
-
-#        pending " --> symlinking .dash to .dashcore... "
-#        ln -s ${OLDDASH_DIR}"core" $OLDDASH_DIR
-#        ok "${messages["done"]}"
-
-
         # poll it ----------------------------------------------------------------
 
         MN_CONF_ENABLED=$( egrep -s '^[^#]*\s*masternode\s*=\s*1' $INSTALL_DIR/dash.conf | wc -l 2>/dev/null)
         if [ $MN_CONF_ENABLED -gt 0 ] ; then
 
-            # pull it ----------------------------------------------------------------
+            # populate it --------------------------------------------------------
 
             pending " --> updating sentinel... "
             cd sentinel
@@ -605,7 +532,7 @@ update_dashd(){
             cd ..
             ok "${messages["done"]}"
 
-            # pull it ----------------------------------------------------------------
+            # patch it -----------------------------------------------------------
 
             pending "  --> updating crontab... "
             (crontab -l 2>/dev/null | grep -v sentinel.py ; echo "* * * * * cd $INSTALL_DIR/sentinel && venv/bin/python bin/sentinel.py  2>&1 >> sentinel-cron.log") | crontab -
@@ -629,31 +556,6 @@ update_dashd(){
             echo -e ""
             ls -l --color {$DOWNLOAD_FILE,${DOWNLOAD_FILE}.DIGESTS.txt,dash-cli,dashd,dash-qt,dash*$LATEST_VERSION}
             echo -e ""
-
-#            echo -e "$C_YELLOW  you many delete your old dash folder anytime
-#  you are comfortable with the new install$C_NORM"
-#            echo -e ""
-#            echo -e "    $C_GREEN$OLDDASH_DIR.$LAST_VERSION$C_NORM"
-#            echo -e ""
-#            if [ ! -z "$SUDO_USER" ]; then
-#                echo -e "${C_GREEN}Symlinked to: ${LINK_TO_SYSTEM_DIR}$C_NORM"
-#                echo -e ""
-#                ls -l --color $LINK_TO_SYSTEM_DIR/{dashd,dash-cli}
-#                echo -e ""
-#            fi
-#            if [ ! -z "$MN_CONF_ENABLED" ]; then
-#                echo -e "$C_YELLOW  crontab installed:$C_NORM"
-#                echo -e ""
-#                echo -e "$C_GREEN    $(crontab -l)$C_NORM"
-#                echo -e ""
-#                echo -e "$C_YELLOW  don't forget to start this masternode$C_NORM"
-#                echo -e ""
-#                echo -e "$C_GREEN    masternode walletpassphrase <yourpassphrase> 120$C_NORM"
-#                echo -e "$C_GREEN    masternode start-alias <this masternode alias>$C_NORM"
-#                echo -e "$C_GREEN    walletlock$C_NORM"
-#                echo -e ""
-#            fi
-
 
             quit
         else
@@ -756,36 +658,37 @@ install_dashd(){
     pending " --> ${messages["unpacking"]} ${DOWNLOAD_FILE}... " && \
     tar zxf $DOWNLOAD_FILE && \
     ok "${messages["done"]}"
+
     # pummel it --------------------------------------------------------------
 
-    if [ $DASHD_RUNNING == 1 ]; then
-        pending " --> ${messages["stopping"]} dashd. ${messages["please_wait"]}"
-        $DASH_CLI stop >/dev/null 2>&1
-        sleep 15
-        killall -9 dashd dash-shutoff >/dev/null 2>&1
-        ok "${messages["done"]}"
-    fi
+#    if [ $DASHD_RUNNING == 1 ]; then
+#        pending " --> ${messages["stopping"]} dashd. ${messages["please_wait"]}"
+#        $DASH_CLI stop >/dev/null 2>&1
+#        sleep 15
+#        killall -9 dashd dash-shutoff >/dev/null 2>&1
+#        ok "${messages["done"]}"
+#    fi
 
     # prune it ---------------------------------------------------------------
 
-    pending " --> ${messages["removing_old_version"]}"
-    rm -f \
-        banlist.dat \
-        budget.dat \
-        debug.log \
-        fee_estimates.dat \
-        governance.dat \
-        mncache.dat \
-        mnpayments.dat \
-        netfulfilled.dat \
-        peers.dat \
-        dashd \
-        dashd-$CURRENT_VERSION \
-        dash-qt \
-        dash-qt-$CURRENT_VERSION \
-        dash-cli \
-        dash-cli-$CURRENT_VERSION
-    ok "${messages["done"]}"
+#    pending " --> ${messages["removing_old_version"]}"
+#    rm -f \
+#        banlist.dat \
+#        budget.dat \
+#        debug.log \
+#        fee_estimates.dat \
+#        governance.dat \
+#        mncache.dat \
+#        mnpayments.dat \
+#        netfulfilled.dat \
+#        peers.dat \
+#        dashd \
+#        dashd-$CURRENT_VERSION \
+#        dash-qt \
+#        dash-qt-$CURRENT_VERSION \
+#        dash-cli \
+#        dash-cli-$CURRENT_VERSION
+#    ok "${messages["done"]}"
 
     # place it ---------------------------------------------------------------
 
@@ -1001,7 +904,7 @@ awk ' \
 
 }' |  sort -k10 -n)
 
-    MN_STATUS=$(  echo "$SORTED_MN_LIST" | grep $MASTERNODE_BIND_IP | awk '{print $2}')
+    MN_STATUS=$(   echo "$SORTED_MN_LIST" | grep $MASTERNODE_BIND_IP | awk '{print $2}')
     MN_VISIBLE=$(  echo "$MN_STATUS" | wc -l)
     MN_ENABLED=$(  echo "$SORTED_MN_LIST" | grep -c ENABLED)
     MN_UNHEALTHY=$(echo "$SORTED_MN_LIST" | grep -c EXPIRED)
