@@ -1,6 +1,6 @@
 # dashman
 
-DASH wallet/daemon management utilities - version 0.1.24
+DASH wallet/daemon management utilities - version 0.1.25
 
 * This script installs, updates, and manages single-user dash daemons and wallets
 * It is currently only compatible with 32/64 bit linux.
@@ -8,10 +8,10 @@ DASH wallet/daemon management utilities - version 0.1.24
 
 # Install/Usage
 
-To download dashman do:
+To install dashman do:
 
-    sudo apt-get install git unzip
-    git clone https://github.com/moocowmoo/dashman
+    sudo apt-get install python git unzip pv
+    cd ~ && git clone https://github.com/moocowmoo/dashman
 
 To update your existing version 12 32/64bit linux dash wallet to the latest
 dashd, do:
@@ -83,6 +83,7 @@ given the optional 'now' argument.
 * nc (netcat)
 * curl
 * perl
+* pv
 * python
 * unzip
 * dashd, dash-cli - version 12 or greater to update

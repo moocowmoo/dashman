@@ -1,3 +1,19 @@
+0.1.25 -  Sun Mar 26 05:00:38 2017 +0000
+
+    enh - add .dashcore to path in .bash_aliases on install
+    enh - better block sync check
+    enh - better dashd running detection
+    enh - better sentinel sync messaging
+    enh - dashvote 12.1 compat - background delayed sends
+    enh - invoke sudo install on missing dependencies
+    enh - move versioned executibles to bin dir - fixes tab completion
+    enh - show download progress bar + fancy terminal cleanup
+    enh - unattended install
+
+    config - cleanup
+    config - remove ipv6 support
+    config - remove tarball after install
+
 0.1.24 -  Sat Mar 4 12:09:29 2017 +0000
 
     enh - adding simple sentinel checks
