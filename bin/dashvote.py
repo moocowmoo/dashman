@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import atexit
 import curses
 import datetime
 import json
@@ -7,18 +8,22 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import termios
 import time
 import tty
 
 
-VERSION = '0.0.5'
+VERSION = '0.0.6'
 git_dir = os.path.abspath(
     os.path.join(
         os.path.dirname(
             os.path.abspath(__file__)),
         '..'))
-dash_conf_dir = os.path.join(os.getenv('HOME'), '.dash')
+dash_conf_dir = os.path.join(os.getenv('HOME'), '.dashcore')
+dash_cli_path = os.getenv('DASH_CLI')
+if os.getenv('DASHMAN_PID') is None:
+    quit("--> please run using 'dashman vote'")
 
 sys.path.append(git_dir + '/lib')
 import dashutil
@@ -34,6 +39,17 @@ def getch():
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
     return ch
 
+def urandom_int():
+    random = map(ord, os.urandom(4))
+    offset = 0
+    for d in range(4):
+        offset += pow(random[d], 2**d)
+    return offset
+
+def random_offset(size):
+    bigint = urandom_int()
+    offset_range = bigint % size
+    return offset_range - (size/2)
 
 def random_timestamp():
     now_epoch = int(time.time())
@@ -63,6 +79,8 @@ if "check_output" not in dir( subprocess ):
 def run_command(cmd):
     return subprocess.check_output(cmd, shell=True)
 
+def run_dash_cli_command(cmd):
+    return run_command("%s %s" % (dash_cli_path or 'dash-cli', cmd))
 
 def next_vote(sel_ent):
     sel_ent += 1
@@ -81,8 +99,8 @@ def prev_vote(sel_ent):
 def set_vote(b, s, dir):
     if s >= votecount:
         return s
-    votes = ['NO', 'ABSTAIN', 'YES']
-    vote_idx = {'NO': 0, 'ABSTAIN': 1, 'YES': 2}
+    votes = ['NO', 'SKIP', 'YES', 'ABSTAIN']
+    vote_idx = {'NO': 0, 'SKIP': 1, 'YES': 2, 'ABSTAIN': 3}
     cur_vote = b[ballot_entries[s]][u'vote']
     b[ballot_entries[s]][u'vote'] = votes[
         (vote_idx[cur_vote] + dir) % len(votes)]
@@ -93,8 +111,9 @@ def update_vote_display(win, sel_ent, vote):
     vote_colors = {
         "YES": C_GREEN,
         "NO": C_RED,
+        "SKIP": C_CYAN,
         "ABSTAIN": C_YELLOW,
-        '': 3
+        '': 4
     }
     _y = 6
     if vote == '':
@@ -116,17 +135,32 @@ def submit_votes(win, ballot, s):
     if s < votecount:
         return s
 
+    background_send = 0
+    if len(masternodes) > 2:
+        background_send = 1
+
     votes_to_send = {}
     for entry in sorted(ballot, key=lambda s: s.lower()):
-        if ballot[entry][u'vote'] != 'ABSTAIN':
+        if ballot[entry][u'vote'] != 'SKIP':
             votes_to_send[entry] = ballot[entry]
 
     votewin.clear()
     stdscr.move(0, 0)
 
     if votes_to_send.keys():
-        stdscr.addstr("sending time-randomized votes\n\n", C_GREEN)
+        if background_send:
+            deferred_votes = tempfile.NamedTemporaryFile(prefix='sending_dashvote_votes-',delete=False)
+            deferred_votes.write("#!/bin/sh\n")
+            os.chmod(deferred_votes.name, 0700)
+            stdscr.addstr("writing time-randomized votes to disk\n\n", C_GREEN)
+        else:
+            stdscr.addstr("sending time-randomized votes\n\n", C_GREEN)
         stdscr.refresh()
+
+        # spread out over a day
+        total_sends = (len(votes_to_send) * len(masternodes))
+        vote_delay = total_sends > 1 and 86400/total_sends or 30
+
         for vote in sorted(votes_to_send, key=lambda s: s.lower()):
             castvote = str(votes_to_send[vote][u'vote'])
             stdscr.addstr('  ' + vote, C_YELLOW)
@@ -142,26 +176,57 @@ def submit_votes(win, ballot, s):
                 ts = datetime.datetime.fromtimestamp(random_ts)
                 stdscr.addstr('    ' + alias, C_CYAN)
                 stdscr.addstr(' ' + str(ts) + ' ', C_YELLOW)
-                netvote = str(node['fundtx']) + str(votes_to_send
-                                                    [vote][u'Hash']) + str(votes_to_send[vote][u'vote'] ==
-                                                                           'YES' and 1 or 2) + str(random_ts)
+                netvote = '|'.join([str(node['fundtx']),str(votes_to_send[vote][u'Hash']),"1",
+                        str(votes_to_send[vote][u'vote'] == 'YES' and 1 or votes_to_send[vote][u'vote'] == 'NO' and 2 or 3),str(random_ts)])
                 mnprivkey = node['mnprivkey']
                 signature = dashutil.sign_vote(netvote, mnprivkey)
-                command = 'dash-cli mnbudgetvoteraw ' + str(node['txid']) + ' ' + str(node['txout']) + ' ' + str(
-                    votes_to_send[vote][u'Hash']) + ' ' + str(votes_to_send[vote][u'vote']).lower() + ' ' + str(random_ts) + ' ' + signature
-    #            print netvote + ' ' + signature
-    #            print command
-                stdout = run_command(command)
+                command = ('%s' % dash_cli_path is not None and dash_cli_path or 'dash-cli') + ' voteraw ' + str(node['txid']) + ' ' + str(node['txout']) + ' ' + str(
+                    votes_to_send[vote][u'Hash']) + ' funding ' + str(votes_to_send[vote][u'vote']).lower() + ' ' + str(random_ts) + ' ' + signature
+                if background_send:
+                    deferred_votes.write("sleep %s\n" % (vote_delay + random_offset(vote_delay)))
+                    deferred_votes.write("%s\n" % (command))
+                    stdout = 'vote successfully created'
+                else:
+                    try:
+                        stdout = run_command(command)
+                    except subprocess.CalledProcessError,e:
+                        stdout = 'error running vote command: %s' % command
                 stdscr.addstr(
                     stdout.rstrip("\n") +
                     "\n",
                     'successfully' in stdout and C_GREEN or C_RED)
                 stdscr.refresh()
 
+        if background_send:
+            if deferred_votes.tell() > 1 :
+                deferred_votes.write("rm -- \"$0\"\n")
+                stdout = 'sending votes in background'
+                stdscr.addstr( "\n" + stdout.rstrip("\n") + "\n", C_YELLOW )
+                stdscr.refresh()
+                exec_path = deferred_votes.name
+                deferred_votes = None
+                p = subprocess.Popen([exec_path],
+                                     cwd="/tmp",
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.STDOUT)
+                stdout = 'votes being sent by: %s, pid %s' % ( exec_path, p.pid)
+                stdscr.addstr( "\n" + stdout.rstrip("\n") + "\n", C_CYAN )
+                stdscr.refresh()
+
     stdscr.addstr("\nHit any key to exit." + "\n", C_GREEN)
     stdscr.refresh()
     stdscr.getch()
+    cleanup()
     quit()
+
+
+def cleanup():
+     curses.nocbreak()
+     stdscr.keypad(0)
+     curses.echo()
+     curses.endwin()
+
+atexit.register(cleanup)
 
 
 def main(screen):
@@ -204,14 +269,15 @@ def main(screen):
     C_GREEN = curses.color_pair(3)
     C_RED = curses.color_pair(2)
 
-    # test dash-cli in path -- TODO make robust
-    try:
-        run_command('dash-cli getinfo')
-    except subprocess.CalledProcessError:
-        quit(
-            "--> cannot find dash-cli in $PATH\n" +
-            "    do: export PATH=/path/to/dash-cli-folder:$PATH\n" +
-            "    and try again\n")
+    if dash_cli_path is None:
+        # test dash-cli in path -- TODO make robust
+        try:
+            run_command('dash-cli getinfo')
+        except subprocess.CalledProcessError:
+            quit(
+                "--> cannot find dash-cli in $PATH\n" +
+                "    do: export PATH=/path/to/dash-cli-folder:$PATH\n" +
+                "    and try again\n")
 
     loadwin = curses.newwin(40, 40, 1, 2)
 
@@ -219,33 +285,42 @@ def main(screen):
     loadwin.addstr(2, 2, 'loading votes... please wait', C_GREEN)
     loadwin.refresh()
 
-    mncount = int(run_command('dash-cli masternode count'))
-    block_height = int(run_command('dash-cli getblockcount'))
+    mncount = int(run_dash_cli_command('masternode count'))
+    block_height = int(run_dash_cli_command('getblockcount'))
+    days_to_next_cycle = (16616 - (block_height % 16616)) / 576.0
+    days_to_finalization = days_to_next_cycle - 3
+
     # get ballot
-    ballots = json.loads(run_command('dash-cli mnbudget show'))
+    ballots = json.loads(run_dash_cli_command('gobject list all'))
     ballot = {}
+
     for entry in ballots:
-        # prune expired proposals
-        if ballots[entry][u'BlockEnd'] < block_height:
+
+        # unescape data string
+        ballots[entry]['_data'] = json.loads(ballots[entry][u'DataHex'].decode("hex"))
+
+        (go_type, go_data) = ballots[entry]['_data'][0]
+        ballots[entry][go_type] = go_data
+
+        if go_type == 'watchdog':
             continue
-        # prune completely funded proposals
-        if ballots[entry][u'RemainingPaymentCount'] < 1:
+        if go_data[u'end_epoch'] < int(time.time()):
             continue
-        ballots[entry][u'vote'] = 'ABSTAIN'
-        ballots[entry][u'votes'] = json.loads(
-            run_command(
-                'dash-cli mnbudget getvotes %s' %
-                entry))
+
+        ballots[entry][u'vote'] = 'SKIP'
+        ballots[entry][u'votes'] = json.loads(run_dash_cli_command('gobject getvotes %s' % entry))
         ballot[entry] = ballots[entry]
-    ballot_entries = sorted(ballot, key=lambda s: ballot[s]['BlockStart'])
+
+    ballot_entries = sorted(ballot, key=lambda s: ballot[s]['proposal']['start_epoch'])
     votecount = len(ballot_entries)
     max_proposal_len = 0
     max_yeacount_len = 0
     max_naycount_len = 0
     max_percentage_len = 0
     for entry in ballot_entries:
-        yeas = ballot[entry][u'Yeas']
-        nays = ballot[entry][u'Nays']
+        yeas = ballot[entry][u'YesCount']
+        nays = ballot[entry][u'NoCount']
+        name = ballot[entry]['proposal'][u'name']
         percentage = "{0:.1f}".format(
             (float((yeas + nays)) / float(mncount)) * 100)
         ballot[entry][u'vote_turnout'] = percentage
@@ -255,7 +330,7 @@ def main(screen):
             yeas - nays) > mncount/10 and True or False
         max_proposal_len = max(
             max_proposal_len,
-            len(entry))
+            len(name))
         max_yeacount_len = max(max_yeacount_len, len(str(yeas)))
         max_naycount_len = max(max_naycount_len, len(str(nays)))
         max_percentage_len = max(max_percentage_len, len(str(percentage)))
@@ -323,19 +398,20 @@ def main(screen):
     for entry in ballot:
         ballot[entry][u'previously_voted'] = 0
         for hash in ballot[entry][u'votes']:
-            if hash in masternodes:
-                if ballot[entry][u'votes'][hash][u'Vote'] == 'YES':
+            b = ballot[entry][u'votes'][hash]
+            (vindx,ts,val,mode) = [ b[16:80]+'-'+b[82:83] ] + list(b.split(':')[1:4])
+            if vindx in masternodes:
+                if val == 'YES':
                     ballot[entry][u'previously_voted'] = 1
-                else:
+                elif val == 'NO':
                     ballot[entry][u'previously_voted'] = 2
+                else:
+                    ballot[entry][u'previously_voted'] = 3
 
     loadwin.erase()
     window_width = 35
-    window_width = max(window_width, max_proposal_len +
-                       max_percentage_len +
-                       max_yeacount_len +
-                       max_naycount_len +
-                       len(str(len(masternodes))))
+    content_width = max_proposal_len + max_percentage_len + max_yeacount_len + max_naycount_len
+    window_width = max(window_width, content_width + 3 )
     votewin = curses.newwin(votecount + 9, window_width + 17, 1, 2)
     votewin.keypad(1)
     votewin.border()
@@ -356,8 +432,9 @@ def main(screen):
     for entry in ballot_entries:
         _y += 1
         x = 4
-        yeas = ballot[entry][u'Yeas']
-        nays = ballot[entry][u'Nays']
+        name = ballot[entry]['proposal'][u'name']
+        yeas = ballot[entry][u'YesCount']
+        nays = ballot[entry][u'NoCount']
         percentage = ballot[entry][u'vote_turnout']
         passing = ballot[entry][u'vote_passing']
         threshold = ballot[entry][u'vote_threshold']
@@ -369,7 +446,7 @@ def main(screen):
         votewin.addstr(
             _y,
             x,
-            fmt_entry % entry,
+            fmt_entry % name,
             passing and C_GREEN or threshold and C_RED or C_YELLOW)
 
         for x in range(max_yeacount_len - len(str(yeas))):
@@ -389,7 +466,7 @@ def main(screen):
         votewin.addstr(str(percentage) + "%", C_CYAN)
 
         votewin.addstr(' ')
-        votewin.addstr('ABSTAIN', C_YELLOW)
+        votewin.addstr('SKIP', C_CYAN)
     votewin.addstr(
         _y + 2,
         window_width + 7,

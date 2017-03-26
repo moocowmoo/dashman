@@ -201,6 +201,7 @@ case "$1" in
             _check_dashd_running
             ok " ${messages["done"]}"
             echo
+            export DASH_CLI DASHMAN_PID=$$
             /usr/bin/env python $DASHMAN_GITDIR/bin/dashvote.py
             quit 'Exiting.'
             ;;
