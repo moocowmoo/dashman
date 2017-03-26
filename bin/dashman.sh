@@ -53,11 +53,11 @@ lang_type=${LANG%%\.*}
 
 # process switch overrides ---------------------------------------------------
 
+# show version and exit if requested
+[[ $VERSION || $1 == 'version' ]] && echo $DASHMAN_VERSION && exit 0
+
 # show help and exit if requested or no command supplied - TODO make command specific
 [[ $HELP || -z $1 ]] && usage && exit 0
-
-# show version and exit if requested
-[[ $VERSION ]] && echo $DASHMAN_VERSION && exit 0
 
 # see if users are missing anything critical
 _check_dependencies $@
