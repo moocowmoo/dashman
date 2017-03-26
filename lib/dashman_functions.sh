@@ -491,7 +491,8 @@ update_dashd(){
             dash-qt \
             dash-qt-$CURRENT_VERSION \
             dash-cli \
-            dash-cli-$CURRENT_VERSION
+            dash-cli-$CURRENT_VERSION \
+            dashcore-${CURRENT_VERSION}.gz*
         ok "${messages["done"]}"
 
         # place it ---------------------------------------------------------------
