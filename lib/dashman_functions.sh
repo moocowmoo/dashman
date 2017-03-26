@@ -777,6 +777,15 @@ install_dashd(){
     fi
     ok "${messages["done"]}"
 
+    # path it ----------------------------------------------------------------
+
+    pending " --> adding $INSTALL_DIR PATH to ~/.bash_aliases ... "
+    if [ ! -f ~/.bash_aliases ]; then touch ~/.bash_aliases ; fi
+    sed -i.bak -e '/dashman_env/d' ~/.bash_aliases
+    echo "export PATH=$INSTALL_DIR:\$PATH ; # dashman_env" >> ~/.bash_aliases
+    ok "${messages["done"]}"
+
+
     # poll it ----------------------------------------------------------------
 
     _get_versions
