@@ -365,16 +365,12 @@ def main(screen):
             for line in lines:
                 n, v = line.split('=')
                 conf[n.strip(' ')] = v.strip(' ')
-            conf['masternodeaddr'] = re.sub(
-                '[\[\]]',
-                '',
-                conf['masternodeaddr'])
-            if all(k in conf for k in ('masternode', 'masternodeaddr', 'masternodeprivkey')):
+            if all(k in conf for k in ('masternode', 'externalip', 'masternodeprivkey')):
                 # get funding tx from dashninja
                 import urllib2
                 mninfo = urllib2.urlopen(
                     "https://dashninja.pl/api/masternodes?ips=[\"" +
-                    conf['masternodeaddr'] +
+                    conf['externalip'] + ":9999" +
                     "\"]&portcheck=1").read()
                 try:
                     mndata = json.loads(mninfo)
@@ -384,7 +380,7 @@ def main(screen):
                 vin = str(d[u'MasternodeOutputHash'])
                 vidx = str(d[u'MasternodeOutputIndex'])
                 masternodes[vin + '-' + vidx] = {
-                    "alias": conf['masternodeaddr'],
+                    "alias": conf['externalip'],
                     "mnprivkey": conf['masternodeprivkey'],
                     "fundtx": vin +
                     '-' +
