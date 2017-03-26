@@ -16,6 +16,7 @@ DASH_ORG='https://www.dash.org'
 DOWNLOAD_PAGE='https://www.dash.org/downloads/'
 CHECKSUM_URL='https://www.dash.org/binaries/SHA256SUMS.asc'
 DASHD_RUNNING=0
+DASHD_RESPONDING=0
 DASHMAN_VERSION=$(cat $DASHMAN_GITDIR/VERSION)
 DASHMAN_CHECKOUT=$(GIT_DIR=$DASHMAN_GITDIR/.git GIT_WORK_TREE=$DASHMAN_GITDIR git describe --dirty | sed -e "s/^.*-\([0-9]\+-g\)/\1/" )
 if [ "$DASHMAN_CHECKOUT" == "v"$DASHMAN_VERSION ]; then
@@ -331,9 +332,15 @@ _get_versions() {
 }
 
 
-_check_dashd_running() {
-    if [ $( $DASH_CLI help 2>/dev/null | wc -l ) -gt 0 ]; then
+_check_dashd_state() {
+    _get_dashd_proc_status
+    DASHD_RUNNING=0
+    DASHD_RESPONDING=0
+    if [ $DASHD_HASPID -gt 0 ] && [ $DASHD_PID -gt 0 ]; then
         DASHD_RUNNING=1
+    fi
+    if [ $( $DASH_CLI help 2>/dev/null | wc -l ) -gt 0 ]; then
+        DASHD_RESPONDING=1
     fi
 }
 
@@ -357,14 +364,19 @@ restart_dashd(){
 
     pending " --> ${messages["starting_dashd"]}"
     $INSTALL_DIR/dashd 2>&1 >/dev/null
+    DASHD_RUNNING=1
     ok "${messages["done"]}"
+
     pending " --> ${messages["waiting_for_dashd_to_respond"]}"
     echo -en "${C_YELLOW}"
-    while [ $DASHD_RUNNING == 0 ]; do
+    while [ $DASHD_RUNNING == 1 ] && [ $DASHD_RESPONDING == 0 ]; do
         echo -n "."
-        _check_dashd_running
-        sleep 5
+        _check_dashd_state
+        sleep 2
     done
+    if [ $DASHD_RUNNING == 0 ]; then
+        die "\n - dashd unexpectedly quit. ${messages["exiting"]}"
+    fi
     ok "${messages["done"]}"
     pending " --> dash-cli getinfo"
     echo
@@ -510,12 +522,15 @@ update_dashd(){
 
         pending " --> ${messages["waiting_for_dashd_to_respond"]}"
         echo -en "${C_YELLOW}"
-        DASHD_RUNNING=0
-        while [ $DASHD_RUNNING == 0 ]; do
+        DASHD_RUNNING=1
+        while [ $DASHD_RUNNING == 1 ] && [ $DASHD_RESPONDING == 0 ]; do
             echo -n "."
-            _check_dashd_running
+            _check_dashd_state
             sleep 1
         done
+        if [ $DASHD_RUNNING == 0 ]; then
+            die "\n - dashd unexpectedly quit. ${messages["exiting"]}"
+        fi
         ok "${messages["done"]}"
 
         # poll it ----------------------------------------------------------------
@@ -745,17 +760,21 @@ install_dashd(){
 
     pending " --> ${messages["launching"]} dashd... "
     $INSTALL_DIR/dashd > /dev/null
+    DASHD_RUNNING=1
     ok "${messages["done"]}"
 
     # probe it ---------------------------------------------------------------
 
     pending " --> ${messages["waiting_for_dashd_to_respond"]}"
     echo -en "${C_YELLOW}"
-    while [ $DASHD_RUNNING == 0 ]; do
+    while [ $DASHD_RUNNING == 1 ] && [ $DASHD_RESPONDING == 0 ]; do
         echo -n "."
-        _check_dashd_running
-        sleep 5
+        _check_dashd_state
+        sleep 2
     done
+    if [ $DASHD_RUNNING == 0 ]; then
+        die "\n - dashd unexpectedly quit. ${messages["exiting"]}"
+    fi
     ok "${messages["done"]}"
 
     # poll it ----------------------------------------------------------------
@@ -788,8 +807,7 @@ install_dashd(){
 
 }
 
-get_dashd_status(){
-
+_get_dashd_proc_status(){
     DASHD_HASPID=0
     if [ -e $INSTALL_DIR/dashd.pid ] ; then
         DASHD_HASPID=`ps --no-header \`cat $INSTALL_DIR/dashd.pid 2>/dev/null\` | wc -l`;
@@ -800,6 +818,12 @@ get_dashd_status(){
         fi
     fi
     DASHD_PID=$(pidof dashd)
+}
+
+get_dashd_status(){
+
+    _get_dashd_proc_status
+
     DASHD_UPTIME=$(ps -p $DASHD_PID -o etime= 2>/dev/null | sed -e 's/ //g')
     DASHD_UPTIME_TIMES=$(echo "$DASHD_UPTIME" | perl -ne 'chomp ; s/-/:/ ; print join ":", reverse split /:/' 2>/dev/null )
     DASHD_UPTIME_SECS=$( echo "$DASHD_UPTIME_TIMES" | cut -d: -f1 )

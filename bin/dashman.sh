@@ -72,7 +72,7 @@ case "$1" in
         restart)
             COMMAND=$1
             _find_dash_directory
-            _check_dashd_running
+            _check_dashd_state
             # TODO, show uptime: ps --no-header -o pid,etime $(cat $INSTALL_DIR/dash.pid) | awk '{print $2}'
             case "$2" in
                 now)
@@ -92,7 +92,7 @@ case "$1" in
             _check_dashman_updates
             _find_dash_directory
             _get_versions
-            _check_dashd_running
+            _check_dashd_state
             ok " ${messages["done"]}"
             if [ ! -z "$2" ]; then
                 if [ "$2" == '-y' ] || [ "$2" == '-Y' ]; then
@@ -138,7 +138,7 @@ case "$1" in
             _check_dashman_updates
             _find_dash_directory
             _get_versions
-            _check_dashd_running
+            _check_dashd_state
             REINSTALL=1
             ok " ${messages["done"]}"
             if [ ! -z "$ARM" ] && [ $BIGARM -eq 0 ]; then
@@ -198,7 +198,7 @@ case "$1" in
             _check_dashman_updates
             _find_dash_directory
             _get_versions
-            _check_dashd_running
+            _check_dashd_state
             ok " ${messages["done"]}"
             echo
             export DASH_CLI DASHMAN_PID=$$
@@ -211,7 +211,7 @@ case "$1" in
             _check_dashman_updates
             _find_dash_directory
             _get_versions
-            _check_dashd_running
+            _check_dashd_state
             get_dashd_status
             get_host_status
             ok " ${messages["done"]}"
