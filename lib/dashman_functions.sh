@@ -31,7 +31,7 @@ wget_cmd='wget --no-check-certificate -q'
 
 # (mostly) functioning functions -- lots of refactoring to do ----------------
 
-pending(){ [[ $QUIET ]] || echo -en "$C_YELLOW$1$C_NORM" ; tput el ; }
+pending(){ [[ $QUIET ]] || ( echo -en "$C_YELLOW$1$C_NORM" && tput el ); }
 
 ok(){ [[ $QUIET ]] || echo -e "$C_GREEN$1$C_NORM" ; }
 
