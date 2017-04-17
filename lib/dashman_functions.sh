@@ -9,6 +9,7 @@
 C_RED="\e[31m"
 C_YELLOW="\e[33m"
 C_GREEN="\e[32m"
+C_PURPLE="\e[35m"
 C_CYAN="\e[36m"
 C_NORM="\e[0m"
 
@@ -36,6 +37,7 @@ pending(){ [[ $QUIET ]] || ( echo -en "$C_YELLOW$1$C_NORM" && tput el ); }
 ok(){ [[ $QUIET ]] || echo -e "$C_GREEN$1$C_NORM" ; }
 
 warn() { [[ $QUIET ]] || echo -e "$C_YELLOW$1$C_NORM" ; }
+highlight() { [[ $QUIET ]] || echo -e "$C_PURPLE$1$C_NORM" ; }
 
 err() { [[ $QUIET ]] || echo -e "$C_RED$1$C_NORM" ; }
 die() { [[ $QUIET ]] || echo -e "$C_RED$1$C_NORM" ; exit 1 ; }
@@ -1109,9 +1111,9 @@ print_status() {
     pending "${messages["status_mnvisni"]}" ; [ $WEB_NINJA_SEES_OPEN -gt 0  ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
     pending "${messages["status_mnaddre"]}" ; ok "$WEB_NINJA_MN_ADDY"
     pending "${messages["status_mnfundt"]}" ; ok "$WEB_NINJA_MN_VIN-$WEB_NINJA_MN_VIDX"
-    pending "${messages["status_mnqueue"]}" ; [ $MN_QUEUE_IN_SELECTION -gt 0  ] && ok "$MN_QUEUE_POSITION/$MN_QUEUE_LENGTH (selection pending)" || (pending "$MN_QUEUE_POSITION" && ok "/$MN_QUEUE_LENGTH")
+    pending "${messages["status_mnqueue"]}" ; [ $MN_QUEUE_IN_SELECTION -gt 0  ] && highlight "$MN_QUEUE_POSITION/$MN_QUEUE_LENGTH (selection pending)" || ok "$MN_QUEUE_POSITION/$MN_QUEUE_LENGTH"
     pending "  masternode mnsync state    : " ; [ ! -z "$MN_SYNC_ASSET" ] && ok "$MN_SYNC_ASSET" || ""
-    pending "  masternode network state   : " ; [ "$MN_STATUS" == "ENABLED" ] && ok "$MN_STATUS" || err "$MN_STATUS"
+    pending "  masternode network state   : " ; [ "$MN_STATUS" == "ENABLED" ] && ok "$MN_STATUS" || highlight "$MN_STATUS"
 
     pending "${messages["status_mnlastp"]}" ; [ ! -z "$WEB_NINJA_MN_LAST_PAID_AMOUNT" ] && \
         ok "$WEB_NINJA_MN_LAST_PAID_AMOUNT in $WEB_NINJA_MN_LAST_PAID_BLOCK on $WEB_NINJA_LAST_PAYMENT_TIME " || warn 'never'
