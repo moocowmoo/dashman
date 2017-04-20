@@ -282,7 +282,7 @@ def main(screen):
     loadwin = curses.newwin(40, 40, 1, 2)
 
     loadwin.addstr(1, 2, 'dashvote version: ' + version, C_CYAN)
-    loadwin.addstr(2, 2, 'loading votes... please wait', C_GREEN)
+    loadwin.addstr(2, 2, 'loading votes. please wait...', C_GREEN)
     loadwin.refresh()
 
     mncount = int(run_dash_cli_command('masternode count'))
@@ -424,7 +424,7 @@ def main(screen):
     votewin.addstr(4, 3, '*', C_GREEN)
     votewin.addstr(4, 4, '/', C_CYAN)
     votewin.addstr(4, 5, '*', C_RED)
-    votewin.addstr(4, 7, '== previously voted proposal (yes/no)', C_YELLOW)
+    votewin.addstr(4, 7, '== previously voted on proposal (yes/no)', C_YELLOW)
     _y = 5
     for entry in ballot_entries:
         _y += 1
