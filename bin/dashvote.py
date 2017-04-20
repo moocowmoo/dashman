@@ -302,9 +302,10 @@ def main(screen):
         (go_type, go_data) = ballots[entry]['_data'][0]
         ballots[entry][go_type] = go_data
 
-        if go_type == 'watchdog':
+        if str(go_type) == 'watchdog':
             continue
-        if go_data[u'end_epoch'] < int(time.time()):
+
+        if int(go_data[u'end_epoch']) < int(time.time()):
             continue
 
         ballots[entry][u'vote'] = 'SKIP'
