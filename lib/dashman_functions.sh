@@ -664,6 +664,7 @@ install_dashd(){
     echo -ne "$C_NORM"
     clear_n_lines 2
     tput rc
+    clear_n_lines 3
     if [ ! -e $DOWNLOAD_FILE ] ; then
         echo -e "${C_RED}error ${messages["downloading"]} file"
         echo -e "tried to get $DOWNLOAD_URL$C_NORM"
@@ -758,20 +759,22 @@ install_dashd(){
     wget --no-check-certificate -q -r $BOOSTRAP_LINKS -O links.md
     MAINNET_BOOTSTRAP_FILE_1=$(head -1 links.md | awk '{print $11}' | sed 's/.*\(http.*\.zip\).*/\1/')
     MAINNET_BOOTSTRAP_FILE_1_SIZE=$(head -1 links.md | awk '{print $12}' | sed 's/[()]//g')
+    MAINNET_BOOTSTRAP_FILE_1_SIZE_M=$(( $(echo $MAINNET_BOOTSTRAP_FILE_1_SIZE | sed -e 's/[^0-9]//g') * 99 ))
     MAINNET_BOOTSTRAP_FILE_2=$(head -3 links.md | tail -1 | awk '{print $11}' | sed 's/.*\(http.*\.zip\).*/\1/')
     pending " $MAINNET_BOOTSTRAP_FILE_1_SIZE... "
     tput sc
     echo -e "$C_CYAN"
-    $wget_cmd -O - $MAINNET_BOOTSTRAP_FILE_1 | pv -trepa -s1600M -w80 -N bootstrap > ${MAINNET_BOOTSTRAP_FILE_1##*/}
+    $wget_cmd -O - $MAINNET_BOOTSTRAP_FILE_1 | pv -trepa -s${MAINNET_BOOTSTRAP_FILE_1_SIZE_M}m -w80 -N bootstrap > ${MAINNET_BOOTSTRAP_FILE_1##*/}
     MAINNET_BOOTSTRAP_FILE=${MAINNET_BOOTSTRAP_FILE_1##*/}
     if [ ! -s $MAINNET_BOOTSTRAP_FILE ]; then
         rm $MAINNET_BOOTSTRAP_FILE
-        $wget_cmd -O - $MAINNET_BOOTSTRAP_FILE_2 | pv -trepa -s1600M -w80 -N bootstrap > ${MAINNET_BOOTSTRAP_FILE_2##*/}
+        $wget_cmd -O - $MAINNET_BOOTSTRAP_FILE_2 | pv -trepa -s${MAINNET_BOOTSTRAP_FILE_1_SIZE_M}m -w80 -N bootstrap > ${MAINNET_BOOTSTRAP_FILE_2##*/}
         MAINNET_BOOTSTRAP_FILE=${MAINNET_BOOTSTRAP_FILE_2##*/}
     fi
     echo -ne "$C_NORM"
     clear_n_lines 1
     tput rc
+    tput cuu 2
     if [ ! -s $MAINNET_BOOTSTRAP_FILE ]; then
         # TODO i18n
         err " bootstrap download failed. skipping."
@@ -780,10 +783,12 @@ install_dashd(){
         pending "  --> ${messages["unzipping"]} bootstrap... "
         tput sc
         echo -e "$C_CYAN"
-        unzip -qp ${MAINNET_BOOTSTRAP_FILE##*/} | pv -trep -s2000M -w80 -N 'unpacking bootstrap' > bootstrap.dat
+        BOOTSTRAP_SIZE_M=$(( $(unzip -l ${MAINNET_BOOTSTRAP_FILE##*/} | grep -v zip | grep bootstrap.dat | awk '{print $1}') / 1024 / 1024 ))
+        unzip -qp ${MAINNET_BOOTSTRAP_FILE##*/} | pv -trep -s${BOOTSTRAP_SIZE_M}m -w80 -N 'unpacking bootstrap' > bootstrap.dat
         echo -ne "$C_NORM"
         clear_n_lines 1
         tput rc
+        tput cuu 1
         ok "${messages["done"]}"
         rm -f links.md bootstrap.dat*.zip
     fi
