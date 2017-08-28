@@ -997,14 +997,15 @@ awk ' \
         fi
     fi
 
+    # initialize sentinel variables
+    SENTINEL_INSTALLED=0
+    SENTINEL_PYTEST=0
+    SENTINEL_CRONTAB=0
+    SENTINEL_LAUNCH_OUTPUT=""
+    SENTINEL_LAUNCH_OK=-1
     # sentinel checks
     if [ -e $INSTALL_DIR/sentinel ]; then
 
-        SENTINEL_INSTALLED=0
-        SENTINEL_PYTEST=0
-        SENTINEL_CRONTAB=0
-        SENTINEL_LAUNCH_OUTPUT=""
-        SENTINEL_LAUNCH_OK=-1
 
         cd $INSTALL_DIR/sentinel
         SENTINEL_INSTALLED=$( ls -l bin/sentinel.py | wc -l )
