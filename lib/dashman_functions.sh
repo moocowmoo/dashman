@@ -500,10 +500,10 @@ update_dashd(){
 
         # place it ---------------------------------------------------------------
 
-        mv dashcore-0.12.1/bin/dashd dashd-$LATEST_VERSION
-        mv dashcore-0.12.1/bin/dash-cli dash-cli-$LATEST_VERSION
+        mv dashcore-0.12.2/bin/dashd dashd-$LATEST_VERSION
+        mv dashcore-0.12.2/bin/dash-cli dash-cli-$LATEST_VERSION
         if [ $PLATFORM != 'armv7l' ];then
-            mv dashcore-0.12.1/bin/dash-qt dash-qt-$LATEST_VERSION
+            mv dashcore-0.12.2/bin/dash-qt dash-qt-$LATEST_VERSION
         fi
         ln -s dashd-$LATEST_VERSION dashd
         ln -s dash-cli-$LATEST_VERSION dash-cli
@@ -520,7 +520,8 @@ update_dashd(){
         # purge it ---------------------------------------------------------------
 
         rm -rf dash-0.12.0
-        rm -rf dashcore-0.12.1
+        rm -rf dashcore-0.12.1*
+        rm -rf dashcore-0.12.2
 
         # punch it ---------------------------------------------------------------
 
