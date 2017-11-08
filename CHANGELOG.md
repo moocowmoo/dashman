@@ -1,3 +1,7 @@
+0.1.26 -  Wed Nov 8 07:31:00 2017 +0000
+
+    compat - update dashd 12.2
+
 0.1.25 -  Sun Mar 26 05:00:38 2017 +0000
 
     enh - add .dashcore to path in .bash_aliases on install
