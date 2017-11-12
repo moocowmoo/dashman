@@ -22,6 +22,10 @@ To perform a new install of dash, do:
 
     dashman/dashman install
 
+To install sentinel, do:
+
+    dashman/dashman install sentinel
+
 To overwrite an existing dash install, do:
 
     dashman/dashman reinstall
