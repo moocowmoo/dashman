@@ -173,7 +173,7 @@ _check_dependencies() {
 
     # make sure we have the right netcat version (-4,-6 flags)
     if [ ! -z "$(which nc)" ]; then
-        (nc -z -4 8.8.8.8 53 2>&1) >/dev/null
+        (nc -4 8.8.8.8 53 2>&1) </dev/null >/dev/null
         if [ $? -gt 0 ]; then
             MISSING_DEPENDENCIES="${MISSING_DEPENDENCIES}netcat6 "
         fi
@@ -935,7 +935,7 @@ get_dashd_status(){
     get_public_ips
 
     MASTERNODE_BIND_IP=$PUBLIC_IPV4
-    PUBLIC_PORT_CLOSED=$( timeout 2 nc -4 -z $PUBLIC_IPV4 9999 2>&1 >/dev/null; echo $? )
+    PUBLIC_PORT_CLOSED=$( timeout 2 nc -4 $PUBLIC_IPV4 9999 2>&1 </dev/null >/dev/null; echo $? )
 #    if [ $PUBLIC_PORT_CLOSED -ne 0 ] && [ ! -z "$PUBLIC_IPV6" ]; then
 #        PUBLIC_PORT_CLOSED=$( timeout 2 nc -6 -z $PUBLIC_IPV6 9999 2>&1 >/dev/null; echo $? )
 #        if [ $PUBLIC_PORT_CLOSED -eq 0 ]; then
