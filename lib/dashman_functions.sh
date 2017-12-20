@@ -1028,7 +1028,6 @@ awk ' \
 
         WEB_NINJA_JSON_TEXT=$(echo $WEB_NINJA_API | python -m json.tool)
         WEB_NINJA_SEES_OPEN=$(echo "$WEB_NINJA_JSON_TEXT" | grep '"Result"' | grep open | wc -l)
-        WEB_NINJA_MN_ADDY=$(echo "$WEB_NINJA_JSON_TEXT" | grep MasternodePubkey | awk '{print $2}' | sed -e 's/[",]//g')
         WEB_NINJA_MN_BALANCE=$(echo "$WEB_NINJA_JSON_TEXT" | grep Value | awk '{print $2}' | sed -e 's/[",]//g')
         WEB_NINJA_MN_LAST_PAID_TIME_EPOCH=$(echo "$WEB_NINJA_JSON_TEXT" | grep MNLastPaidTime | awk '{print $2}' | sed -e 's/[",]//g')
         WEB_NINJA_MN_LAST_PAID_AMOUNT=$(echo "$WEB_NINJA_JSON_TEXT" | grep MNLastPaidAmount | awk '{print $2}' | sed -e 's/[",]//g')
@@ -1036,8 +1035,9 @@ awk ' \
 
         WEB_NINJA_LAST_PAYMENT_TIME=$(date -d @${WEB_NINJA_MN_LAST_PAID_TIME_EPOCH} '+%m/%d/%Y %H:%M:%S' 2>/dev/null)
 
-        MN_FUNDING=$(echo "$LOCAL_MN_STATUS" | grep '"outpoint"' | awk '{print $2}' | sed -e 's/[",]//g')
+        LOCAL_MN_STATUS=$( $DASH_CLI masternode status | python -mjson.tool )
         MN_PAYEE=$(echo "$LOCAL_MN_STATUS" | grep '"payee"' | awk '{print $2}' | sed -e 's/[",]//g')
+        MN_FUNDING=$([ ! -z "$MN_PAYEE" ] && echo "$LOCAL_MN_STATUS" | grep '"outpoint"' | awk '{print $2}' | sed -e 's/[",]//g')
 
         if [ ! -z "$WEB_NINJA_LAST_PAYMENT_TIME" ]; then
             local daysago=$(dateDiff -d now "$WEB_NINJA_LAST_PAYMENT_TIME")
