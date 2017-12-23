@@ -1227,6 +1227,7 @@ install_sentinel() {
     ok "${messages["done"]}"
 
     pending "   --> pip modules... "
+    venv/bin/pip install argparse 2>&1 > /dev/null
     venv/bin/pip install -r requirements.txt 2>&1 > /dev/null;
     if [[ $? -gt 0 ]];then
         err "  --> pip install failed"
