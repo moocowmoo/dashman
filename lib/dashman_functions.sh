@@ -1227,7 +1227,6 @@ install_sentinel() {
     ok "${messages["done"]}"
 
     pending "   --> pip modules... "
-    venv/bin/pip install argparse 2>&1 > /dev/null
     venv/bin/pip install -r requirements.txt 2>&1 > /dev/null;
     if [[ $? -gt 0 ]];then
         err "  --> pip install failed"
@@ -1250,6 +1249,8 @@ install_sentinel() {
     pending "  --> installing crontab... "
     (crontab -l 2>/dev/null | grep -v sentinel.py ; echo "* * * * * cd $INSTALL_DIR/sentinel && venv/bin/python bin/sentinel.py  2>&1 >> sentinel-cron.log") | crontab -
     ok "${messages["done"]}"
+
+    [ -e venv/bin/python2 ] && [ ! -L venv/bin/python2 ] && [ ! -z "$LD_LIBRARY_PATH" ] && cp -a venv/bin/python2 venv/bin/python2.bin && echo -e "#!/bin/sh\nLD_LIBRARY_PATH=$LD_LIBRARY_PATH exec \`dirname \$0\`/python2.bin \$*" > venv/bin/python2
 
     cd ..
 
