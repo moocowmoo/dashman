@@ -358,7 +358,7 @@ restart_dashd(){
 
     if [ $DASHD_RUNNING == 1 ]; then
         pending " --> ${messages["stopping"]} dashd. ${messages["please_wait"]}"
-        $DASH_CLI stop 2>&1 >/dev/null
+        $DASH_CLI stop 2>/dev/null >/dev/null
         sleep 10
         killall -9 dashd dash-shutoff 2>/dev/null
         ok "${messages["done"]}"
@@ -373,7 +373,7 @@ restart_dashd(){
     ok "${messages["done"]}"
 
     pending " --> ${messages["starting_dashd"]}"
-    $INSTALL_DIR/dashd 2>&1 >/dev/null
+    $INSTALL_DIR/dashd 2>/dev/null >/dev/null
     DASHD_RUNNING=1
     ok "${messages["done"]}"
 
@@ -399,7 +399,6 @@ restart_dashd(){
 update_dashd(){
 
     if [ $LATEST_VERSION != $CURRENT_VERSION ] || [ ! -z "$REINSTALL" ] ; then
-                    
 
         if [ ! -z "$REINSTALL" ];then
             echo -e ""
@@ -470,7 +469,7 @@ update_dashd(){
 
         if [ $DASHD_RUNNING == 1 ]; then
             pending " --> ${messages["stopping"]} dashd. ${messages["please_wait"]}"
-            $DASH_CLI stop >/dev/null 2>&1
+            $DASH_CLI stop 2>/dev/null >/dev/null
             sleep 15
             killall -9 dashd dash-shutoff >/dev/null 2>&1
             ok "${messages["done"]}"
@@ -554,7 +553,7 @@ update_dashd(){
 
             pending " --> updating sentinel... "
             cd sentinel
-            git remote update >/dev/null 2>&1 
+            git remote update >/dev/null 2>&1
             git reset -q --hard origin/master
             cd ..
             ok "${messages["done"]}"
@@ -1009,7 +1008,7 @@ awk ' \
 
         cd $INSTALL_DIR/sentinel
         SENTINEL_INSTALLED=$( ls -l bin/sentinel.py | wc -l )
-        SENTINEL_PYTEST=$( venv/bin/py.test test 2>&1 > /dev/null ; echo $? )
+        SENTINEL_PYTEST=$( venv/bin/py.test test 2>/dev/null > /dev/null ; echo $? )
         SENTINEL_CRONTAB=$( crontab -l | grep sentinel | grep -v '^#' | wc -l )
         SENTINEL_LAUNCH_OUTPUT=$( venv/bin/python bin/sentinel.py 2>&1 )
         if [ -z "$SENTINEL_LAUNCH_OUTPUT" ] ; then
@@ -1217,7 +1216,7 @@ install_sentinel() {
     cd sentinel
 
     pending "   --> virtualenv init... "
-    virtualenv venv 2>&1 > /dev/null;
+    virtualenv venv 2>/dev/null >/dev/null;
     if [[ $? -gt 0 ]];then
         err "  --> virtualenv initialization failed"
         pending "  when running: " ; echo
@@ -1227,7 +1226,7 @@ install_sentinel() {
     ok "${messages["done"]}"
 
     pending "   --> pip modules... "
-    venv/bin/pip install -r requirements.txt 2>&1 > /dev/null;
+    venv/bin/pip install -r requirements.txt 2>/dev/null > /dev/null;
     if [[ $? -gt 0 ]];then
         err "  --> pip install failed"
         pending "  when running: " ; echo
@@ -1237,7 +1236,7 @@ install_sentinel() {
     ok "${messages["done"]}"
 
     pending "  --> testing installation... "
-    venv/bin/py.test ./test/ 2>&1>/dev/null; 
+    venv/bin/py.test ./test/ 2>/dev/null >/dev/null;
     if [[ $? -gt 0 ]];then
         err "  --> sentinel tests failed"
         pending "  when running: " ; echo
@@ -1247,7 +1246,7 @@ install_sentinel() {
     ok "${messages["done"]}"
 
     pending "  --> installing crontab... "
-    (crontab -l 2>/dev/null | grep -v sentinel.py ; echo "* * * * * cd $INSTALL_DIR/sentinel && venv/bin/python bin/sentinel.py  2>&1 >> sentinel-cron.log") | crontab -
+    (crontab -l 2>/dev/null | grep -v sentinel.py ; echo "* * * * * cd $INSTALL_DIR/sentinel && venv/bin/python bin/sentinel.py  2>>sentinel-cron.log >> sentinel-cron.log") | crontab -
     ok "${messages["done"]}"
 
     [ -e venv/bin/python2 ] && [ ! -L venv/bin/python2 ] && [ ! -z "$LD_LIBRARY_PATH" ] && cp -a venv/bin/python2 venv/bin/python2.bin && echo -e "#!/bin/sh\nLD_LIBRARY_PATH=$LD_LIBRARY_PATH exec \`dirname \$0\`/python2.bin \$*" > venv/bin/python2
