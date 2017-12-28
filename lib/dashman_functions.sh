@@ -947,7 +947,7 @@ get_dashd_status(){
     # masternode (remote!) specific
 
     MN_CONF_ENABLED=$( egrep -s '^[^#]*\s*masternode\s*=\s*1' $HOME/.dash{,core}/dash.conf | wc -l 2>/dev/null)
-    MN_STARTED=`$DASH_CLI masternode debug 2>&1 | grep 'successfully started' | wc -l`
+    MN_STARTED=`$DASH_CLI masternode status 2>&1 | grep 'successfully started' | wc -l`
     MN_QUEUE_IN_SELECTION=0
     MN_QUEUE_LENGTH=0
     MN_QUEUE_POSITION=0
