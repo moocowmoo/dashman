@@ -764,11 +764,11 @@ install_dashd(){
     pending " $MAINNET_BOOTSTRAP_FILE_1_SIZE... "
     tput sc
     echo -e "$C_CYAN"
-    $wget_cmd -O - $MAINNET_BOOTSTRAP_FILE_1 | pv -trepa -s${MAINNET_BOOTSTRAP_FILE_1_SIZE_M}m -w80 -N bootstrap > ${MAINNET_BOOTSTRAP_FILE_1##*/}
+    $wget_cmd -O - $MAINNET_BOOTSTRAP_FILE_1 | pv -trep -s${MAINNET_BOOTSTRAP_FILE_1_SIZE_M}m -w80 -N bootstrap > ${MAINNET_BOOTSTRAP_FILE_1##*/}
     MAINNET_BOOTSTRAP_FILE=${MAINNET_BOOTSTRAP_FILE_1##*/}
     if [ ! -s $MAINNET_BOOTSTRAP_FILE ]; then
         rm $MAINNET_BOOTSTRAP_FILE
-        $wget_cmd -O - $MAINNET_BOOTSTRAP_FILE_2 | pv -trepa -s${MAINNET_BOOTSTRAP_FILE_1_SIZE_M}m -w80 -N bootstrap > ${MAINNET_BOOTSTRAP_FILE_2##*/}
+        $wget_cmd -O - $MAINNET_BOOTSTRAP_FILE_2 | pv -trep -s${MAINNET_BOOTSTRAP_FILE_1_SIZE_M}m -w80 -N bootstrap > ${MAINNET_BOOTSTRAP_FILE_2##*/}
         MAINNET_BOOTSTRAP_FILE=${MAINNET_BOOTSTRAP_FILE_2##*/}
     fi
     echo -ne "$C_NORM"
