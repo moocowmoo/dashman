@@ -789,7 +789,7 @@ install_dashd(){
         echo -ne "$C_NORM"
         clear_n_lines 1
         tput rc
-        tput cuu 1
+        tput cuu 2
         ok "${messages["done"]}"
         rm -f links.md bootstrap.dat*.zip
     fi
