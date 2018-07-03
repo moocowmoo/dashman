@@ -640,8 +640,8 @@ install_dashd(){
 #        if [ ! -z "$USE_IPV6" ]; then
 #            IPADDR='['$PUBLIC_IPV6']'
 #        fi
-        RPCUSER=`echo $(dd if=/dev/urandom bs=128 count=1 2>/dev/null) | sha256sum | awk '{print $1}'`
-        RPCPASS=`echo $(dd if=/dev/urandom bs=128 count=1 2>/dev/null) | sha256sum | awk '{print $1}'`
+        RPCUSER=`echo $(dd if=/dev/urandom bs=32 count=1 2>/dev/null) | sha256sum | awk '{print $1}'`
+        RPCPASS=`echo $(dd if=/dev/urandom bs=32 count=1 2>/dev/null) | sha256sum | awk '{print $1}'`
         while read; do
             eval echo "$REPLY"
         done < $DASHMAN_GITDIR/.dash.conf.template > $INSTALL_DIR/dash.conf
