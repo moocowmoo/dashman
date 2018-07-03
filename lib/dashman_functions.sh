@@ -909,7 +909,7 @@ get_dashd_status(){
     WEB_BLOCK_COUNT_DWHALE=$(echo "$WEB_DASHWHALE_JSON_TEXT" | grep consensus_blockheight | awk '{print $2}' | sed -e 's/[",]//g')
 
     WEB_ME=`$curl_cmd https://www.masternode.me/data/block_state.txt 2>/dev/null`;
-    if [[ $(echo "$WEB_ME" | grep cloudflare | wc -l) -gt 0 ]]; then
+    if [[ -z "$WEB_ME" ]] || [[ $(echo "$WEB_ME" | grep cloudflare | wc -l) -gt 0 ]]; then
         WEB_ME=`$curl_cmd https://stats.masternode.me/data/block_state.txt 2>/dev/null`;
     fi
     WEB_BLOCK_COUNT_ME=$( echo $WEB_ME | awk '{print $1}')
