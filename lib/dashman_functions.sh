@@ -26,7 +26,7 @@ else
     DASHMAN_CHECKOUT=" ("$DASHMAN_CHECKOUT")"
 fi
 
-curl_cmd="timeout 7 curl -s -L -A dashman/$DASHMAN_VERSION"
+curl_cmd="timeout 7 curl -k -s -L -A dashman/$DASHMAN_VERSION"
 wget_cmd='wget --no-check-certificate -q'
 
 
