@@ -1,5 +1,18 @@
-0.1.26 -  Sun Jan 21 08:45:23 2018 +0000
+0.1.27 -  Tue Jul 3 18:23:03 2018 +0000
 
+    compat - 12.3 release/github download
+
+    config - remove tarball after install
+
+    bugfix - better failover on mnme block pull
+    bugfix - low-entropy conf provision
+    bugfix - match new bootstrap zip filename
+    bugfix - ssl cert fix for older platforms
+
+    style - render fix on install
+
+
+0.1.26 -  Sun Jan 21 08:45:23 2018 +0000
     enh - add highlight color for selection pending and startup states
 
     compat - bootstrap path change

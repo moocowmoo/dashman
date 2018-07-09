@@ -13,9 +13,9 @@ C_PURPLE="\e[35m"
 C_CYAN="\e[36m"
 C_NORM="\e[0m"
 
-DASH_ORG='https://www.dash.org'
-DOWNLOAD_PAGE='https://www.dash.org/downloads/'
-CHECKSUM_URL='https://www.dash.org/binaries/SHA256SUMS.asc'
+
+GITHUB_API_DASH="https://api.github.com/repos/dashpay/dash"
+
 DASHD_RUNNING=0
 DASHD_RESPONDING=0
 DASHMAN_VERSION=$(cat $DASHMAN_GITDIR/VERSION)
@@ -26,7 +26,7 @@ else
     DASHMAN_CHECKOUT=" ("$DASHMAN_CHECKOUT")"
 fi
 
-curl_cmd="timeout 7 curl -s -L -A dashman/$DASHMAN_VERSION"
+curl_cmd="timeout 7 curl -k -s -L -A dashman/$DASHMAN_VERSION"
 wget_cmd='wget --no-check-certificate -q'
 
 
@@ -280,13 +280,18 @@ _get_platform_info() {
     PLATFORM=$(uname -m)
     case "$PLATFORM" in
         i[3-6]86)
-            BITS=32
+            PLAT=i686-pc
             ;;
         x86_64)
-            BITS=64
+            PLAT=x86_64
             ;;
-        armv7l|aarch64)
-            BITS=32
+        armv7l)
+            PLAT=arm
+            ARM=1
+            BIGARM=$(grep -E "(BCM2709|Freescale i\\.MX6)" /proc/cpuinfo | wc -l)
+            ;;
+        aarch64)
+            PLAT=aarch64
             ARM=1
             BIGARM=$(grep -E "(BCM2709|Freescale i\\.MX6)" /proc/cpuinfo | wc -l)
             ;;
@@ -308,33 +313,24 @@ _get_versions() {
         DOWNLOAD_FOR='RPi2'
     fi
 
+    GITHUB_RELEASE_JSON="$($curl_cmd $GITHUB_API_DASH/releases/latest | python -mjson.tool)"
+    CHECKSUM_URL=$(echo "$GITHUB_RELEASE_JSON" | grep browser_download | grep SUMS.asc | cut -d'"' -f4)
     CHECKSUM_FILE=$( $curl_cmd $CHECKSUM_URL )
-    DOWNLOAD_HTML=$( echo "$CHECKSUM_FILE" )
 
-    read -a DOWNLOAD_URLS <<< $( echo $DOWNLOAD_HTML | sed -e 's/ /\n/g' | grep -v '.asc' | grep $DOWNLOAD_FOR | tr "\n" " ")
-
+    read -a DOWNLOAD_URLS <<< $( echo "$GITHUB_RELEASE_JSON" | grep browser_download | grep -v 'debug' | grep -v '.asc' | grep $DOWNLOAD_FOR | cut -d'"' -f4 | tr "\n" " ")
     #$(( <-- vim syntax highlighting fix
-    LATEST_VERSION=$( echo ${DOWNLOAD_URLS[0]} | perl -ne '/dashcore-([0-9.]+)-/; print $1;' 2>/dev/null )
+
+    LATEST_VERSION=$(echo "$GITHUB_RELEASE_JSON" | grep tag_name | cut -d'"' -f4 | tr -d 'v')
+    TARDIR="dashcore-${LATEST_VERSION::-2}"
     if [ -z "$LATEST_VERSION" ]; then
-        die "\n${messages["err_could_not_get_version"]} $DOWNLOAD_PAGE -- ${messages["exiting"]}"
+        die "\n${messages["err_could_not_get_version"]} -- ${messages["exiting"]}"
     fi
 
     if [ -z "$DASH_CLI" ]; then DASH_CLI='echo'; fi
     CURRENT_VERSION=$( $DASH_CLI --version | perl -ne '/v([0-9.]+)/; print $1;' 2>/dev/null ) 2>/dev/null
     for url in "${DOWNLOAD_URLS[@]}"
     do
-        if [ $DOWNLOAD_FOR == 'linux' ] ; then
-            if [[ $url =~ .*linux${BITS}.* ]] ; then
-                if [[ ! $url =~ "http" ]] ; then
-                    url=$DASH_ORG"/binaries/"$url
-                fi
-                DOWNLOAD_URL=$url
-                DOWNLOAD_FILE=${DOWNLOAD_URL##*/}
-            fi
-        elif [ $DOWNLOAD_FOR == 'RPi2' ] ; then
-            if [[ ! $url =~ "http" ]] ; then
-                url=$DASH_ORG"/binaries/"$url
-            fi
+        if [[ $url =~ .*${PLAT}-linux.* ]] ; then
             DOWNLOAD_URL=$url
             DOWNLOAD_FILE=${DOWNLOAD_URL##*/}
         fi
@@ -499,10 +495,10 @@ update_dashd(){
 
         # place it ---------------------------------------------------------------
 
-        mv dashcore-0.12.2/bin/dashd dashd-$LATEST_VERSION
-        mv dashcore-0.12.2/bin/dash-cli dash-cli-$LATEST_VERSION
+        mv $TARDIR/bin/dashd dashd-$LATEST_VERSION
+        mv $TARDIR/bin/dash-cli dash-cli-$LATEST_VERSION
         if [ $PLATFORM != 'armv7l' ];then
-            mv dashcore-0.12.2/bin/dash-qt dash-qt-$LATEST_VERSION
+            mv $TARDIR/bin/dash-qt dash-qt-$LATEST_VERSION
         fi
         ln -s dashd-$LATEST_VERSION dashd
         ln -s dash-cli-$LATEST_VERSION dash-cli
@@ -520,7 +516,8 @@ update_dashd(){
 
         rm -rf dash-0.12.0
         rm -rf dashcore-0.12.1*
-        rm -rf dashcore-0.12.2
+        rm -rf dashcore-0.12.2*
+        rm -rf $TARDIR
 
         # punch it ---------------------------------------------------------------
 
@@ -642,8 +639,8 @@ install_dashd(){
 #        if [ ! -z "$USE_IPV6" ]; then
 #            IPADDR='['$PUBLIC_IPV6']'
 #        fi
-        RPCUSER=`echo $(dd if=/dev/urandom bs=128 count=1 2>/dev/null) | sha256sum | awk '{print $1}'`
-        RPCPASS=`echo $(dd if=/dev/urandom bs=128 count=1 2>/dev/null) | sha256sum | awk '{print $1}'`
+        RPCUSER=`echo $(dd if=/dev/urandom bs=32 count=1 2>/dev/null) | sha256sum | awk '{print $1}'`
+        RPCPASS=`echo $(dd if=/dev/urandom bs=32 count=1 2>/dev/null) | sha256sum | awk '{print $1}'`
         while read; do
             eval echo "$REPLY"
         done < $DASHMAN_GITDIR/.dash.conf.template > $INSTALL_DIR/dash.conf
@@ -659,7 +656,7 @@ install_dashd(){
     pending " --> ${messages["downloading"]} ${DOWNLOAD_URL}... "
     tput sc
     echo -e "$C_CYAN"
-    $wget_cmd -O - $DOWNLOAD_URL | pv -trep -s27M -w80 -N wallet > $DOWNLOAD_FILE
+    $wget_cmd -O - $DOWNLOAD_URL | pv -trep -s28787607 -w80 -N wallet > $DOWNLOAD_FILE
     $wget_cmd -O - https://github.com/dashpay/dash/releases/download/v$LATEST_VERSION/SHA256SUMS.asc | pv -trep -w80 -N checksums > ${DOWNLOAD_FILE}.DIGESTS.txt
     echo -ne "$C_NORM"
     clear_n_lines 2
@@ -730,10 +727,10 @@ install_dashd(){
 
     # place it ---------------------------------------------------------------
 
-    mv dashcore-0.12.2/bin/dashd dashd-$LATEST_VERSION
-    mv dashcore-0.12.2/bin/dash-cli dash-cli-$LATEST_VERSION
+    mv $TARDIR/bin/dashd dashd-$LATEST_VERSION
+    mv $TARDIR/bin/dash-cli dash-cli-$LATEST_VERSION
     if [ $PLATFORM != 'armv7l' ];then
-        mv dashcore-0.12.2/bin/dash-qt dash-qt-$LATEST_VERSION
+        mv $TARDIR/bin/dash-qt dash-qt-$LATEST_VERSION
     fi
     ln -s dashd-$LATEST_VERSION dashd
     ln -s dash-cli-$LATEST_VERSION dash-cli
@@ -750,6 +747,9 @@ install_dashd(){
     # purge it ---------------------------------------------------------------
 
     rm -rf dash-0.12.0
+    rm -rf dashcore-0.12.1*
+    rm -rf dashcore-0.12.2*
+    rm -rf $TARDIR
 
     # preload it -------------------------------------------------------------
 
@@ -759,7 +759,7 @@ install_dashd(){
     wget --no-check-certificate -q $BOOSTRAP_LINKS -O - | grep 'bootstrap\.dat\.zip' | grep 'sha256\.txt' > links.md
     MAINNET_BOOTSTRAP_FILE_1=$(head -1 links.md | awk '{print $9}' | sed 's/.*\(http.*\.zip\).*/\1/')
     MAINNET_BOOTSTRAP_FILE_1_SIZE=$(head -1 links.md | awk '{print $10}' | sed 's/[()]//g')
-    MAINNET_BOOTSTRAP_FILE_1_SIZE_M=$(( $(echo $MAINNET_BOOTSTRAP_FILE_1_SIZE | sed -e 's/[^0-9]//g') * 99 ))
+    MAINNET_BOOTSTRAP_FILE_1_SIZE_M=$(( $(echo $MAINNET_BOOTSTRAP_FILE_1_SIZE | sed -e 's/[^0-9]//g') * 100 ))
     MAINNET_BOOTSTRAP_FILE_2=$(head -3 links.md | tail -1 | awk '{print $9}' | sed 's/.*\(http.*\.zip\).*/\1/')
     pending " $MAINNET_BOOTSTRAP_FILE_1_SIZE... "
     tput sc
@@ -788,7 +788,7 @@ install_dashd(){
         echo -ne "$C_NORM"
         clear_n_lines 1
         tput rc
-        tput cuu 1
+        tput cuu 2
         ok "${messages["done"]}"
         rm -f links.md bootstrap.dat*.zip
     fi
@@ -908,7 +908,7 @@ get_dashd_status(){
     WEB_BLOCK_COUNT_DWHALE=$(echo "$WEB_DASHWHALE_JSON_TEXT" | grep consensus_blockheight | awk '{print $2}' | sed -e 's/[",]//g')
 
     WEB_ME=`$curl_cmd https://www.masternode.me/data/block_state.txt 2>/dev/null`;
-    if [[ $(echo "$WEB_ME" | grep cloudflare | wc -l) -gt 0 ]]; then
+    if [[ -z "$WEB_ME" ]] || [[ $(echo "$WEB_ME" | grep cloudflare | wc -l) -gt 0 ]]; then
         WEB_ME=`$curl_cmd https://stats.masternode.me/data/block_state.txt 2>/dev/null`;
     fi
     WEB_BLOCK_COUNT_ME=$( echo $WEB_ME | awk '{print $1}')
