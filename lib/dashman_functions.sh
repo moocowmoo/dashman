@@ -321,7 +321,7 @@ _get_versions() {
     #$(( <-- vim syntax highlighting fix
 
     LATEST_VERSION=$(echo "$GITHUB_RELEASE_JSON" | grep tag_name | cut -d'"' -f4 | tr -d 'v')
-    TARDIR="dashcore-${LATEST_VERSION::-2}"
+    TARDIR="dashcore-"`echo $LATEST_VERSION | sed -r 's/\.[0-9]+$//;'`
     if [ -z "$LATEST_VERSION" ]; then
         die "\n${messages["err_could_not_get_version"]} -- ${messages["exiting"]}"
     fi
