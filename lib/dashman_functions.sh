@@ -934,7 +934,7 @@ get_dashd_status(){
     get_public_ips
 
     MASTERNODE_BIND_IP=$PUBLIC_IPV4
-    PUBLIC_PORT_CLOSED=$( timeout 2 nc -4 $PUBLIC_IPV4 9999 2>&1 </dev/null >/dev/null; echo $? )
+    PUBLIC_PORT_CLOSED=$( timeout 2 nc -4 $PUBLIC_IPV4 9999 >/dev/null 2>&1 </dev/null; echo $? )
 #    if [ $PUBLIC_PORT_CLOSED -ne 0 ] && [ ! -z "$PUBLIC_IPV6" ]; then
 #        PUBLIC_PORT_CLOSED=$( timeout 2 nc -6 -z $PUBLIC_IPV6 9999 2>&1 >/dev/null; echo $? )
 #        if [ $PUBLIC_PORT_CLOSED -eq 0 ]; then
