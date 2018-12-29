@@ -112,6 +112,7 @@ messages=(
     ["status_dbllast"]="  last block (local dashd)   : "
     ["status_webchai"]="             (chainz)        : "
     ["status_webdark"]="             (dash.org)      : "
+    ["status_webholy"]="             (holytxn)       : "
     ["status_webdash"]="             (dashwhale)     : "
     ["status_webmast"]="             (masternode.me) : "
     ["status_dcurdif"]="  dashd current difficulty   : "

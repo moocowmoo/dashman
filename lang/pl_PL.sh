@@ -112,6 +112,7 @@ messages=(
     ["status_dbllast"]="  ostatni blok (lokalny dashd)       : "
     ["status_webchai"]="               (chainz)              : "
     ["status_webdark"]="               (dash.org)            : "
+    ["status_webholy"]="               (holytxn)             : "
     ["status_webdash"]="               (dashwhale)           : "
     ["status_webmast"]="               (masternode.me)       : "
     ["status_dcurdif"]="  aktualna trudność wydobycia        : "

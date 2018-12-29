@@ -15,6 +15,8 @@ C_NORM="\e[0m"
 
 
 GITHUB_API_DASH="https://api.github.com/repos/dashpay/dash"
+APIURL_BLOCKCOUNT_DASH="https://explorer.dash.org/chain/Dash/q/getblockcount";
+APIURL_BLOCKCOUNT_HOLY="https://dash.holytransaction.com/api/getblockcount";
 
 DASHD_RUNNING=0
 DASHD_RESPONDING=0
@@ -26,7 +28,10 @@ else
     DASHMAN_CHECKOUT=" ("$DASHMAN_CHECKOUT")"
 fi
 
-curl_cmd="timeout 7 curl -k -s -L -A dashman/$DASHMAN_VERSION"
+#curl_cmd="timeout 4 curl -k -s -L -A dashman/$DASHMAN_VERSION"
+#curl_cmd='/usr/bin/time -f %E timeout 4 curl -k -s -L -A dashman/'$DASHMAN_VERSION
+#curl_cmd='echo $(echo $@) && /usr/bin/time -f %E -c "timeout 4 curl -k -s -L -A dashman/$DASHMAN_VERSION"'
+curl_cmd='bin/curl_wrapper.sh'
 wget_cmd='wget --no-check-certificate -q'
 
 
@@ -894,9 +899,16 @@ get_dashd_status(){
         WEB_BLOCK_COUNT_CHAINZ=0
     fi
 
-    WEB_BLOCK_COUNT_DQA=`$curl_cmd https://explorer.dash.org/chain/Dash/q/getblockcount`;
+
+
+    WEB_BLOCK_COUNT_DQA=`$curl_cmd $APIURL_BLOCKCOUNT_DASH`;
     if [ -z "$WEB_BLOCK_COUNT_DQA" ]; then
         WEB_BLOCK_COUNT_DQA=0
+    fi
+
+    WEB_BLOCK_COUNT_HOLY=`$curl_cmd $APIURL_BLOCKCOUNT_HOLY`;
+    if [ -z "$WEB_BLOCK_COUNT_HOLY" ]; then
+        WEB_BLOCK_COUNT_HOLY=0
     fi
 
     WEB_DASHWHALE=`$curl_cmd https://www.dashcentral.org/api/v1/public`;
@@ -920,7 +932,9 @@ get_dashd_status(){
     CHECK_SYNC_AGAINST_HEIGHT=$(echo "$WEB_BLOCK_COUNT_CHAINZ $WEB_BLOCK_COUNT_ME $WEB_BLOCK_COUNT_DQA $WEB_BLOCK_COUNT_DWHALE" | tr " " "\n" | sort -rn | head -1)
 
     DASHD_SYNCED=0
-    if [ $CHECK_SYNC_AGAINST_HEIGHT -ge $DASHD_CURRENT_BLOCK ] && [ $(($CHECK_SYNC_AGAINST_HEIGHT - 5)) -lt $DASHD_CURRENT_BLOCK ];then
+    HEIGHT_DIFF=$(( $CHECK_SYNC_AGAINST_HEIGHT - $DASHD_CURRENT_BLOCK ))
+    HEIGHT_DIFF=${HEIGHT_DIFF/#-/}
+    if [ $HEIGHT_DIFF -lt 5 ];then
         DASHD_SYNCED=1
     fi
 
@@ -1033,7 +1047,7 @@ awk ' \
         WEB_NINJA_MN_VIDX=$(echo "$WEB_NINJA_JSON_TEXT" | grep MasternodeOutputIndex | awk '{print $2}' | sed -e 's/[",]//g')
         WEB_NINJA_MN_BALANCE=$(echo "$WEB_NINJA_JSON_TEXT" | grep Value | awk '{print $2}' | sed -e 's/[",]//g')
         WEB_NINJA_MN_LAST_PAID_TIME_EPOCH=$(echo "$WEB_NINJA_JSON_TEXT" | grep MNLastPaidTime | awk '{print $2}' | sed -e 's/[",]//g')
-        WEB_NINJA_MN_LAST_PAID_AMOUNT=$(echo "$WEB_NINJA_JSON_TEXT" | grep MNLastPaidAmount | awk '{print $2}' | sed -e 's/[",]//g')
+        WEB_NINJA_MN_LAST_PAID_AMOUNT=$(printf "%.8f" $(echo "$WEB_NINJA_JSON_TEXT" | grep MNLastPaidAmount | awk '{print $2}' | sed -e 's/[",]//g'))
         WEB_NINJA_MN_LAST_PAID_BLOCK=$(echo "$WEB_NINJA_JSON_TEXT" | grep MNLastPaidBlock | awk '{print $2}' | sed -e 's/[",]//g')
 
         WEB_NINJA_LAST_PAYMENT_TIME=$(date -d @${WEB_NINJA_MN_LAST_PAID_TIME_EPOCH} '+%m/%d/%Y %H:%M:%S' 2>/dev/null)
@@ -1042,8 +1056,7 @@ awk ' \
             local daysago=$(dateDiff -d now "$WEB_NINJA_LAST_PAYMENT_TIME")
             local hoursago=$(dateDiff -h now "$WEB_NINJA_LAST_PAYMENT_TIME")
             hoursago=$(( hoursago - (24 * daysago) ))
-            WEB_NINJA_LAST_PAYMENT_TIME="$WEB_NINJA_LAST_PAYMENT_TIME ($daysago ${messages["days"]}, $hoursago ${messages["hours"]}${messages["ago"]})"
-
+            WEB_NINJA_LAST_PAYMENT_TIME="$WEB_NINJA_LAST_PAYMENT_TIME ($(printf '%02d' $daysago) ${messages["days"]}, $(printf '%02d' $hoursago) ${messages["hours"]}${messages["ago"]})"
         fi
 
         WEB_NINJA_API_OFFLINE=0
@@ -1106,7 +1119,8 @@ print_status() {
     pending "${messages["status_dblsync"]}" ; [ $DASHD_SYNCED     -gt 0 ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
     pending "${messages["status_dbllast"]}" ; [ $DASHD_SYNCED     -gt 0 ] && ok "$DASHD_CURRENT_BLOCK" || err "$DASHD_CURRENT_BLOCK"
     pending "${messages["status_webchai"]}" ; [ $WEB_BLOCK_COUNT_CHAINZ -gt 0 ] && ok "$WEB_BLOCK_COUNT_CHAINZ" || err "$WEB_BLOCK_COUNT_CHAINZ"
-    pending "${messages["status_webdark"]}" ; [ $WEB_BLOCK_COUNT_DQA    -gt 0 ] && ok "$WEB_BLOCK_COUNT_DQA" || err "$WEB_BLOCK_COUNT_DQA"
+    #pending "${messages["status_webdark"]}" ; [ $WEB_BLOCK_COUNT_DQA    -gt 0 ] && ok "$WEB_BLOCK_COUNT_DQA" || err "$WEB_BLOCK_COUNT_DQA"
+    pending "${messages["status_webholy"]}" ; [ $WEB_BLOCK_COUNT_HOLY    -gt 0 ] && ok "$WEB_BLOCK_COUNT_HOLY" || err "$WEB_BLOCK_COUNT_HOLY"
     pending "${messages["status_webdash"]}" ; [ $WEB_BLOCK_COUNT_DWHALE -gt 0 ] && ok "$WEB_BLOCK_COUNT_DWHALE" || err "$WEB_BLOCK_COUNT_DWHALE"
     pending "${messages["status_webmast"]}" ; [ $WEB_ME_FORK_DETECT -gt 0 ] && err "$WEB_ME" || ok "$WEB_ME"
     pending "${messages["status_dcurdif"]}" ; ok "$DASHD_DIFFICULTY"
