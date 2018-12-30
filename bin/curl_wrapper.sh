@@ -14,7 +14,7 @@ if [ -e $CACHE_FILE ];then
     exit
 fi
 
-curl -k -s -L -m 4 -A dashman/$DASHMAN_VERSION $@ > $CACHE_FILE 2>/dev/null
+curl -k -s -L -m 3 -A dashman/$DASHMAN_VERSION $@ > $CACHE_FILE 2>/dev/null
 if [ $? -gt 0 ];then
     #rm -f $CACHE_FILE
     exit

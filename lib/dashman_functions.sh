@@ -18,6 +18,11 @@ GITHUB_API_DASH="https://api.github.com/repos/dashpay/dash"
 APIURL_BLOCKCOUNT_DASH="https://explorer.dash.org/chain/Dash/q/getblockcount";
 APIURL_BLOCKCOUNT_HOLY="https://dash.holytransaction.com/api/getblockcount";
 
+now_epoch(){ date +%s; }
+LASTTIME=$(now_epoch)
+#deltatime() { echo ${BASH_LINENO[0]} $(( $(now_epoch) - $LASTTIME )) >&2 ; LASTTIME=$(now_epoch) ; }
+deltatime() { return ; };
+
 DASHD_RUNNING=0
 DASHD_RESPONDING=0
 DASHMAN_VERSION=$(cat $DASHMAN_GITDIR/VERSION)
@@ -31,7 +36,7 @@ fi
 #curl_cmd="timeout 4 curl -k -s -L -A dashman/$DASHMAN_VERSION"
 #curl_cmd='/usr/bin/time -f %E timeout 4 curl -k -s -L -A dashman/'$DASHMAN_VERSION
 #curl_cmd='echo $(echo $@) && /usr/bin/time -f %E -c "timeout 4 curl -k -s -L -A dashman/$DASHMAN_VERSION"'
-curl_cmd='bin/curl_wrapper.sh'
+curl_cmd="$DASHMAN_GITDIR/bin/curl_wrapper.sh"
 wget_cmd='wget --no-check-certificate -q'
 
 
@@ -42,9 +47,12 @@ pending(){ [[ $QUIET ]] || ( echo -en "$C_YELLOW$1$C_NORM" && tput el ); }
 ok(){ [[ $QUIET ]] || echo -e "$C_GREEN$1$C_NORM" ; }
 
 warn() { [[ $QUIET ]] || echo -e "$C_YELLOW$1$C_NORM" ; }
-highlight() { [[ $QUIET ]] || echo -e "$C_PURPLE$1$C_NORM" ; }
+warn_inline() { [[ $QUIET ]] || echo -ne "$C_YELLOW$1$C_NORM" ; }
+highlight() { [[ $QUIET ]] || echo -e "$C_CYAN$1$C_NORM" ; }
+highlight_inline() { [[ $QUIET ]] || echo -ne "$C_CYAN$1$C_NORM" ; }
 
 err() { [[ $QUIET ]] || echo -e "$C_RED$1$C_NORM" ; }
+err_inline() { [[ $QUIET ]] || echo -ne "$C_RED$1$C_NORM" ; }
 die() { [[ $QUIET ]] || echo -e "$C_RED$1$C_NORM" ; exit 1 ; }
 
 quit(){ [[ $QUIET ]] || echo -e "$C_GREEN${1:-${messages["exiting"]}}$C_NORM" ; echo ; exit 0 ; }
@@ -266,7 +274,9 @@ _find_dash_directory() {
 
 
 _check_dashman_updates() {
+deltatime
     GITHUB_DASHMAN_VERSION=$( $curl_cmd https://raw.githubusercontent.com/moocowmoo/dashman/master/VERSION )
+
     if [ ! -z "$GITHUB_DASHMAN_VERSION" ] && [ "$DASHMAN_VERSION" != "$GITHUB_DASHMAN_VERSION" ]; then
         echo -e "\n"
         echo -e "${C_RED}${0##*/} ${messages["requires_updating"]} $C_GREEN$GITHUB_DASHMAN_VERSION$C_RED\n${messages["requires_sync"]}$C_NORM\n"
@@ -318,8 +328,10 @@ _get_versions() {
         DOWNLOAD_FOR='RPi2'
     fi
 
+deltatime
     GITHUB_RELEASE_JSON="$($curl_cmd $GITHUB_API_DASH/releases/latest | python -mjson.tool)"
     CHECKSUM_URL=$(echo "$GITHUB_RELEASE_JSON" | grep browser_download | grep SUMS.asc | cut -d'"' -f4)
+deltatime
     CHECKSUM_FILE=$( $curl_cmd $CHECKSUM_URL )
 
     read -a DOWNLOAD_URLS <<< $( echo "$GITHUB_RELEASE_JSON" | grep browser_download | grep -v 'debug' | grep -v '.asc' | grep $DOWNLOAD_FOR | cut -d'"' -f4 | tr "\n" " ")
@@ -894,6 +906,7 @@ get_dashd_status(){
     DASHD_GETINFO=`$DASH_CLI getinfo 2>/dev/null`;
     DASHD_DIFFICULTY=$(echo "$DASHD_GETINFO" | grep difficulty | awk '{print $2}' | sed -e 's/[",]//g')
 
+deltatime
     WEB_BLOCK_COUNT_CHAINZ=`$curl_cmd https://chainz.cryptoid.info/dash/api.dws?q=getblockcount`;
     if [ -z "$WEB_BLOCK_COUNT_CHAINZ" ]; then
         WEB_BLOCK_COUNT_CHAINZ=0
@@ -901,27 +914,33 @@ get_dashd_status(){
 
 
 
+deltatime
     WEB_BLOCK_COUNT_DQA=`$curl_cmd $APIURL_BLOCKCOUNT_DASH`;
     if [ -z "$WEB_BLOCK_COUNT_DQA" ]; then
         WEB_BLOCK_COUNT_DQA=0
     fi
 
+deltatime
     WEB_BLOCK_COUNT_HOLY=`$curl_cmd $APIURL_BLOCKCOUNT_HOLY`;
     if [ -z "$WEB_BLOCK_COUNT_HOLY" ]; then
         WEB_BLOCK_COUNT_HOLY=0
     fi
 
+deltatime
     WEB_DASHWHALE=`$curl_cmd https://www.dashcentral.org/api/v1/public`;
     if [ -z "$WEB_DASHWHALE" ]; then
         sleep 3
+deltatime
         WEB_DASHWHALE=`$curl_cmd https://www.dashcentral.org/api/v1/public`;
     fi
 
     WEB_DASHWHALE_JSON_TEXT=$(echo $WEB_DASHWHALE | python -m json.tool)
     WEB_BLOCK_COUNT_DWHALE=$(echo "$WEB_DASHWHALE_JSON_TEXT" | grep consensus_blockheight | awk '{print $2}' | sed -e 's/[",]//g')
 
+deltatime
     WEB_ME=`$curl_cmd https://www.masternode.me/data/block_state.txt 2>/dev/null`;
     if [[ -z "$WEB_ME" ]] || [[ $(echo "$WEB_ME" | grep cloudflare | wc -l) -gt 0 ]]; then
+deltatime
         WEB_ME=`$curl_cmd https://stats.masternode.me/data/block_state.txt 2>/dev/null`;
     fi
     WEB_BLOCK_COUNT_ME=$( echo $WEB_ME | awk '{print $1}')
@@ -1033,10 +1052,12 @@ awk ' \
     fi
 
     if [ $MN_CONF_ENABLED -gt 0 ] ; then
+deltatime
         WEB_NINJA_API=$($curl_cmd "https://www.dashninja.pl/api/masternodes?ips=\[\"${MASTERNODE_BIND_IP}:9999\"\]&portcheck=1&balance=1")
         if [ -z "$WEB_NINJA_API" ]; then
             sleep 2
             # downgrade connection to support distros with stale nss libraries
+deltatime
             WEB_NINJA_API=$($curl_cmd --ciphers rsa_3des_sha "https://www.dashninja.pl/api/masternodes?ips=\[\"${MASTERNODE_BIND_IP}:9999\"\]&portcheck=1&balance=1")
         fi
 
@@ -1107,8 +1128,10 @@ print_status() {
     pending "${messages["status_hostnam"]}" ; ok "$HOSTNAME"
     pending "${messages["status_uptimeh"]}" ; ok "$HOST_UPTIME_DAYS ${messages["days"]}, $HOST_LOAD_AVERAGE"
     pending "${messages["status_dashdip"]}" ; [ $MASTERNODE_BIND_IP != 'none' ] && ok "$MASTERNODE_BIND_IP" || err "$MASTERNODE_BIND_IP"
-    pending "${messages["status_dashdve"]}" ; ok "$CURRENT_VERSION"
-    pending "${messages["status_uptodat"]}" ; [ $DASHD_UP_TO_DATE -gt 0 ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
+    pending "${messages["status_dashdve"]}" ; [ $DASHD_UP_TO_DATE -gt 0 ] && ok "$CURRENT_VERSION" || err "$CURRENT_VERSION"
+    #pending "${messages["status_dashdve"]}" ; [ $DASHD_UP_TO_DATE -gt 0 ] && ok "$CURRENT_VERSION" || (err_inline "$CURRENT_VERSION" && highlight " - $LATEST_VERSION update needed")
+    pending "${messages["status_uptodat"]}" ; [ $DASHD_UP_TO_DATE -gt 0 ] && ok "${messages["YES"]} $CURRENT_VERSION is latest" || (err_inline "${messages["NO ->"]}" && highlight "$LATEST_VERSION update available")
+#    pending "${messages["status_uptodat"]}" ; [ $DASHD_UP_TO_DATE -gt 0 ] && ok "${messages["YES"]}" || err "${messages["NO"]} - $LATEST_VERSION update needed"
     pending "${messages["status_running"]}" ; [ $DASHD_HASPID     -gt 0 ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
     pending "${messages["status_uptimed"]}" ; [ $DASHD_RUNNING    -gt 0 ] && ok "$DASHD_UPTIME_STRING" || err "$DASHD_UPTIME_STRING"
     pending "${messages["status_drespon"]}" ; [ $DASHD_RUNNING    -gt 0 ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
@@ -1170,12 +1193,14 @@ show_message_configure() {
 }
 
 get_public_ips() {
+deltatime
     PUBLIC_IPV4=$($curl_cmd -4 https://icanhazip.com/)
 #    PUBLIC_IPV6=$($curl_cmd -6 https://icanhazip.com/)
 #    if [ -z "$PUBLIC_IPV4" ] && [ -z "$PUBLIC_IPV6" ]; then
     if [ -z "$PUBLIC_IPV4" ]; then
 
         # try http
+deltatime
         PUBLIC_IPV4=$($curl_cmd -4 http://icanhazip.com/)
 #        PUBLIC_IPV6=$($curl_cmd -6 http://icanhazip.com/)
 
