@@ -362,7 +362,8 @@ _check_dashd_state() {
     if [ $DASHD_HASPID -gt 0 ] && [ $DASHD_PID -gt 0 ]; then
         DASHD_RUNNING=1
     fi
-    if [ $( $DASH_CLI help 2>/dev/null | wc -l ) -gt 0 ]; then
+    $DASH_CLI getinfo >/dev/null 2>&1
+    if [ $? -eq 0 ] || [ $? -eq 28 ]; then
         DASHD_RESPONDING=1
     fi
 }
@@ -392,6 +393,7 @@ restart_dashd(){
 
     pending " --> ${messages["waiting_for_dashd_to_respond"]}"
     echo -en "${C_YELLOW}"
+    DASHD_RESPONDING=0
     while [ $DASHD_RUNNING == 1 ] && [ $DASHD_RESPONDING == 0 ]; do
         echo -n "."
         _check_dashd_state
