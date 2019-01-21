@@ -518,6 +518,7 @@ update_dashd(){
         rm -rf dash-0.12.0
         rm -rf dashcore-0.12.1*
         rm -rf dashcore-0.12.2*
+        rm -rf dashcore-0.12.3*
         rm -rf $TARDIR
 
         # punch it ---------------------------------------------------------------
@@ -750,6 +751,7 @@ install_dashd(){
     rm -rf dash-0.12.0
     rm -rf dashcore-0.12.1*
     rm -rf dashcore-0.12.2*
+    rm -rf dashcore-0.12.3*
     rm -rf $TARDIR
 
     # preload it -------------------------------------------------------------
