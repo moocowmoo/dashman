@@ -16,7 +16,7 @@ C_NORM="\e[0m"
 
 GITHUB_API_DASH="https://api.github.com/repos/dashpay/dash"
 APIURL_BLOCKCOUNT_DASH="https://explorer.dash.org/chain/Dash/q/getblockcount";
-APIURL_BLOCKCOUNT_HOLY="https://dash.holytransaction.com/api/getblockcount";
+#APIURL_BLOCKCOUNT_HOLY="https://dash.holytransaction.com/api/getblockcount";
 
 now_epoch(){ date +%s; }
 LASTTIME=$(now_epoch)
@@ -923,10 +923,10 @@ deltatime
     fi
 
 deltatime
-    WEB_BLOCK_COUNT_HOLY=`$curl_cmd $APIURL_BLOCKCOUNT_HOLY`;
-    if [ -z "$WEB_BLOCK_COUNT_HOLY" ]; then
-        WEB_BLOCK_COUNT_HOLY=0
-    fi
+#    WEB_BLOCK_COUNT_HOLY=`$curl_cmd $APIURL_BLOCKCOUNT_HOLY`;
+#    if [ -z "$WEB_BLOCK_COUNT_HOLY" ]; then
+#        WEB_BLOCK_COUNT_HOLY=0
+#    fi
 
 deltatime
     WEB_DASHWHALE=`$curl_cmd https://www.dashcentral.org/api/v1/public`;
@@ -1144,8 +1144,8 @@ print_status() {
     pending "${messages["status_dblsync"]}" ; [ $DASHD_SYNCED     -gt 0 ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
     pending "${messages["status_dbllast"]}" ; [ $DASHD_SYNCED     -gt 0 ] && ok "$DASHD_CURRENT_BLOCK" || err "$DASHD_CURRENT_BLOCK"
     pending "${messages["status_webchai"]}" ; [ $WEB_BLOCK_COUNT_CHAINZ -gt 0 ] && ok "$WEB_BLOCK_COUNT_CHAINZ" || err "$WEB_BLOCK_COUNT_CHAINZ"
-    #pending "${messages["status_webdark"]}" ; [ $WEB_BLOCK_COUNT_DQA    -gt 0 ] && ok "$WEB_BLOCK_COUNT_DQA" || err "$WEB_BLOCK_COUNT_DQA"
-    pending "${messages["status_webholy"]}" ; [ $WEB_BLOCK_COUNT_HOLY    -gt 0 ] && ok "$WEB_BLOCK_COUNT_HOLY" || err "$WEB_BLOCK_COUNT_HOLY"
+    pending "${messages["status_webdark"]}" ; [ $WEB_BLOCK_COUNT_DQA    -gt 0 ] && ok "$WEB_BLOCK_COUNT_DQA" || err "$WEB_BLOCK_COUNT_DQA"
+#    pending "${messages["status_webholy"]}" ; [ $WEB_BLOCK_COUNT_HOLY    -gt 0 ] && ok "$WEB_BLOCK_COUNT_HOLY" || err "$WEB_BLOCK_COUNT_HOLY"
     pending "${messages["status_webdash"]}" ; [ $WEB_BLOCK_COUNT_DWHALE -gt 0 ] && ok "$WEB_BLOCK_COUNT_DWHALE" || err "$WEB_BLOCK_COUNT_DWHALE"
     pending "${messages["status_webmast"]}" ; [ $WEB_ME_FORK_DETECT -gt 0 ] && err "$WEB_ME" || ok "$WEB_ME"
     pending "${messages["status_dcurdif"]}" ; ok "$DASHD_DIFFICULTY"
