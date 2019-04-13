@@ -2,16 +2,27 @@
 
 # dashman_functions.sh - common functions and variables
 
-# Copyright (c) 2015-2017 moocowmoo - moocowmoo@masternode.me
+# Copyright (c) 2015-2019 moocowmoo - moocowmoo@masternode.me
 
 # variables are for putting things in ----------------------------------------
 
-C_RED="\e[31m"
-C_YELLOW="\e[33m"
-C_GREEN="\e[32m"
-C_PURPLE="\e[35m"
-C_CYAN="\e[36m"
-C_NORM="\e[0m"
+C_RED=''
+C_YELLOW=''
+C_GREEN=''
+C_PURPLE=''
+C_CYAN=''
+C_NORM=''
+TPUT_EL=''
+
+if [ -t 1 ] || [ ! -z "$FORCE_COLOR" ] ; then
+    C_RED="\e[31m"
+    C_YELLOW="\e[33m"
+    C_GREEN="\e[32m"
+    C_PURPLE="\e[35m"
+    C_CYAN="\e[36m"
+    C_NORM="\e[0m"
+    TPUT_EL=$(tput el)
+fi
 
 
 GITHUB_API_DASH="https://api.github.com/repos/dashpay/dash"
@@ -32,7 +43,7 @@ wget_cmd='wget --no-check-certificate -q'
 
 # (mostly) functioning functions -- lots of refactoring to do ----------------
 
-pending(){ [[ $QUIET ]] || ( echo -en "$C_YELLOW$1$C_NORM" && tput el ); }
+pending(){ [[ $QUIET ]] || ( echo -en "$C_YELLOW$1$C_NORM$TPUT_EL" ); }
 
 ok(){ [[ $QUIET ]] || echo -e "$C_GREEN$1$C_NORM" ; }
 
