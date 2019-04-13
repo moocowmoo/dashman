@@ -962,31 +962,52 @@ get_dashd_status(){
 
     # masternode (remote!) specific
 
-    MN_PROTX_RECORD=`$DASH_CLI protx list valid 1 2>&1 | grep -w -B6 -A19 $MASTERNODE_BIND_IP:9999 | sed -e 's/:9999/~9999/' -e 's/[":,{}]//g' -e 's/^ \+//' -e 's/ \+$//' -e 's/~9999/:9999/' -e '/^$/d' -e '/^[^ ]\+$/d'`
+    MN_PROTX_RAW="$($DASH_CLI protx list valid 1 2>&1)"
+    MN_PROTX_RECORD=`echo "$MN_PROTX_RAW" | grep -w -B6 -A19 $MASTERNODE_BIND_IP:9999 | sed -e 's/:9999/~9999/' -e 's/[":,{}]//g' -e 's/^ \+//' -e 's/ \+$//' -e 's/~9999/:9999/' -e '/^$/d' -e '/^[^ ]\+$/d'`
+    MN_PROTX_QUEUE=`echo "$MN_PROTX_RAW" | egrep '(proTxHash|lastPaidHeight)' | sed -e 's/[":,{}]//g' -e 's/^ \+//' -e 's/ \+$//' -e '/^$/d' -e '/^[^ ]\+$/d' -e 's/lastPaidHeight//' -e 's/proTxHash//' | tac | sed -e 'N;s/\n/ /' | sort -nr`
+    MN_PROTX_QUEUE_LEN=$(echo "$MN_PROTX_QUEUE" | wc -l)
 
-    # TODO - tuples available
-    # proTxHash
-    # collateralHash
-    # collateralIndex
-    # collateralAddress
-    # operatorReward
-    # service
-    # registeredHeight
-    # lastPaidHeight
-    # PoSePenalty
-    # PoSeRevivedHeight
-    # PoSeBanHeight
-    # revocationReason
-    # ownerAddress
-    # votingAddress
-    # payoutAddress
-    # pubKeyOperator
-    # confirmations
+    MN_PROTX_HASH=''
+    MN_PROTX_CONFIRMATIONS=''
+    MN_PROTX_REGD_HEIGHT=''
+    MN_PROTX_LAST_PAID_HEIGHT=''
+    MN_PROTX_COLL_HASH=''
+    MN_PROTX_COLL_IDX=''
+    MN_PROTX_COLL_ADDY=''
+    MN_PROTX_OPER_REWARD=''
+    MN_PROTX_POSE_PENALTY=''
+    MN_PROTX_POSE_REVIVED_HEIGHT=''
+    MN_PROTX_POSE_BAN_HEIGHT=''
+    MN_PROTX_SERVICE=''
+    MN_PROTX_OWNER_ADDRESS=''
+    MN_PROTX_VOTER_ADDRESS=''
+    MN_PROTX_PAYOUT_ADDRESS=''
+    MN_PROTX_OPER_PUBKEY=''
 
     MN_CONF_ENABLED=$( egrep -s '^[^#]*\s*masternode\s*=\s*1' $HOME/.dash{,core}/dash.conf | wc -l 2>/dev/null)
     #MN_STARTED=`$DASH_CLI masternode status 2>&1 | grep 'successfully started' | wc -l`
     MN_REGISTERED=0
     [[ -z "$MN_PROTX_RECORD" ]] || MN_REGISTERED=1
+    if [ $MN_REGISTERED -gt 0 ]; then
+        MN_PROTX_HASH=$(echo "$MN_PROTX_RECORD" | grep proTxHash | awk '{print $2}')
+        MN_PROTX_CONFIRMATIONS=$(echo "$MN_PROTX_RECORD" | grep confirmations | awk '{print $2}')
+        MN_PROTX_REGD_HEIGHT=$(echo "$MN_PROTX_RECORD" | grep registeredHeight | awk '{print $2}')
+        MN_PROTX_LAST_PAID_HEIGHT=$(echo "$MN_PROTX_RECORD" | grep lastPaidHeight | awk '{print $2}')
+        MN_PROTX_COLL_HASH=$(echo "$MN_PROTX_RECORD" | grep collateralHash | awk '{print $2}')
+        MN_PROTX_COLL_IDX=$(echo "$MN_PROTX_RECORD" | grep collateralIndex | awk '{print $2}')
+        MN_PROTX_COLL_ADDY=$(echo "$MN_PROTX_RECORD" | grep collateralAddress | awk '{print $2}')
+        MN_PROTX_OPER_REWARD=$(echo "$MN_PROTX_RECORD" | grep operatorReward | awk '{print $2}')
+        MN_PROTX_POSE_PENALTY=$(echo "$MN_PROTX_RECORD" | grep PoSePenalty | awk '{print $2}')
+        MN_PROTX_POSE_REVIVED_HEIGHT=$(echo "$MN_PROTX_RECORD" | grep PoSeRevivedHeight | awk '{print $2}')
+        MN_PROTX_POSE_BAN_HEIGHT=$(echo "$MN_PROTX_RECORD" | grep PoSeBanHeight | awk '{print $2}')
+        MN_PROTX_SERVICE=$(echo "$MN_PROTX_RECORD" | grep service | awk '{print $2}')
+        MN_PROTX_OWNER_ADDRESS=$(echo "$MN_PROTX_RECORD" | grep ownerAddress | awk '{print $2}')
+        MN_PROTX_VOTER_ADDRESS=$(echo "$MN_PROTX_RECORD" | grep votingAddress | awk '{print $2}')
+        MN_PROTX_PAYOUT_ADDRESS=$(echo "$MN_PROTX_RECORD" | grep payoutAddress | awk '{print $2}')
+        MN_PROTX_OPER_PUBKEY=$(echo "$MN_PROTX_RECORD" | grep pubKeyOperator | awk '{print $2}')
+
+        MN_PROTX_QUEUE_POSITION=$(echo "$MN_PROTX_QUEUE" | grep -A9999999 $MN_PROTX_HASH | wc -l)
+    fi
 
     MN_QUEUE_IN_SELECTION=0
     MN_QUEUE_LENGTH=0
@@ -1157,7 +1178,7 @@ print_status() {
     pending "${messages["status_mnvisni"]}" ; [ $WEB_NINJA_SEES_OPEN -gt 0  ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
     pending "${messages["status_mnaddre"]}" ; ok "$WEB_NINJA_MN_ADDY"
     pending "${messages["status_mnfundt"]}" ; ok "$WEB_NINJA_MN_VIN-$WEB_NINJA_MN_VIDX"
-#    pending "${messages["status_mnqueue"]}" ; [ $MN_QUEUE_IN_SELECTION -gt 0  ] && highlight "$MN_QUEUE_POSITION/$MN_QUEUE_LENGTH (selection pending)" || ok "$MN_QUEUE_POSITION/$MN_QUEUE_LENGTH"
+    pending "${messages["status_mnqueue"]}" ; ok "$MN_PROTX_QUEUE_POSITION/$MN_PROTX_QUEUE_LEN"
     pending "  masternode mnsync state    : " ; [ ! -z "$MN_SYNC_ASSET" ] && ok "$MN_SYNC_ASSET" || ""
     pending "  masternode network state   : " ; [ "$MN_STATUS" == "ENABLED" ] && ok "$MN_STATUS" || highlight "$MN_STATUS"
 
@@ -1173,6 +1194,24 @@ print_status() {
         else
     err     "  dashninja api offline        " ;
         fi
+    if [ $MN_REGISTERED -gt 0 ] ; then
+        pending " protx registration hash     : " ; ok "$MN_PROTX_HASH"
+        pending " protx registered service    : " ; ok "$MN_PROTX_SERVICE"
+        pending " protx registered address    : " ; ok "$MN_PROTX_COLL_ADDY"
+        pending " protx registered collateral : " ; ok "$MN_PROTX_COLL_HASH-$MN_PROTX_COLL_IDX"
+        pending " protx registered at block   : " ; ok "$MN_PROTX_REGD_HEIGHT"
+        pending " protx confirmations         : " ; ok "$MN_PROTX_CONFIRMATIONS"
+        pending " protx last paid block       : " ; ok "$MN_PROTX_LAST_PAID_HEIGHT"
+        pending " protx owner address         : " ; ok "$MN_PROTX_OWNER_ADDRESS"
+        pending " protx voter address         : " ; ok "$MN_PROTX_VOTER_ADDRESS"
+        pending " protx payout address        : " ; ok "$MN_PROTX_PAYOUT_ADDRESS"
+        pending " protx operator reward       : " ; ok "$MN_PROTX_OPER_REWARD"
+        pending " protx operator pubkey       : " ; ok "$MN_PROTX_OPER_PUBKEY"
+        pending " protx pose score            : " ; [ $MN_PROTX_POSE_PENALTY  -gt 0 ] && err "$MN_PROTX_POSE_PENALTY" || ok "$MN_PROTX_POSE_PENALTY"
+        #    MN_PROTX_POSE_REVIVED_HEIGHT=$(echo "$MN_PROTX_RECORD" | grep PoSeRevivedHeight | awk '{print $2}')
+        #    MN_PROTX_POSE_BAN_HEIGHT=$(echo "$MN_PROTX_RECORD" | grep PoSeBanHeight | awk '{print $2}')
+    fi
+
     else
     pending "${messages["status_mncount"]}" ; [ $MN_TOTAL            -gt 0 ] && ok "$MN_TOTAL" || err "$MN_TOTAL"
     fi
