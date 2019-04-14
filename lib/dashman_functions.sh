@@ -1085,33 +1085,10 @@ get_dashd_status(){
     NOW=`date +%s`
     MN_LIST="$(cache_output /tmp/mnlist_cache '$DASH_CLI masternodelist full 2>/dev/null')"
 
-    SORTED_MN_LIST=$(echo "$MN_LIST" | grep ENABLED | sed -e 's/[}|{]//' -e 's/"//g' -e 's/,//g' | grep -v ^$ | \
-awk ' \
-{
-    if ($7 == 0) {
-        TIME = $6
-        print $_ " " TIME
-
-    }
-    else {
-        xxx = ("'$NOW'" - $7)
-        if ( xxx >= $6) {
-            TIME = $6
-        }
-        else {
-            TIME = xxx
-        }
-
-        print $_ " " TIME
-    }
-
-}' |  sort -k10 -n)
-
-    MN_STATUS=$(   echo "$SORTED_MN_LIST" | grep $MASTERNODE_BIND_IP | awk '{print $2}')
-    MN_VISIBLE=$(  test "$MN_STATUS" && echo 1 || echo 0 )
-    MN_ENABLED=$(  echo "$SORTED_MN_LIST" | grep -c ENABLED)
-    MN_UNHEALTHY=$(echo "$SORTED_MN_LIST" | grep -c EXPIRED)
-    #MN_EXPIRED=$(  echo "$SORTED_MN_LIST" | grep -c EXPIRED)
+    MN_STATUS=$( grep $MASTERNODE_BIND_IP /tmp/mnlist_cache | sed -e 's/"//g' | awk '{print $2}' )
+    MN_VISIBLE=$( test "$MN_STATUS" && echo 1 || echo 0 )
+    MN_ENABLED=$( cat /tmp/mnlist_cache | grep -c ENABLED )
+    MN_UNHEALTHY=$( cat /tmp/mnlist_cache | grep -c EXPIRED )
     MN_TOTAL=$(( $MN_ENABLED + $MN_UNHEALTHY ))
 
     MN_SYNC_STATUS=$( $DASH_CLI mnsync status )
