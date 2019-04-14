@@ -88,15 +88,17 @@ usage(){
         restart [now]
 
             ${messages["usage_restart_description"]}
-                banlist.dat
-                budget.dat
                 debug.log
+                banlist.dat
                 fee_estimates.dat
                 governance.dat
+                instantsend.dat
+                mempool.dat
                 mncache.dat
                 mnpayments.dat
                 netfulfilled.dat
                 peers.dat
+                sporks.dat
 
             ${messages["usage_restart_description_now"]}
 
@@ -377,7 +379,19 @@ restart_dashd(){
 
     cd $INSTALL_DIR
 
-    rm -f banlist.dat governance.dat netfulfilled.dat budget.dat debug.log fee_estimates.dat mncache.dat mnpayments.dat peers.dat
+    rm -f \
+        debug.log \
+        banlist.dat \
+        fee_estimates.dat \
+        governance.dat \
+        instantsend.dat \
+        mempool.dat \
+        mncache.dat \
+        mnpayments.dat \
+        netfulfilled.dat \
+        peers.dat \
+        sporks.dat
+
     ok "${messages["done"]}"
 
     pending " --> ${messages["starting_dashd"]}"
@@ -489,22 +503,24 @@ update_dashd(){
 
         pending " --> ${messages["removing_old_version"]}"
         rm -rf \
-            banlist.dat \
-            budget.dat \
             debug.log \
+            banlist.dat \
             fee_estimates.dat \
             governance.dat \
+            instantsend.dat \
+            mempool.dat \
             mncache.dat \
             mnpayments.dat \
             netfulfilled.dat \
             peers.dat \
+            sporks.dat \
             dashd \
             dashd-$CURRENT_VERSION \
             dash-qt \
             dash-qt-$CURRENT_VERSION \
             dash-cli \
             dash-cli-$CURRENT_VERSION \
-            dashcore-${CURRENT_VERSION}.gz*
+            dashcore-${CURRENT_VERSION}*.gz*
         ok "${messages["done"]}"
 
         # place it ---------------------------------------------------------------
