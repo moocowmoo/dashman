@@ -983,11 +983,14 @@ get_dashd_status(){
     MN_PROTX_VOTER_ADDRESS=''
     MN_PROTX_PAYOUT_ADDRESS=''
     MN_PROTX_OPER_PUBKEY=''
+    MN_PROTX_QUEUE_POSITION=0
+    MN_PROTX_SERVICE_VALID=0
 
     MN_CONF_ENABLED=$( egrep -s '^[^#]*\s*masternode\s*=\s*1' $HOME/.dash{,core}/dash.conf | wc -l 2>/dev/null)
     #MN_STARTED=`$DASH_CLI masternode status 2>&1 | grep 'successfully started' | wc -l`
     MN_REGISTERED=0
     [[ -z "$MN_PROTX_RECORD" ]] || MN_REGISTERED=1
+
     if [ $MN_REGISTERED -gt 0 ]; then
         MN_PROTX_HASH=$(echo "$MN_PROTX_RECORD" | grep proTxHash | awk '{print $2}')
         MN_PROTX_CONFIRMATIONS=$(echo "$MN_PROTX_RECORD" | grep confirmations | awk '{print $2}')
@@ -1006,6 +1009,11 @@ get_dashd_status(){
         MN_PROTX_PAYOUT_ADDRESS=$(echo "$MN_PROTX_RECORD" | grep payoutAddress | awk '{print $2}')
         MN_PROTX_OPER_PUBKEY=$(echo "$MN_PROTX_RECORD" | grep pubKeyOperator | awk '{print $2}')
 
+        MN_PROTX_SERVICE_IP=$(echo "$MN_PROTX_SERVICE" | sed -e 's/:.*//' )
+
+        if [ "$MASTERNODE_BIND_IP" == "$MN_PROTX_SERVICE_IP" ]; then
+            MN_PROTX_SERVICE_VALID=1
+        fi
         MN_PROTX_QUEUE_POSITION=$(echo "$MN_PROTX_QUEUE" | grep -A9999999 $MN_PROTX_HASH | wc -l)
     fi
 
@@ -1196,7 +1204,7 @@ print_status() {
         fi
     if [ $MN_REGISTERED -gt 0 ] ; then
         pending " protx registration hash     : " ; ok "$MN_PROTX_HASH"
-        pending " protx registered service    : " ; ok "$MN_PROTX_SERVICE"
+        pending " protx registered service    : " ; [ $MN_PROTX_SERVICE_VALID  -eq 1 ] && ok "$MN_PROTX_SERVICE" || err "$MN_PROTX_SERVICE"
         pending " protx registered address    : " ; ok "$MN_PROTX_COLL_ADDY"
         pending " protx registered collateral : " ; ok "$MN_PROTX_COLL_HASH-$MN_PROTX_COLL_IDX"
         pending " protx registered at block   : " ; ok "$MN_PROTX_REGD_HEIGHT"
