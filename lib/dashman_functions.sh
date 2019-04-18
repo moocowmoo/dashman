@@ -1024,8 +1024,19 @@ get_dashd_status(){
 
     MN_PROTX_RAW="$($DASH_CLI protx list valid 1 2>&1)"
     MN_PROTX_RECORD=`echo "$MN_PROTX_RAW" | grep -w -B6 -A19 $MASTERNODE_BIND_IP:9999 | sed -e 's/:9999/~9999/' -e 's/[":,{}]//g' -e 's/^ \+//' -e 's/ \+$//' -e 's/~9999/:9999/' -e '/^$/d' -e '/^[^ ]\+$/d'`
-    MN_PROTX_QUEUE=`echo "$MN_PROTX_RAW" | egrep '(proTxHash|lastPaidHeight)' | sed -e 's/[":,{}]//g' -e 's/^ \+//' -e 's/ \+$//' -e '/^$/d' -e '/^[^ ]\+$/d' -e 's/lastPaidHeight//' -e 's/proTxHash//' | tac | sed -e 'N;s/\n/ /' | sort -nr`
-    MN_PROTX_QUEUE_LEN=$(echo "$MN_PROTX_QUEUE" | wc -l)
+    MN_PROTX_QUEUE=`echo "$MN_PROTX_RAW" | egrep '(proTxHash|lastPaidHeight|PoSeRevivedHeight|registeredHeight)' | sed -e 's/[":,{}]//g' -e 's/^ \+//' -e 's/ \+$//' -e '/^$/d' -e '/^[^ ]\+$/d' | sed -e 'N;s/\n/ /' | sed -e 'N;s/\n/ /' | awk ' \
+{
+    if ($8 > $6) {
+        print $8 " " $_
+    }
+    else if ($6 == 0) {
+        print $4 " " $_
+    }
+    else {
+        print $6 " " $_
+    }
+}' | sort -k1,1nr`
+    MN_PROTX_QUEUE_LENGTH=$(echo "$MN_PROTX_QUEUE" | wc -l)
 
     MN_PROTX_HASH=''
     MN_PROTX_CONFIRMATIONS=''
@@ -1223,7 +1234,7 @@ print_status() {
     pending "${messages["status_mnvisni"]}" ; [ $WEB_NINJA_SEES_OPEN -gt 0  ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
     pending "${messages["status_mnaddre"]}" ; ok "$WEB_NINJA_MN_ADDY"
     pending "${messages["status_mnfundt"]}" ; ok "$WEB_NINJA_MN_VIN-$WEB_NINJA_MN_VIDX"
-    pending "${messages["status_mnqueue"]}" ; ok "$MN_PROTX_QUEUE_POSITION/$MN_PROTX_QUEUE_LEN"
+    pending "${messages["status_mnqueue"]}" ; ok "$MN_PROTX_QUEUE_POSITION/$MN_PROTX_QUEUE_LENGTH"
     pending "  masternode mnsync state    : " ; [ ! -z "$MN_SYNC_ASSET" ] && ok "$MN_SYNC_ASSET" || ""
     pending "  masternode network state   : " ; [ "$MN_STATUS" == "ENABLED" ] && ok "$MN_STATUS" || highlight "$MN_STATUS"
 
