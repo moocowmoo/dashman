@@ -117,6 +117,7 @@ messages=(
     ["status_dcurdif"]="  aktualna trudność wydobycia        : "
     ["status_mncount"]="  liczba masternodów                 : "
     ["status_mnstart"]="  masternod uruchomiony              : "
+    ["status_mnregis"]="  masternod zarejestrowany           : "
     ["status_mnvislo"]="  masternod wiczoczny (lokalny)      : "
     ["status_mnvisni"]="  masternod wiczoczny (ninja)        : "
     ["status_mnaddre"]="  adres twojego masternoda           : "
