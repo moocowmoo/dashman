@@ -117,6 +117,7 @@ messages=(
     ["status_dcurdif"]="  dashd current difficulty   : "
     ["status_mncount"]="  masternode count           : "
     ["status_mnstart"]="  masternode started         : "
+    ["status_mnregis"]="  masternode registered      : "
     ["status_mnvislo"]="  masternode visible (local) : "
     ["status_mnvisni"]="  masternode visible (ninja) : "
     ["status_mnaddre"]="  masternode address         : "

@@ -1,3 +1,7 @@
+0.1.28 -  Wed Apr 3 13:00:24 2019 +0000
+
+    enh - use protx registration for masternode status
+
 0.1.27 -  Tue Jul 3 18:23:03 2018 +0000
 
     compat - 12.3 release/github download

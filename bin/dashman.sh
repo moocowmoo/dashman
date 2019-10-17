@@ -3,7 +3,7 @@
 # dashman - main executable
 # installs, updates, and manages dash daemons and wallets
 
-# Copyright (c) 2015-2017 moocowmoo - moocowmoo@masternode.me
+# Copyright (c) 2015-2019 moocowmoo - moocowmoo@masternode.me
 
 # check we're running bash 4 -------------------------------------------------
 

@@ -2,16 +2,27 @@
 
 # dashman_functions.sh - common functions and variables
 
-# Copyright (c) 2015-2017 moocowmoo - moocowmoo@masternode.me
+# Copyright (c) 2015-2019 moocowmoo - moocowmoo@masternode.me
 
 # variables are for putting things in ----------------------------------------
 
-C_RED="\e[31m"
-C_YELLOW="\e[33m"
-C_GREEN="\e[32m"
-C_PURPLE="\e[35m"
-C_CYAN="\e[36m"
-C_NORM="\e[0m"
+C_RED=''
+C_YELLOW=''
+C_GREEN=''
+C_PURPLE=''
+C_CYAN=''
+C_NORM=''
+TPUT_EL=''
+
+if [ -t 1 ] || [ ! -z "$FORCE_COLOR" ] ; then
+    C_RED="\e[31m"
+    C_YELLOW="\e[33m"
+    C_GREEN="\e[32m"
+    C_PURPLE="\e[35m"
+    C_CYAN="\e[36m"
+    C_NORM="\e[0m"
+    TPUT_EL=$(tput el)
+fi
 
 
 GITHUB_API_DASH="https://api.github.com/repos/dashpay/dash"
@@ -26,13 +37,55 @@ else
     DASHMAN_CHECKOUT=" ("$DASHMAN_CHECKOUT")"
 fi
 
+[ -z "$CACHE_EXPIRE" ] && CACHE_EXPIRE=5
+[ -z "$ENABLE_CACHE" ] && ENABLE_CACHE=0
+
+CACHE_CMD=''
+[ $ENABLE_CACHE -gt 0 ] && CACHE_CMD='cached_cmd'
+
+CACHE_DIR=/tmp/dashman_cache
+mkdir -p $CACHE_DIR
+chmod 700 $CACHE_DIR
+
 curl_cmd="timeout 7 curl -k -s -L -A dashman/$DASHMAN_VERSION"
+function cached_cmd() {
+    cmd=""
+    whitespace="[[:space:]]"
+    punctuation="&"
+    for i in "$@"; do
+        if [[ $i =~ $whitespace ]];then
+            i=\'$i\'
+        fi
+        if [[ $i =~ $punctuation ]];then
+            i=\'$i\'
+        fi
+        cmd="$cmd $i"
+    done
+
+    FILE_HASH=$(echo $cmd| md5sum | awk '{print $1}')
+    CACHE_FILE=$CACHE_DIR/$FILE_HASH
+    find $CACHE_DIR -type f \( -name '*.cached' -o -name '*.err' -o -name '*.cmd' \) -cmin +$CACHE_EXPIRE -exec rm {} \; >/dev/null 2>&1
+    if [ -e $CACHE_FILE.cached ];then
+        cat $CACHE_FILE.cached
+        return
+    fi
+    echo $cmd > $CACHE_FILE.cmd
+    eval $cmd > $CACHE_FILE.cached 2> $CACHE_FILE.err
+    if [ $? -gt 0 ];then
+        exit $?
+    fi
+    if [ -e $CACHE_FILE.cached ];then
+        cat $CACHE_FILE.cached
+        return
+    fi
+}
+curl_cmd="$CACHE_CMD $curl_cmd"
 wget_cmd='wget --no-check-certificate -q'
 
 
 # (mostly) functioning functions -- lots of refactoring to do ----------------
 
-pending(){ [[ $QUIET ]] || ( echo -en "$C_YELLOW$1$C_NORM" && tput el ); }
+pending(){ [[ $QUIET ]] || ( echo -en "$C_YELLOW$1$C_NORM$TPUT_EL" ); }
 
 ok(){ [[ $QUIET ]] || echo -e "$C_GREEN$1$C_NORM" ; }
 
@@ -77,15 +130,17 @@ usage(){
         restart [now]
 
             ${messages["usage_restart_description"]}
-                banlist.dat
-                budget.dat
                 debug.log
+                banlist.dat
                 fee_estimates.dat
                 governance.dat
+                instantsend.dat
+                mempool.dat
                 mncache.dat
                 mnpayments.dat
                 netfulfilled.dat
                 peers.dat
+                sporks.dat
 
             ${messages["usage_restart_description_now"]}
 
@@ -257,6 +312,8 @@ _find_dash_directory() {
         exit 1
     fi
 
+    DASH_CLI="$CACHE_CMD $INSTALL_DIR/dash-cli"
+
 }
 
 
@@ -345,7 +402,8 @@ _check_dashd_state() {
     if [ $DASHD_HASPID -gt 0 ] && [ $DASHD_PID -gt 0 ]; then
         DASHD_RUNNING=1
     fi
-    if [ $( $DASH_CLI help 2>/dev/null | wc -l ) -gt 0 ]; then
+    $DASH_CLI getinfo >/dev/null 2>&1
+    if [ $? -eq 0 ] || [ $? -eq 28 ]; then
         DASHD_RESPONDING=1
     fi
 }
@@ -365,7 +423,19 @@ restart_dashd(){
 
     cd $INSTALL_DIR
 
-    rm -f banlist.dat governance.dat netfulfilled.dat budget.dat debug.log fee_estimates.dat mncache.dat mnpayments.dat peers.dat
+    rm -f \
+        debug.log \
+        banlist.dat \
+        fee_estimates.dat \
+        governance.dat \
+        instantsend.dat \
+        mempool.dat \
+        mncache.dat \
+        mnpayments.dat \
+        netfulfilled.dat \
+        peers.dat \
+        sporks.dat
+
     ok "${messages["done"]}"
 
     pending " --> ${messages["starting_dashd"]}"
@@ -375,6 +445,7 @@ restart_dashd(){
 
     pending " --> ${messages["waiting_for_dashd_to_respond"]}"
     echo -en "${C_YELLOW}"
+    DASHD_RESPONDING=0
     while [ $DASHD_RUNNING == 1 ] && [ $DASHD_RESPONDING == 0 ]; do
         echo -n "."
         _check_dashd_state
@@ -475,22 +546,24 @@ update_dashd(){
 
         pending " --> ${messages["removing_old_version"]}"
         rm -rf \
-            banlist.dat \
-            budget.dat \
             debug.log \
+            banlist.dat \
             fee_estimates.dat \
             governance.dat \
+            instantsend.dat \
+            mempool.dat \
             mncache.dat \
             mnpayments.dat \
             netfulfilled.dat \
             peers.dat \
+            sporks.dat \
             dashd \
             dashd-$CURRENT_VERSION \
             dash-qt \
             dash-qt-$CURRENT_VERSION \
             dash-cli \
             dash-cli-$CURRENT_VERSION \
-            dashcore-${CURRENT_VERSION}.gz*
+            dashcore-${CURRENT_VERSION}*.gz*
         ok "${messages["done"]}"
 
         # place it ---------------------------------------------------------------
@@ -517,6 +590,7 @@ update_dashd(){
         rm -rf dash-0.12.0
         rm -rf dashcore-0.12.1*
         rm -rf dashcore-0.12.2*
+        rm -rf dashcore-0.12.3*
         rm -rf $TARDIR
 
         # punch it ---------------------------------------------------------------
@@ -749,6 +823,7 @@ install_dashd(){
     rm -rf dash-0.12.0
     rm -rf dashcore-0.12.1*
     rm -rf dashcore-0.12.2*
+    rm -rf dashcore-0.12.3*
     rm -rf $TARDIR
 
     # preload it -------------------------------------------------------------
@@ -946,8 +1021,72 @@ get_dashd_status(){
 
     # masternode (remote!) specific
 
+    MN_PROTX_RAW="$($DASH_CLI protx list valid 1 2>&1)"
+    MN_PROTX_RECORD=`echo "$MN_PROTX_RAW" | grep -w -B6 -A19 $MASTERNODE_BIND_IP:9999 | sed -e 's/:9999/~9999/' -e 's/[":,{}]//g' -e 's/^ \+//' -e 's/ \+$//' -e 's/~9999/:9999/' -e '/^$/d' -e '/^[^ ]\+$/d'`
+    MN_PROTX_QUEUE=`echo "$MN_PROTX_RAW" | egrep '(proTxHash|lastPaidHeight|PoSeRevivedHeight|registeredHeight)' | sed -e 's/[":,{}]//g' -e 's/^ \+//' -e 's/ \+$//' -e '/^$/d' -e '/^[^ ]\+$/d' | sed -e 'N;s/\n/ /' | sed -e 'N;s/\n/ /' | awk ' \
+{
+    if ($8 > $6) {
+        print $8 " " $_
+    }
+    else if ($6 == 0) {
+        print $4 " " $_
+    }
+    else {
+        print $6 " " $_
+    }
+}' | sort -k1,1nr`
+    MN_PROTX_QUEUE_LENGTH=$(echo "$MN_PROTX_QUEUE" | wc -l)
+
+    MN_PROTX_HASH=''
+    MN_PROTX_CONFIRMATIONS=''
+    MN_PROTX_REGD_HEIGHT=''
+    MN_PROTX_LAST_PAID_HEIGHT=''
+    MN_PROTX_COLL_HASH=''
+    MN_PROTX_COLL_IDX=''
+    MN_PROTX_COLL_ADDY=''
+    MN_PROTX_OPER_REWARD=''
+    MN_PROTX_POSE_PENALTY=''
+    MN_PROTX_POSE_REVIVED_HEIGHT=''
+    MN_PROTX_POSE_BAN_HEIGHT=''
+    MN_PROTX_SERVICE=''
+    MN_PROTX_OWNER_ADDRESS=''
+    MN_PROTX_VOTER_ADDRESS=''
+    MN_PROTX_PAYOUT_ADDRESS=''
+    MN_PROTX_OPER_PUBKEY=''
+    MN_PROTX_QUEUE_POSITION=0
+    MN_PROTX_SERVICE_VALID=0
+
     MN_CONF_ENABLED=$( egrep -s '^[^#]*\s*masternode\s*=\s*1' $HOME/.dash{,core}/dash.conf | wc -l 2>/dev/null)
-    MN_STARTED=`$DASH_CLI masternode status 2>&1 | grep 'successfully started' | wc -l`
+    #MN_STARTED=`$DASH_CLI masternode status 2>&1 | grep 'successfully started' | wc -l`
+    MN_REGISTERED=0
+    [[ -z "$MN_PROTX_RECORD" ]] || MN_REGISTERED=1
+
+    if [ $MN_REGISTERED -gt 0 ]; then
+        MN_PROTX_HASH=$(echo "$MN_PROTX_RECORD" | grep proTxHash | awk '{print $2}')
+        MN_PROTX_CONFIRMATIONS=$(echo "$MN_PROTX_RECORD" | grep confirmations | awk '{print $2}')
+        MN_PROTX_REGD_HEIGHT=$(echo "$MN_PROTX_RECORD" | grep registeredHeight | awk '{print $2}')
+        MN_PROTX_LAST_PAID_HEIGHT=$(echo "$MN_PROTX_RECORD" | grep lastPaidHeight | awk '{print $2}')
+        MN_PROTX_COLL_HASH=$(echo "$MN_PROTX_RECORD" | grep collateralHash | awk '{print $2}')
+        MN_PROTX_COLL_IDX=$(echo "$MN_PROTX_RECORD" | grep collateralIndex | awk '{print $2}')
+        MN_PROTX_COLL_ADDY=$(echo "$MN_PROTX_RECORD" | grep collateralAddress | awk '{print $2}')
+        MN_PROTX_OPER_REWARD=$(echo "$MN_PROTX_RECORD" | grep operatorReward | awk '{print $2}')
+        MN_PROTX_POSE_PENALTY=$(echo "$MN_PROTX_RECORD" | grep PoSePenalty | awk '{print $2}')
+        MN_PROTX_POSE_REVIVED_HEIGHT=$(echo "$MN_PROTX_RECORD" | grep PoSeRevivedHeight | awk '{print $2}')
+        MN_PROTX_POSE_BAN_HEIGHT=$(echo "$MN_PROTX_RECORD" | grep PoSeBanHeight | awk '{print $2}')
+        MN_PROTX_SERVICE=$(echo "$MN_PROTX_RECORD" | grep service | awk '{print $2}')
+        MN_PROTX_OWNER_ADDRESS=$(echo "$MN_PROTX_RECORD" | grep ownerAddress | awk '{print $2}')
+        MN_PROTX_VOTER_ADDRESS=$(echo "$MN_PROTX_RECORD" | grep votingAddress | awk '{print $2}')
+        MN_PROTX_PAYOUT_ADDRESS=$(echo "$MN_PROTX_RECORD" | grep payoutAddress | awk '{print $2}')
+        MN_PROTX_OPER_PUBKEY=$(echo "$MN_PROTX_RECORD" | grep pubKeyOperator | awk '{print $2}')
+
+        MN_PROTX_SERVICE_IP=$(echo "$MN_PROTX_SERVICE" | sed -e 's/:.*//' )
+
+        if [ "$MASTERNODE_BIND_IP" == "$MN_PROTX_SERVICE_IP" ]; then
+            MN_PROTX_SERVICE_VALID=1
+        fi
+        MN_PROTX_QUEUE_POSITION=$(echo "$MN_PROTX_QUEUE" | grep -A9999999 $MN_PROTX_HASH | wc -l)
+    fi
+
     MN_QUEUE_IN_SELECTION=0
     MN_QUEUE_LENGTH=0
     MN_QUEUE_POSITION=0
@@ -956,33 +1095,10 @@ get_dashd_status(){
     NOW=`date +%s`
     MN_LIST="$(cache_output /tmp/mnlist_cache '$DASH_CLI masternodelist full 2>/dev/null')"
 
-    SORTED_MN_LIST=$(echo "$MN_LIST" | grep ENABLED | sed -e 's/[}|{]//' -e 's/"//g' -e 's/,//g' | grep -v ^$ | \
-awk ' \
-{
-    if ($7 == 0) {
-        TIME = $6
-        print $_ " " TIME
-
-    }
-    else {
-        xxx = ("'$NOW'" - $7)
-        if ( xxx >= $6) {
-            TIME = $6
-        }
-        else {
-            TIME = xxx
-        }
-
-        print $_ " " TIME
-    }
-
-}' |  sort -k10 -n)
-
-    MN_STATUS=$(   echo "$SORTED_MN_LIST" | grep $MASTERNODE_BIND_IP | awk '{print $2}')
-    MN_VISIBLE=$(  test "$MN_STATUS" && echo 1 || echo 0 )
-    MN_ENABLED=$(  echo "$SORTED_MN_LIST" | grep -c ENABLED)
-    MN_UNHEALTHY=$(echo "$SORTED_MN_LIST" | grep -c EXPIRED)
-    #MN_EXPIRED=$(  echo "$SORTED_MN_LIST" | grep -c EXPIRED)
+    MN_STATUS=$( grep $MASTERNODE_BIND_IP /tmp/mnlist_cache | sed -e 's/"//g' | awk '{print $2}' )
+    MN_VISIBLE=$( test "$MN_STATUS" && echo 1 || echo 0 )
+    MN_ENABLED=$( cat /tmp/mnlist_cache | grep -c ENABLED )
+    MN_UNHEALTHY=$( cat /tmp/mnlist_cache | grep -c EXPIRED )
     MN_TOTAL=$(( $MN_ENABLED + $MN_UNHEALTHY ))
 
     MN_SYNC_STATUS=$( $DASH_CLI mnsync status )
@@ -1111,14 +1227,15 @@ print_status() {
     pending "${messages["status_webmast"]}" ; [ $WEB_ME_FORK_DETECT -gt 0 ] && err "$WEB_ME" || ok "$WEB_ME"
     pending "${messages["status_dcurdif"]}" ; ok "$DASHD_DIFFICULTY"
     if [ $DASHD_RUNNING -gt 0 ] && [ $MN_CONF_ENABLED -gt 0 ] ; then
-    pending "${messages["status_mnstart"]}" ; [ $MN_STARTED -gt 0  ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
+    #pending "${messages["status_mnstart"]}" ; [ $MN_STARTED -gt 0  ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
+    pending "${messages["status_mnregis"]}" ; [ $MN_REGISTERED -gt 0 ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
     pending "${messages["status_mnvislo"]}" ; [ $MN_VISIBLE -gt 0  ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
         if [ $WEB_NINJA_API_OFFLINE -eq 0 ]; then
     pending "${messages["status_mnvisni"]}" ; [ $WEB_NINJA_SEES_OPEN -gt 0  ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
     pending "${messages["status_mnaddre"]}" ; ok "$MN_PAYEE"
     pending "${messages["status_mnfundt"]}" ; ok "$MN_FUNDING"
-    pending "${messages["status_mnqueue"]}" ; [ $MN_QUEUE_IN_SELECTION -gt 0  ] && highlight "$MN_QUEUE_POSITION/$MN_QUEUE_LENGTH (selection pending)" || ok "$MN_QUEUE_POSITION/$MN_QUEUE_LENGTH"
-    pending "  masternode mnsync state    : " ; [ ! -z "$MN_SYNC_ASSET" ] && ok "$MN_SYNC_ASSET"
+    pending "${messages["status_mnqueue"]}" ; ok "$MN_PROTX_QUEUE_POSITION/$MN_PROTX_QUEUE_LENGTH"
+    pending "  masternode mnsync state    : " ; [ ! -z "$MN_SYNC_ASSET" ] && ok "$MN_SYNC_ASSET" || ""
     pending "  masternode network state   : " ; [ "$MN_STATUS" == "ENABLED" ] && ok "$MN_STATUS" || highlight "$MN_STATUS"
 
     pending "${messages["status_mnlastp"]}" ; [ ! -z "$WEB_NINJA_MN_LAST_PAID_AMOUNT" ] && \
@@ -1133,6 +1250,24 @@ print_status() {
         else
     err     "  dashninja api offline        " ;
         fi
+    if [ $MN_REGISTERED -gt 0 ] ; then
+        pending " protx registration hash     : " ; ok "$MN_PROTX_HASH"
+        pending " protx registered service    : " ; [ $MN_PROTX_SERVICE_VALID  -eq 1 ] && ok "$MN_PROTX_SERVICE" || err "$MN_PROTX_SERVICE"
+        pending " protx registered address    : " ; ok "$MN_PROTX_COLL_ADDY"
+        pending " protx registered collateral : " ; ok "$MN_PROTX_COLL_HASH-$MN_PROTX_COLL_IDX"
+        pending " protx registered at block   : " ; ok "$MN_PROTX_REGD_HEIGHT"
+        pending " protx confirmations         : " ; ok "$MN_PROTX_CONFIRMATIONS"
+        pending " protx last paid block       : " ; ok "$MN_PROTX_LAST_PAID_HEIGHT"
+        pending " protx owner address         : " ; ok "$MN_PROTX_OWNER_ADDRESS"
+        pending " protx voter address         : " ; ok "$MN_PROTX_VOTER_ADDRESS"
+        pending " protx payout address        : " ; ok "$MN_PROTX_PAYOUT_ADDRESS"
+        pending " protx operator reward       : " ; ok "$MN_PROTX_OPER_REWARD"
+        pending " protx operator pubkey       : " ; ok "$MN_PROTX_OPER_PUBKEY"
+        pending " protx pose score            : " ; [ $MN_PROTX_POSE_PENALTY  -gt 0 ] && err "$MN_PROTX_POSE_PENALTY" || ok "$MN_PROTX_POSE_PENALTY"
+        #    MN_PROTX_POSE_REVIVED_HEIGHT=$(echo "$MN_PROTX_RECORD" | grep PoSeRevivedHeight | awk '{print $2}')
+        #    MN_PROTX_POSE_BAN_HEIGHT=$(echo "$MN_PROTX_RECORD" | grep PoSeBanHeight | awk '{print $2}')
+    fi
+
     else
     pending "${messages["status_mncount"]}" ; [ $MN_TOTAL            -gt 0 ] && ok "$MN_TOTAL" || err "$MN_TOTAL"
     fi
