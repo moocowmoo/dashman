@@ -313,7 +313,7 @@ def main(screen):
     if dash_cli_path is None:
         # test dash-cli in path -- TODO make robust
         try:
-            run_command('dash-cli getinfo')
+            run_command('dash-cli getblockchaininfo')
         except subprocess.CalledProcessError:
             quit(
                 "--> cannot find dash-cli in $PATH\n" +
