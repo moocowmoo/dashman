@@ -11,5 +11,4 @@ logtimestamps=1
 maxconnections=64
 "externalip=${IPADDR}"
 "#----"
-"#masternode=1"
-"#masternodeprivkey=<replace_with_mnprivkey>"
+"#masternodeblsprivkey=<replace_with_bls_secret>"
