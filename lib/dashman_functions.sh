@@ -402,7 +402,7 @@ _check_dashd_state() {
     if [ $DASHD_HASPID -gt 0 ] && [ $DASHD_PID -gt 0 ]; then
         DASHD_RUNNING=1
     fi
-    $DASH_CLI getinfo >/dev/null 2>&1
+    $DASH_CLI getblockchaininfo >/dev/null 2>&1
     if [ $? -eq 0 ] || [ $? -eq 28 ]; then
         DASHD_RESPONDING=1
     fi
