@@ -455,9 +455,9 @@ restart_dashd(){
         die "\n - dashd unexpectedly quit. ${messages["exiting"]}"
     fi
     ok "${messages["done"]}"
-    pending " --> dash-cli getinfo"
+    pending " --> dash-cli getblockchaininfo"
     echo
-    $DASH_CLI getinfo
+    $DASH_CLI getblockchaininfo
     echo
 
 }
@@ -960,7 +960,7 @@ get_dashd_status(){
     DASHD_CONNECTIONS=`netstat -nat | grep ESTA | grep 9999 | wc -l`;
     DASHD_CURRENT_BLOCK=`$DASH_CLI getblockcount 2>/dev/null`
     if [ -z "$DASHD_CURRENT_BLOCK" ] ; then DASHD_CURRENT_BLOCK=0 ; fi
-    DASHD_GETINFO=`$DASH_CLI getinfo 2>/dev/null`;
+    DASHD_GETINFO=`$DASH_CLI getblockchaininfo 2>/dev/null`;
     DASHD_DIFFICULTY=$(echo "$DASHD_GETINFO" | grep difficulty | awk '{print $2}' | sed -e 's/[",]//g')
 
     WEB_BLOCK_COUNT_CHAINZ=`$curl_cmd https://chainz.cryptoid.info/dash/api.dws?q=getblockcount`;
