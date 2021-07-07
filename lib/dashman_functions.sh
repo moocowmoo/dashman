@@ -228,7 +228,7 @@ _check_dependencies() {
 
     # make sure we have the right netcat version (-4,-6 flags)
     if [ ! -z "$(which nc)" ]; then
-        (nc -z -4 8.8.8.8 53 2>&1) >/dev/null
+        (nc -4 8.8.8.8 53 2>&1) </dev/null >/dev/null
         if [ $? -gt 0 ]; then
             MISSING_DEPENDENCIES="${MISSING_DEPENDENCIES}netcat6 "
         fi
@@ -318,7 +318,7 @@ _find_dash_directory() {
 
 
 _check_dashman_updates() {
-    GITHUB_DASHMAN_VERSION=$( $curl_cmd https://raw.githubusercontent.com/moocowmoo/dashman/master/VERSION )
+    GITHUB_DASHMAN_VERSION=$( $curl_cmd https://raw.githubusercontent.com/hookbot/dashman/master/VERSION )
     if [ ! -z "$GITHUB_DASHMAN_VERSION" ] && [ "$DASHMAN_VERSION" != "$GITHUB_DASHMAN_VERSION" ]; then
         echo -e "\n"
         echo -e "${C_RED}${0##*/} ${messages["requires_updating"]} $C_GREEN$GITHUB_DASHMAN_VERSION$C_RED\n${messages["requires_sync"]}$C_NORM\n"
@@ -378,7 +378,7 @@ _get_versions() {
     #$(( <-- vim syntax highlighting fix
 
     LATEST_VERSION=$(echo "$GITHUB_RELEASE_JSON" | grep tag_name | cut -d'"' -f4 | tr -d 'v')
-    TARDIR="dashcore-${LATEST_VERSION::-2}"
+    TARDIR="dashcore-"`echo $LATEST_VERSION | sed -r 's/\.[0-9]+$//;'`
     if [ -z "$LATEST_VERSION" ]; then
         die "\n${messages["err_could_not_get_version"]} -- ${messages["exiting"]}"
     fi
@@ -402,7 +402,7 @@ _check_dashd_state() {
     if [ $DASHD_HASPID -gt 0 ] && [ $DASHD_PID -gt 0 ]; then
         DASHD_RUNNING=1
     fi
-    $DASH_CLI getinfo >/dev/null 2>&1
+    $DASH_CLI getblockchaininfo >/dev/null 2>&1
     if [ $? -eq 0 ] || [ $? -eq 28 ]; then
         DASHD_RESPONDING=1
     fi
@@ -412,7 +412,7 @@ restart_dashd(){
 
     if [ $DASHD_RUNNING == 1 ]; then
         pending " --> ${messages["stopping"]} dashd. ${messages["please_wait"]}"
-        $DASH_CLI stop 2>&1 >/dev/null
+        $DASH_CLI stop 2>/dev/null >/dev/null
         sleep 10
         killall -9 dashd dash-shutoff 2>/dev/null
         ok "${messages["done"]}"
@@ -439,7 +439,7 @@ restart_dashd(){
     ok "${messages["done"]}"
 
     pending " --> ${messages["starting_dashd"]}"
-    $INSTALL_DIR/dashd 2>&1 >/dev/null
+    $INSTALL_DIR/dashd 2>/dev/null >/dev/null
     DASHD_RUNNING=1
     ok "${messages["done"]}"
 
@@ -455,9 +455,9 @@ restart_dashd(){
         die "\n - dashd unexpectedly quit. ${messages["exiting"]}"
     fi
     ok "${messages["done"]}"
-    pending " --> dash-cli getinfo"
+    pending " --> dash-cli getblockchaininfo"
     echo
-    $DASH_CLI getinfo
+    $DASH_CLI getblockchaininfo
     echo
 
 }
@@ -466,7 +466,6 @@ restart_dashd(){
 update_dashd(){
 
     if [ $LATEST_VERSION != $CURRENT_VERSION ] || [ ! -z "$REINSTALL" ] ; then
-                    
 
         if [ ! -z "$REINSTALL" ];then
             echo -e ""
@@ -537,7 +536,7 @@ update_dashd(){
 
         if [ $DASHD_RUNNING == 1 ]; then
             pending " --> ${messages["stopping"]} dashd. ${messages["please_wait"]}"
-            $DASH_CLI stop >/dev/null 2>&1
+            $DASH_CLI stop 2>/dev/null >/dev/null
             sleep 15
             killall -9 dashd dash-shutoff >/dev/null 2>&1
             ok "${messages["done"]}"
@@ -625,7 +624,7 @@ update_dashd(){
 
             pending " --> updating sentinel... "
             cd sentinel
-            git remote update >/dev/null 2>&1 
+            git remote update >/dev/null 2>&1
             git reset -q --hard origin/master
             cd ..
             ok "${messages["done"]}"
@@ -633,7 +632,7 @@ update_dashd(){
             # patch it -----------------------------------------------------------
 
             pending "  --> updating crontab... "
-            (crontab -l 2>/dev/null | grep -v sentinel.py ; echo "* * * * * cd $INSTALL_DIR/sentinel && venv/bin/python bin/sentinel.py  2>&1 >> sentinel-cron.log") | crontab -
+            (crontab -l 2>/dev/null | grep -v sentinel.py ; echo "* * * * * cd $INSTALL_DIR/sentinel && venv/bin/python bin/sentinel.py >> sentinel-cron.log 2>&1") | crontab -
             ok "${messages["done"]}"
 
         fi
@@ -840,11 +839,11 @@ install_dashd(){
     pending " $MAINNET_BOOTSTRAP_FILE_1_SIZE... "
     tput sc
     echo -e "$C_CYAN"
-    $wget_cmd -O - $MAINNET_BOOTSTRAP_FILE_1 | pv -trepa -s${MAINNET_BOOTSTRAP_FILE_1_SIZE_M}m -w80 -N bootstrap > ${MAINNET_BOOTSTRAP_FILE_1##*/}
+    $wget_cmd -O - $MAINNET_BOOTSTRAP_FILE_1 | pv -trep -s${MAINNET_BOOTSTRAP_FILE_1_SIZE_M}m -w80 -N bootstrap > ${MAINNET_BOOTSTRAP_FILE_1##*/}
     MAINNET_BOOTSTRAP_FILE=${MAINNET_BOOTSTRAP_FILE_1##*/}
     if [ ! -s $MAINNET_BOOTSTRAP_FILE ]; then
         rm $MAINNET_BOOTSTRAP_FILE
-        $wget_cmd -O - $MAINNET_BOOTSTRAP_FILE_2 | pv -trepa -s${MAINNET_BOOTSTRAP_FILE_1_SIZE_M}m -w80 -N bootstrap > ${MAINNET_BOOTSTRAP_FILE_2##*/}
+        $wget_cmd -O - $MAINNET_BOOTSTRAP_FILE_2 | pv -trep -s${MAINNET_BOOTSTRAP_FILE_1_SIZE_M}m -w80 -N bootstrap > ${MAINNET_BOOTSTRAP_FILE_2##*/}
         MAINNET_BOOTSTRAP_FILE=${MAINNET_BOOTSTRAP_FILE_2##*/}
     fi
     echo -ne "$C_NORM"
@@ -961,7 +960,7 @@ get_dashd_status(){
     DASHD_CONNECTIONS=`netstat -nat | grep ESTA | grep 9999 | wc -l`;
     DASHD_CURRENT_BLOCK=`$DASH_CLI getblockcount 2>/dev/null`
     if [ -z "$DASHD_CURRENT_BLOCK" ] ; then DASHD_CURRENT_BLOCK=0 ; fi
-    DASHD_GETINFO=`$DASH_CLI getinfo 2>/dev/null`;
+    DASHD_GETINFO=`$DASH_CLI getblockchaininfo 2>/dev/null`;
     DASHD_DIFFICULTY=$(echo "$DASHD_GETINFO" | grep difficulty | awk '{print $2}' | sed -e 's/[",]//g')
 
     WEB_BLOCK_COUNT_CHAINZ=`$curl_cmd https://chainz.cryptoid.info/dash/api.dws?q=getblockcount`;
@@ -969,7 +968,7 @@ get_dashd_status(){
         WEB_BLOCK_COUNT_CHAINZ=0
     fi
 
-    WEB_BLOCK_COUNT_DQA=`$curl_cmd https://explorer.dash.org/chain/Dash/q/getblockcount`;
+    WEB_BLOCK_COUNT_DQA=`$curl_cmd 'https://insight.dash.org/insight-api/status?q=getInfo' | perl -ne 'print $1 if /"blocks":(\d+)/'`
     if [ -z "$WEB_BLOCK_COUNT_DQA" ]; then
         WEB_BLOCK_COUNT_DQA=0
     fi
@@ -1010,7 +1009,7 @@ get_dashd_status(){
     get_public_ips
 
     MASTERNODE_BIND_IP=$PUBLIC_IPV4
-    PUBLIC_PORT_CLOSED=$( timeout 2 nc -4 -z $PUBLIC_IPV4 9999 2>&1 >/dev/null; echo $? )
+    PUBLIC_PORT_CLOSED=$( timeout 2 nc -4 $PUBLIC_IPV4 9999 >/dev/null 2>&1 </dev/null; echo $? )
 #    if [ $PUBLIC_PORT_CLOSED -ne 0 ] && [ ! -z "$PUBLIC_IPV6" ]; then
 #        PUBLIC_PORT_CLOSED=$( timeout 2 nc -6 -z $PUBLIC_IPV6 9999 2>&1 >/dev/null; echo $? )
 #        if [ $PUBLIC_PORT_CLOSED -eq 0 ]; then
@@ -1125,7 +1124,7 @@ get_dashd_status(){
 
         cd $INSTALL_DIR/sentinel
         SENTINEL_INSTALLED=$( ls -l bin/sentinel.py | wc -l )
-        SENTINEL_PYTEST=$( venv/bin/py.test test 2>&1 > /dev/null ; echo $? )
+        SENTINEL_PYTEST=$( venv/bin/py.test test 2>/dev/null > /dev/null ; echo $? )
         SENTINEL_CRONTAB=$( crontab -l | grep sentinel | grep -v '^#' | wc -l )
         SENTINEL_LAUNCH_OUTPUT=$( venv/bin/python bin/sentinel.py 2>&1 )
         if [ -z "$SENTINEL_LAUNCH_OUTPUT" ] ; then
@@ -1144,15 +1143,16 @@ get_dashd_status(){
 
         WEB_NINJA_JSON_TEXT=$(echo $WEB_NINJA_API | python -m json.tool)
         WEB_NINJA_SEES_OPEN=$(echo "$WEB_NINJA_JSON_TEXT" | grep '"Result"' | grep open | wc -l)
-        WEB_NINJA_MN_ADDY=$(echo "$WEB_NINJA_JSON_TEXT" | grep MasternodePubkey | awk '{print $2}' | sed -e 's/[",]//g')
-        WEB_NINJA_MN_VIN=$(echo "$WEB_NINJA_JSON_TEXT" | grep MasternodeOutputHash | awk '{print $2}' | sed -e 's/[",]//g')
-        WEB_NINJA_MN_VIDX=$(echo "$WEB_NINJA_JSON_TEXT" | grep MasternodeOutputIndex | awk '{print $2}' | sed -e 's/[",]//g')
         WEB_NINJA_MN_BALANCE=$(echo "$WEB_NINJA_JSON_TEXT" | grep Value | awk '{print $2}' | sed -e 's/[",]//g')
         WEB_NINJA_MN_LAST_PAID_TIME_EPOCH=$(echo "$WEB_NINJA_JSON_TEXT" | grep MNLastPaidTime | awk '{print $2}' | sed -e 's/[",]//g')
         WEB_NINJA_MN_LAST_PAID_AMOUNT=$(echo "$WEB_NINJA_JSON_TEXT" | grep MNLastPaidAmount | awk '{print $2}' | sed -e 's/[",]//g')
         WEB_NINJA_MN_LAST_PAID_BLOCK=$(echo "$WEB_NINJA_JSON_TEXT" | grep MNLastPaidBlock | awk '{print $2}' | sed -e 's/[",]//g')
 
         WEB_NINJA_LAST_PAYMENT_TIME=$(date -d @${WEB_NINJA_MN_LAST_PAID_TIME_EPOCH} '+%m/%d/%Y %H:%M:%S' 2>/dev/null)
+
+        LOCAL_MN_STATUS=$( $DASH_CLI masternode status | python -mjson.tool )
+        MN_PAYEE=$(echo "$LOCAL_MN_STATUS" | grep '"payee"' | awk '{print $2}' | sed -e 's/[",]//g')
+        MN_FUNDING=$([ ! -z "$MN_PAYEE" ] && echo "$LOCAL_MN_STATUS" | grep '"outpoint"' | awk '{print $2}' | sed -e 's/[",]//g')
 
         if [ ! -z "$WEB_NINJA_LAST_PAYMENT_TIME" ]; then
             local daysago=$(dateDiff -d now "$WEB_NINJA_LAST_PAYMENT_TIME")
@@ -1232,8 +1232,8 @@ print_status() {
     pending "${messages["status_mnvislo"]}" ; [ $MN_VISIBLE -gt 0  ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
         if [ $WEB_NINJA_API_OFFLINE -eq 0 ]; then
     pending "${messages["status_mnvisni"]}" ; [ $WEB_NINJA_SEES_OPEN -gt 0  ] && ok "${messages["YES"]}" || err "${messages["NO"]}"
-    pending "${messages["status_mnaddre"]}" ; ok "$WEB_NINJA_MN_ADDY"
-    pending "${messages["status_mnfundt"]}" ; ok "$WEB_NINJA_MN_VIN-$WEB_NINJA_MN_VIDX"
+    pending "${messages["status_mnaddre"]}" ; ok "$MN_PAYEE"
+    pending "${messages["status_mnfundt"]}" ; ok "$MN_FUNDING"
     pending "${messages["status_mnqueue"]}" ; ok "$MN_PROTX_QUEUE_POSITION/$MN_PROTX_QUEUE_LENGTH"
     pending "  masternode mnsync state    : " ; [ ! -z "$MN_SYNC_ASSET" ] && ok "$MN_SYNC_ASSET" || ""
     pending "  masternode network state   : " ; [ "$MN_STATUS" == "ENABLED" ] && ok "$MN_STATUS" || highlight "$MN_STATUS"
@@ -1351,7 +1351,7 @@ install_sentinel() {
     cd sentinel
 
     pending "   --> virtualenv init... "
-    virtualenv venv 2>&1 > /dev/null;
+    virtualenv venv 2>/dev/null >/dev/null;
     if [[ $? -gt 0 ]];then
         err "  --> virtualenv initialization failed"
         pending "  when running: " ; echo
@@ -1361,7 +1361,7 @@ install_sentinel() {
     ok "${messages["done"]}"
 
     pending "   --> pip modules... "
-    venv/bin/pip install -r requirements.txt 2>&1 > /dev/null;
+    venv/bin/pip install -r requirements.txt 2>/dev/null > /dev/null;
     if [[ $? -gt 0 ]];then
         err "  --> pip install failed"
         pending "  when running: " ; echo
@@ -1371,7 +1371,7 @@ install_sentinel() {
     ok "${messages["done"]}"
 
     pending "  --> testing installation... "
-    venv/bin/py.test ./test/ 2>&1>/dev/null; 
+    venv/bin/py.test ./test/ 2>/dev/null >/dev/null;
     if [[ $? -gt 0 ]];then
         err "  --> sentinel tests failed"
         pending "  when running: " ; echo
@@ -1381,8 +1381,10 @@ install_sentinel() {
     ok "${messages["done"]}"
 
     pending "  --> installing crontab... "
-    (crontab -l 2>/dev/null | grep -v sentinel.py ; echo "* * * * * cd $INSTALL_DIR/sentinel && venv/bin/python bin/sentinel.py  2>&1 >> sentinel-cron.log") | crontab -
+    (crontab -l 2>/dev/null | grep -v sentinel.py ; echo "* * * * * cd $INSTALL_DIR/sentinel && venv/bin/python bin/sentinel.py >> sentinel-cron.log 2>&1") | crontab -
     ok "${messages["done"]}"
+
+    [ -e venv/bin/python2 ] && [ ! -L venv/bin/python2 ] && [ ! -z "$LD_LIBRARY_PATH" ] && cp -a venv/bin/python2 venv/bin/python2.bin && echo -e "#!/bin/sh\nLD_LIBRARY_PATH=$LD_LIBRARY_PATH exec \`dirname \$0\`/python2.bin \$*" > venv/bin/python2
 
     cd ..
 
